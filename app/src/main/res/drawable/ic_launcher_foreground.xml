@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Капля воды -->
+    <path
+        android:fillColor="#E7B98A"
+        android:pathData="M54,22 C54,22 47,30.5 47,35 A7,7 0 0,0 61,35 C61,30.5 54,22 54,22 Z" />
+    <!-- Воронка -->
+    <path
+        android:fillColor="#F3E6D8"
+        android:pathData="M30,45 L78,45 Q79.5,45 78.6,46.4 L61,71 L47,71 L29.4,46.4 Q28.5,45 30,45 Z" />
+    <!-- Спиральные рёбра -->
+    <path
+        android:strokeColor="#CFAE8C"
+        android:strokeWidth="2"
+        android:strokeLineCap="round"
+        android:pathData="M40,50 L50,66 M52,50 L56,66 M66,50 L58,66" />
+    <!-- Подставка -->
+    <path
+        android:fillColor="#C68B59"
+        android:pathData="M40,71 L68,71 Q70,71 70,73 L70,74 Q70,76 68,76 L40,76 Q38,76 38,74 L38,73 Q38,71 40,71 Z" />
+    <!-- Струйка и капля -->
+    <path
+        android:fillColor="#E7B98A"
+        android:pathData="M52.8,77 L55.2,77 L55.2,82 L52.8,82 Z M54,84 C54,84 51.5,87 51.5,88.5 A2.5,2.5 0 0,0 56.5,88.5 C56.5,87 54,84 54,84 Z" />
+</vector>
