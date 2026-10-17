@@ -14,6 +14,8 @@ public static class TweakCatalog
         new PowerPlanTweak(),
         new GameDvrTweak(),
         new GameModeTweak(),
+        new ExclusiveFullscreenTweak(),
+        new WindowedGameOptimizationsTweak(),
         new FullscreenOptimizationsTweak(),
         new HagsTweak(),
         new CpuPriorityTweak(),
@@ -63,7 +65,7 @@ public static class TweakCatalog
         foreach (var token in LaunchOptionsComposer.Analyze(currentLaunchOptions).ManagedTokens)
         {
             var parts = token.Split(' ');
-            options.LaunchTokens.Add(parts[0]);
+            options.LaunchTokens.Add(LaunchOptionCatalog.All.FirstOrDefault(o => o.Token.Equals(token, StringComparison.OrdinalIgnoreCase))?.Token ?? parts[0]);
             if (parts[0].Equals(LaunchOptionCatalog.FpsMax.Token, StringComparison.OrdinalIgnoreCase) && parts.Length > 1 &&
                 int.TryParse(parts[1], out var fps))
             {

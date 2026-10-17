@@ -135,3 +135,75 @@ public sealed class LaunchOptionsTweak : Tweak
         return Result(TweakStatus.CanApply, $"Новая строка: «{line}»", new[] { action }, copy: line);
     }
 }
+
+public sealed class ExclusiveFullscreenTweak : Tweak
+{
+    private const string Fullscreen = "setting.fullscreen";
+    private const string NoBorder = "setting.nowindowborder";
+
+    public override string Id => "dota.fullscreen";
+    public override string Title => "Эксклюзивный полноэкранный режим Dota 2";
+    public override TweakCategory Category => TweakCategory.Game;
+    public override Effectiveness Effectiveness => Effectiveness.HardwareDependent;
+    public override bool Recommended => false;
+
+    public override string Explanation =>
+        "Переключает игру из окна/«окна без рамки» в эксклюзивный полноэкранный режим (те же ключи video.txt, что и в настройках игры). " +
+        "Обычно это минимальная задержка и ровные кадры на мониторах 144 Гц+. Минусы: Alt+Tab медленнее, хуже работают оверлеи и запись экрана. " +
+        "Если у вас фризы именно в полноэкранном режиме — наоборот, попробуйте «окно без рамки» в самой игре.";
+
+    public override TweakPlan Plan(TweakContext ctx)
+    {
+        var steam = ctx.Snapshot.Steam;
+        if (!steam.DotaFound || steam.VideoConfigPaths.Count == 0)
+        {
+            return Result(TweakStatus.NotApplicable, "video.txt не найден");
+        }
+
+        if (steam.DotaRunning)
+        {
+            return Result(TweakStatus.Blocked, "Закройте Dota 2: при выходе игра перезапишет video.txt.");
+        }
+
+        var actions = new List<PlannedAction>();
+        foreach (var path in steam.VideoConfigPaths)
+        {
+            var cfg = VideoConfig.Parse(ctx.FileSystem.ReadAllText(path));
+            if (cfg.Get(Fullscreen) is null)
+            {
+                continue;
+            }
+
+            if (cfg.Get(Fullscreen) == "1" && cfg.Get(NoBorder) is null or "0")
+            {
+                continue;
+            }
+
+            cfg.TrySet(Fullscreen, "1");
+            cfg.TrySet(NoBorder, "0");
+            actions.Add(PlannedAction.WriteFile(path, cfg.ToString(), "Режим экрана Dota 2: эксклюзивный полноэкранный"));
+        }
+
+        return actions.Count == 0
+            ? Result(TweakStatus.AlreadyOptimal, "Игра уже в эксклюзивном полноэкранном режиме (или ключей режима нет в video.txt).")
+            : Result(TweakStatus.CanApply, "Сейчас игра в окне или «окне без рамки».", actions);
+    }
+
+    /// <summary>True when Dota runs windowed/borderless according to its video.txt (used by Windows-side tweaks).</summary>
+    public static bool? IsWindowed(TweakContext ctx)
+    {
+        var path = ctx.Snapshot.Steam.VideoConfigPaths.FirstOrDefault();
+        if (path is null || !ctx.FileSystem.FileExists(path))
+        {
+            return null;
+        }
+
+        var cfg = VideoConfig.Parse(ctx.FileSystem.ReadAllText(path));
+        return cfg.Get(Fullscreen) switch
+        {
+            null => null,
+            "1" => cfg.Get(NoBorder) == "1",
+            _ => true,
+        };
+    }
+}

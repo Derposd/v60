@@ -7,6 +7,7 @@ public enum ActionKind
     SetRegistry,
     DeleteRegistry,
     WriteFile,
+    DeleteFile,
     RunCommand,
 }
 
@@ -66,6 +67,14 @@ public sealed record PlannedAction
         RequiresAdmin = requiresAdmin,
     };
 
+    /// <summary>Deletes a file after backing it up; rollback puts it back.</summary>
+    public static PlannedAction DeleteFile(string path, string description) => new()
+    {
+        Kind = ActionKind.DeleteFile,
+        Path = path,
+        Description = description,
+    };
+
     public static PlannedAction Run(string command, string args, string undoCommand, string undoArgs, string description, bool requiresAdmin) => new()
     {
         Kind = ActionKind.RunCommand,
@@ -80,7 +89,7 @@ public sealed record PlannedAction
     public string Target => Kind switch
     {
         ActionKind.SetRegistry or ActionKind.DeleteRegistry => $"{Hive.ShortName()}\\{Key}\\{ValueName}",
-        ActionKind.WriteFile => Path ?? string.Empty,
+        ActionKind.WriteFile or ActionKind.DeleteFile => Path ?? string.Empty,
         _ => $"{Command} {Arguments}",
     };
 }
