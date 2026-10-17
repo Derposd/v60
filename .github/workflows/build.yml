@@ -1,0 +1,75 @@
+name: build
+
+on:
+  push:
+    branches: ["**"]
+    tags: ["v*"]
+  pull_request:
+
+permissions:
+  contents: write
+
+env:
+  PRESENTMON_VERSION: "2.6.0"
+  INNOSETUP_VERSION: "6.4.3"
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Test
+        run: dotnet test tests/Dota2Optimizer.Tests -c Release
+
+      - name: Version
+        id: ver
+        shell: pwsh
+        env:
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          # Only accept plain vX.Y.Z tags, so the ref name never reaches a command line unchecked.
+          $v = "1.0.0"
+          if ($env:REF_TYPE -eq "tag" -and $env:REF_NAME -match '^v(\d+\.\d+\.\d+)$') { $v = $Matches[1] }
+          "version=$v" >> $env:GITHUB_OUTPUT
+
+      - name: Publish single-file exe
+        run: dotnet publish src/Dota2Optimizer.App -c Release -r win-x64 -o artifacts/publish -p:Version=${{ steps.ver.outputs.version }} -p:ContinuousIntegrationBuild=true
+
+      - name: Download PresentMon (MIT)
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force installer/tools | Out-Null
+          $v = $env:PRESENTMON_VERSION
+          Invoke-WebRequest "https://github.com/GameTechDev/PresentMon/releases/download/v$v/PresentMon-$v-x64.exe" -OutFile "installer/tools/PresentMon-$v-x64.exe"
+          Invoke-WebRequest "https://raw.githubusercontent.com/GameTechDev/PresentMon/v$v/LICENSE.txt" -OutFile "installer/tools/PresentMon-LICENSE.txt"
+
+      - name: Get Inno Setup
+        shell: pwsh
+        run: |
+          $v = $env:INNOSETUP_VERSION
+          Invoke-WebRequest "https://api.nuget.org/v3-flatcontainer/tools.innosetup/$v/tools.innosetup.$v.nupkg" -OutFile inno.zip
+          Expand-Archive inno.zip -DestinationPath inno -Force
+
+      - name: Build Setup.exe
+        run: inno\tools\ISCC.exe /DAppVersion=${{ steps.ver.outputs.version }} installer\Dota2Optimizer.iss
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Dota2Optimizer-${{ steps.ver.outputs.version }}
+          path: |
+            installer/Output/Setup.exe
+            artifacts/publish/Dota2Optimizer.exe
+
+      - name: Release
+        if: github.ref_type == 'tag'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            installer/Output/Setup.exe
+            artifacts/publish/Dota2Optimizer.exe

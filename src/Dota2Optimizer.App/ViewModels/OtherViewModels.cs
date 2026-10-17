@@ -208,24 +208,17 @@ public sealed class RollbackViewModel : ObservableObject
             return;
         }
 
-        IReadOnlyList<string> messages;
-        if (active.Any(a => a.RequiresAdminToRollback) && !Elevation.IsElevated)
+        var messages = new List<string>();
+        var adminIds = active.Where(a => a.RequiresAdminToRollback).OrderByDescending(a => a.CreatedUtc).Select(a => a.Id).ToList();
+        if (adminIds.Count > 0 && !Elevation.IsElevated)
         {
-            var result = await Task.Run(() => AppServices.RunElevated(new ElevatedRequest { Mode = "rollbackAll" }));
-            if (result is null)
-            {
-                var userOnly = await Task.Run(() => _s.Executor.RollbackAll(includeAdmin: false));
-                messages = userOnly.Messages.Prepend("Права администратора не выданы — откачены только пользовательские изменения.").ToList();
-            }
-            else
-            {
-                messages = result.Messages;
-            }
+            // Only admin-level sets go to the elevated copy: if UAC is confirmed by another administrator account,
+            // that process has a different HKCU, so per-user values must be restored here.
+            var result = await Task.Run(() => AppServices.RunElevated(new ElevatedRequest { Mode = "rollback", ChangeSetIds = adminIds }));
+            messages.AddRange(result?.Messages ?? new List<string> { "Права администратора не выданы — системные изменения не откачены." });
         }
-        else
-        {
-            messages = (await Task.Run(() => _s.Executor.RollbackAll(includeAdmin: true))).Messages;
-        }
+
+        messages.AddRange((await Task.Run(() => _s.Executor.RollbackAll(includeAdmin: Elevation.IsElevated))).Messages);
 
         _s.History.Add(new HistoryEntry(DateTime.Now, "Откат", "Откатить всё", string.Join("; ", messages)));
         Status = string.Join("\n", messages);
