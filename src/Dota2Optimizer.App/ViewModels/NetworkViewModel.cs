@@ -31,7 +31,28 @@ public sealed class NetworkViewModel : ObservableObject
         ChangeDnsCommand = new AsyncCommand(ChangeDnsAsync, () => !_busy);
         ResetStackCommand = new RelayCommand(ResetStack, () => !_busy);
         CopyCommand = new RelayCommand(() => System.Windows.Clipboard.SetText(ResultsText()));
+        UndoDnsCommand = new AsyncCommand(async () =>
+        {
+            if (ActiveDnsChange is { } set && await _s.UndoAsync(set.Id) is { } messages)
+            {
+                Ui.Info("DNS возвращён к прежним настройкам.\n\n" + string.Join("\n", messages));
+            }
+        }, () => !_busy && ActiveDnsChange is not null);
+        _s.ChangesApplied += () =>
+        {
+            OnPropertyChanged(nameof(ActiveDnsChange));
+            OnPropertyChanged(nameof(DnsChangedText));
+        };
     }
+
+    public ICommand UndoDnsCommand { get; }
+
+    /// <summary>The DNS change made by the app that is still in effect, if any.</summary>
+    public ChangeSet? ActiveDnsChange => _s.ActiveChangeFor("net.dns");
+
+    public string? DnsChangedText => ActiveDnsChange is { } set
+        ? $"Сейчас действует изменение программы: {set.Title} (от {set.CreatedUtc.ToLocalTime():dd.MM.yyyy HH:mm})."
+        : null;
 
     public ICommand RunCommand { get; }
     public ICommand CancelCommand { get; }

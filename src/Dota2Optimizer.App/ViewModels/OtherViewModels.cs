@@ -163,35 +163,11 @@ public sealed class RollbackViewModel : ObservableObject
             return;
         }
 
-        var conflicts = _s.Store.LaterConflicts(vm.Set.Id);
-        var warn = conflicts.Count > 0
-            ? $"\n\nВнимание: позже эти же настройки меняли: {string.Join(", ", conflicts.Select(c => c.Title))}. Лучше сначала откатить их (или нажать «Откатить всё»)."
-            : string.Empty;
-        if (!Ui.Confirm($"Откатить «{vm.Title}»?\n\n{vm.Details}{warn}"))
+        var messages = await _s.UndoAsync(vm.Set.Id);
+        if (messages is not null)
         {
-            return;
+            Status = string.Join("\n", messages);
         }
-
-        if (GameOrSteamFileInvolved(vm.Set) is { } blocker)
-        {
-            Ui.Info(blocker);
-            return;
-        }
-
-        IReadOnlyList<string> messages;
-        if (vm.Set.RequiresAdminToRollback && !Elevation.IsElevated)
-        {
-            var result = await Task.Run(() => AppServices.RunElevated(new ElevatedRequest { Mode = "rollback", ChangeSetIds = { vm.Set.Id } }));
-            messages = result?.Messages ?? new List<string> { "Запрос прав администратора отклонён — ничего не изменено." };
-        }
-        else
-        {
-            messages = (await Task.Run(() => _s.Executor.Rollback(vm.Set.Id))).Messages;
-        }
-
-        _s.History.Add(new HistoryEntry(DateTime.Now, "Откат", vm.Title, string.Join("; ", messages)));
-        Status = string.Join("\n", messages);
-        Reload();
     }
 
     private async Task RollbackAllAsync()
@@ -202,7 +178,7 @@ public sealed class RollbackViewModel : ObservableObject
         }
 
         var active = _s.Store.Active();
-        if (active.Select(GameOrSteamFileInvolved).FirstOrDefault(b => b is not null) is { } blocker)
+        if (active.Select(AppServices.GameOrSteamFileInvolved).FirstOrDefault(b => b is not null) is { } blocker)
         {
             Ui.Info(blocker);
             return;
@@ -222,24 +198,7 @@ public sealed class RollbackViewModel : ObservableObject
 
         _s.History.Add(new HistoryEntry(DateTime.Now, "Откат", "Откатить всё", string.Join("; ", messages)));
         Status = string.Join("\n", messages);
-        Reload();
-    }
-
-    /// <summary>Restoring video.txt or localconfig.vdf while the game/Steam runs would be overwritten by them on exit.</summary>
-    private static string? GameOrSteamFileInvolved(ChangeSet set)
-    {
-        var files = set.Records.Where(r => r.Kind == BackupKind.File && !set.RolledBack).Select(r => r.Path ?? string.Empty).ToList();
-        if (files.Any(f => f.EndsWith("video.txt", StringComparison.OrdinalIgnoreCase)) && Core.SystemInfo.SystemScanner.IsProcessRunning("dota2"))
-        {
-            return "Закройте Dota 2: иначе при выходе игра перезапишет восстановленный video.txt.";
-        }
-
-        if (files.Any(f => f.EndsWith("localconfig.vdf", StringComparison.OrdinalIgnoreCase)) && Core.SystemInfo.SystemScanner.IsProcessRunning("steam"))
-        {
-            return "Закройте Steam полностью: иначе он перезапишет восстановленный localconfig.vdf.";
-        }
-
-        return null;
+        _s.NotifyChangesApplied();
     }
 }
 
