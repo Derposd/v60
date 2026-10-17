@@ -29,7 +29,19 @@ public sealed class ProcessCommandRunner : ICommandRunner
             StandardOutputEncoding = ConsoleEncoding(),
             StandardErrorEncoding = ConsoleEncoding(),
         };
-        using var p = Process.Start(psi) ?? throw new InvalidOperationException($"Не удалось запустить {fileName}");
+        Process? started;
+        try
+        {
+            started = Process.Start(psi);
+        }
+        catch (System.ComponentModel.Win32Exception ex)
+        {
+            // Tool missing or blocked: report as a failed command instead of breaking the caller.
+            Log.Warn($"Не удалось запустить {fileName}: {ex.Message}");
+            return new CommandResult(-1, string.Empty, ex.Message);
+        }
+
+        using var p = started ?? throw new InvalidOperationException($"Не удалось запустить {fileName}");
         var stdout = p.StandardOutput.ReadToEndAsync();
         var stderr = p.StandardError.ReadToEndAsync();
         if (!p.WaitForExit((int)(timeout ?? TimeSpan.FromSeconds(60)).TotalMilliseconds))

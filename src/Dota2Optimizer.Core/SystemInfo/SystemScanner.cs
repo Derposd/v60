@@ -39,8 +39,11 @@ public sealed partial class SystemScanner
         Log.Info("Сканирование системы…");
 
         var gpus = Safe("видеокарты", ScanGpus) ?? new List<GpuInfo>();
-        var cpu = Safe("процессор", ScanCpu);
-        var memory = Safe("память", ScanMemory);
+        // Fallbacks without WMI: thread count and physical memory are always known to the runtime.
+        var cpu = Safe("процессор", ScanCpu)
+                  ?? new CpuInfo("Не определён", Math.Max(1, Environment.ProcessorCount / 2), Environment.ProcessorCount, 0);
+        var memory = Safe("память", ScanMemory)
+                     ?? new MemoryInfo((ulong)GC.GetGCMemoryInfo().TotalAvailableMemoryBytes, Array.Empty<MemoryModule>());
         var disks = Safe("диски", ScanDisks) ?? new List<DiskInfo>();
         var display = Safe("монитор", ScanDisplay);
         var windows = Safe("версия Windows", ScanWindows);
@@ -88,9 +91,7 @@ public sealed partial class SystemScanner
         {
             return f();
         }
-        catch (Exception ex) when (ex is ManagementException or System.Runtime.InteropServices.COMException or UnauthorizedAccessException
-                                       or InvalidOperationException or IOException or DllNotFoundException or EntryPointNotFoundException
-                                       or PlatformNotSupportedException or TypeInitializationException)
+        catch (Exception ex) when (ex is not OutOfMemoryException)
         {
             _warnings.Add($"Не удалось определить: {section} ({ex.Message})");
             Log.Warn($"Сканирование «{section}»: {ex}");
@@ -106,7 +107,18 @@ public sealed partial class SystemScanner
 
     private List<GpuInfo> ScanGpus()
     {
-        var wmi = Query("SELECT Name, PNPDeviceID, DriverVersion, DriverDate, AdapterRAM FROM Win32_VideoController").ToList();
+        // WMI gives driver version/date; DXGI gives exact VRAM and the LUID. Either may be unavailable on its own.
+        List<ManagementObject> wmi;
+        try
+        {
+            wmi = Query("SELECT Name, PNPDeviceID, DriverVersion, DriverDate, AdapterRAM FROM Win32_VideoController").ToList();
+        }
+        catch (Exception ex) when (ex is ManagementException or PlatformNotSupportedException or System.Runtime.InteropServices.COMException or UnauthorizedAccessException)
+        {
+            _warnings.Add($"WMI недоступен, версия и дата драйвера не определены ({ex.Message})");
+            wmi = new List<ManagementObject>();
+        }
+
         var dxgi = Native.EnumerateAdapters().Where(d => (d.Flags & Native.DxgiAdapterFlagSoftware) == 0).ToList();
         var result = new List<GpuInfo>();
 
@@ -267,7 +279,7 @@ public sealed partial class SystemScanner
     {
         var mode = new Native.DevMode { dmSize = (short)System.Runtime.InteropServices.Marshal.SizeOf<Native.DevMode>() };
         return Native.EnumDisplaySettings(null, Native.EnumCurrentSettings, ref mode)
-            ? new DisplayInfo(mode.dmPelsWidth, mode.dmPelsHeight, mode.dmDisplayFrequency, mode.dmDeviceName)
+            ? new DisplayInfo(mode.dmPelsWidth, mode.dmPelsHeight, mode.dmDisplayFrequency > 1 ? mode.dmDisplayFrequency : 0, mode.dmDeviceName)
             : null;
     }
 
