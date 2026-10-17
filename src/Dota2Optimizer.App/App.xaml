@@ -15,6 +15,13 @@
             <vm:NullToCollapsedConverter x:Key="NullToCollapsed" />
             <vm:InverseBoolConverter x:Key="Not" />
             <vm:EqualsToVisibleConverter x:Key="EqualsToVisible" />
+            <vm:StepFillConverter x:Key="StepFill" />
+            <vm:StepGlyphConverter x:Key="StepGlyph" />
+            <vm:StepLineConverter x:Key="StepLine" />
+            <vm:EffectBrushConverter x:Key="EffectBrush" />
+            <vm:StatusBrushConverter x:Key="StatusBrush" />
+            <vm:CountToVisibleConverter x:Key="CountToVisible" />
+            <vm:SizeTextConverter x:Key="SizeText" />
         </ResourceDictionary>
     </Application.Resources>
 </Application>
