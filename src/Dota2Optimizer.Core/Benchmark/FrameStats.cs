@@ -37,6 +37,49 @@ public static class PresentMonCsv
 {
     private static readonly string[] FrameTimeColumns = { "MsBetweenPresents", "FrameTime", "msBetweenPresents" };
 
+    /// <summary>
+    /// Frames with their capture time in seconds, for per-minute FPS. PresentMon 2.x writes CPUStartTime
+    /// in milliseconds since capture start; 1.x writes TimeInSeconds.
+    /// </summary>
+    public static IReadOnlyList<(double TimeSec, double FrameMs)> ReadTimedFrames(string csv, string processName = "dota2.exe")
+    {
+        var lines = csv.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        if (lines.Length < 2)
+        {
+            return Array.Empty<(double, double)>();
+        }
+
+        var header = lines[0].Split(',').Select(h => h.Trim()).ToArray();
+        var ft = Array.FindIndex(header, h => FrameTimeColumns.Contains(h, StringComparer.OrdinalIgnoreCase));
+        var app = Array.FindIndex(header, h => h.Equals("Application", StringComparison.OrdinalIgnoreCase));
+        var tMs = Array.FindIndex(header, h => h.Equals("CPUStartTime", StringComparison.OrdinalIgnoreCase));
+        var tSec = Array.FindIndex(header, h => h.Equals("TimeInSeconds", StringComparison.OrdinalIgnoreCase));
+        if (ft < 0 || (tMs < 0 && tSec < 0))
+        {
+            return Array.Empty<(double, double)>();
+        }
+
+        var result = new List<(double, double)>();
+        foreach (var line in lines.Skip(1))
+        {
+            var cells = line.Split(',');
+            if (app >= 0 && app < cells.Length && !cells[app].Trim().Equals(processName, StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            var ti = tMs >= 0 ? tMs : tSec;
+            if (ti < cells.Length && ft < cells.Length &&
+                double.TryParse(cells[ti], NumberStyles.Float, CultureInfo.InvariantCulture, out var t) &&
+                double.TryParse(cells[ft], NumberStyles.Float, CultureInfo.InvariantCulture, out var f))
+            {
+                result.Add((tMs >= 0 ? t / 1000.0 : t, f));
+            }
+        }
+
+        return result;
+    }
+
     public static IReadOnlyList<double> ReadFrameTimes(string csv, string processName = "dota2.exe")
     {
         var lines = csv.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);

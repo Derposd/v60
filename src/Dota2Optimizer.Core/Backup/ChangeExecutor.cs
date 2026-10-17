@@ -41,6 +41,7 @@ public sealed class ChangeExecutor
             ActionKind.SetRegistry => new PreviewLine(a.Target, Show(_reg.GetValue(a.Hive, a.Key!, a.ValueName!)), Show(a.Value), a.Description, a.RequiresAdmin),
             ActionKind.DeleteRegistry => new PreviewLine(a.Target, Show(_reg.GetValue(a.Hive, a.Key!, a.ValueName!)), "(удалить)", a.Description, a.RequiresAdmin),
             ActionKind.WriteFile => new PreviewLine(a.Target, _fs.FileExists(a.Path!) ? "файл (будет сохранена копия)" : "(нет файла)", "изменённый файл", a.Description, a.RequiresAdmin),
+            ActionKind.DeleteFile => new PreviewLine(a.Target, _fs.FileExists(a.Path!) ? "файл (будет сохранена копия)" : "(нет файла)", "(удалить)", a.Description, a.RequiresAdmin),
             _ => new PreviewLine(a.Target, "—", "выполнить команду", a.Description, a.RequiresAdmin),
         }).ToList();
 
@@ -135,7 +136,7 @@ public sealed class ChangeExecutor
             Description = action.Description,
             RequiresAdmin = action.RequiresAdmin,
         },
-        ActionKind.WriteFile => _store.BackupFile(set, action.Path!, action.Description, action.RequiresAdmin),
+        ActionKind.WriteFile or ActionKind.DeleteFile => _store.BackupFile(set, action.Path!, action.Description, action.RequiresAdmin),
         _ => new BackupRecord
         {
             Kind = BackupKind.Command,
@@ -158,6 +159,9 @@ public sealed class ChangeExecutor
                 break;
             case ActionKind.WriteFile:
                 _fs.WriteAllText(action.Path!, action.Content!);
+                break;
+            case ActionKind.DeleteFile:
+                _fs.DeleteFile(action.Path!);
                 break;
             case ActionKind.RunCommand:
                 var result = _cmd.Run(action.Command!, action.Arguments ?? string.Empty);

@@ -48,7 +48,11 @@ public static class LaunchOptionCatalog
         "Сохраняет вывод консоли в game\\dota\\console.log — по нему вкладка «Диагностика вылетов» ищет ошибки. Включайте на время поиска проблемы.",
         Effectiveness.Low, Recommended: false, Disputed: false);
 
-    public static IReadOnlyList<LaunchOptionInfo> All { get; } = new[] { NoVid, Dx11, Vulkan, FpsMax, High, NoJoy, Console, ConDebug };
+    public static readonly LaunchOptionInfo MapPreload = new("-map dota", "Загружать карту при запуске",
+        "Загружает карту сразу при старте игры, чтобы после нахождения матча загрузка шла быстрее (заметнее на HDD). Запуск игры становится дольше. Свежих замеров для текущей версии нет — проверьте сами.",
+        Effectiveness.HardwareDependent, Recommended: false, Disputed: true);
+
+    public static IReadOnlyList<LaunchOptionInfo> All { get; } = new[] { NoVid, Dx11, Vulkan, FpsMax, High, MapPreload, NoJoy, Console, ConDebug };
 
     /// <summary>
     /// Options we deliberately do not offer: removed by Valve, belong to other Source games or never did
@@ -59,7 +63,6 @@ public static class LaunchOptionCatalog
         ["-threads"] = "движок сам определяет число потоков; ручное значение может только навредить",
         ["-prewarm"] = "удалён Valve, его эффект теперь включён по умолчанию",
         ["-preload"] = "нет подтверждений, что работает в Source 2",
-        ["-map"] = "«-map dota» не ускоряет загрузку матча в современной Dota 2, может удлинить запуск",
         ["-dxlevel"] = "параметр DirectX 9 из старого Source, в Dota 2 не работает",
         ["-heapsize"] = "параметр старого Source, в 64-битном Source 2 не используется",
         ["-useforcedmparms"] = "параметр мыши из старого Source, в Dota 2 не работает",
@@ -116,7 +119,7 @@ public static class LaunchOptionsComposer
 
     public static LaunchOptionsAnalysis Analyze(string? line)
     {
-        var managedHeads = LaunchOptionCatalog.All.Select(o => o.Token).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var managedHeads = LaunchOptionCatalog.All.Select(o => Head(o.Token)).ToHashSet(StringComparer.OrdinalIgnoreCase);
         var managed = new List<string>();
         var user = new List<string>();
         var myths = new List<(string, string)>();

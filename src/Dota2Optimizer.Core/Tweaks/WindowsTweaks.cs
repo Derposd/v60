@@ -265,3 +265,42 @@ public sealed class CpuPriorityTweak : Tweak
         });
     }
 }
+
+public sealed class WindowedGameOptimizationsTweak : Tweak
+{
+    private const string Name = "DirectXUserGlobalSettings";
+    private const string Pair = "SwapEffectUpgradeEnable";
+
+    public override string Id => "win.windowedopt";
+    public override string Title => "«Оптимизация для оконных игр» Windows 11";
+    public override TweakCategory Category => TweakCategory.Windows;
+    public override Effectiveness Effectiveness => Effectiveness.HardwareDependent;
+    public override bool Recommended => false;
+    public override bool Disputed => true;
+
+    public override string Explanation =>
+        "Настройка Windows 11 (Параметры → Система → Дисплей → Графика) для DirectX 11 игр в окне и «окне без рамки»: переводит их на современный режим вывода — меньше задержка, работает VRR. " +
+        "При этом пользователи Windows 11 24H2 сообщали, что именно её выключение убирало случайные фризы. Данные противоречивы, поэтому переключение — только по вашему решению и с замером. " +
+        "Влияет, только если Dota 2 запущена не в эксклюзивном полноэкранном режиме.";
+
+    public override string? ManualSteps => "То же вручную: Параметры → Система → Дисплей → Графика → «Изменить параметры графики по умолчанию» → «Оптимизация для оконных игр».";
+
+    public override TweakPlan Plan(TweakContext ctx)
+    {
+        if (ctx.Snapshot.Windows is not { IsWindows11: true })
+        {
+            return Result(TweakStatus.NotApplicable, "Есть только в Windows 11.");
+        }
+
+        var current = ctx.Registry.GetValue(RegHive.CurrentUser, GpuPreferenceTweak.Key, Name)?.Data;
+        var on = RegistryStrings.GetSemicolonPair(current, Pair) == "1";
+        var windowed = ExclusiveFullscreenTweak.IsWindowed(ctx);
+        var note = windowed == false ? " Dota 2 сейчас в эксклюзивном полноэкранном режиме — на неё эта настройка не влияет." : string.Empty;
+        var target = on ? "0" : "1";
+        var action = PlannedAction.SetReg(RegHive.CurrentUser, GpuPreferenceTweak.Key, Name,
+            RegValue.Str(RegistryStrings.SetSemicolonPair(current, Pair, target)),
+            on ? "Выключить «Оптимизацию для оконных игр» (если есть фризы)" : "Включить «Оптимизацию для оконных игр» (меньше задержка в окне)");
+        return Result(TweakStatus.CanApply, (on ? "Сейчас включена." : "Сейчас выключена (или по умолчанию Windows).") + note,
+            new[] { action }, recommendedHere: false);
+    }
+}
