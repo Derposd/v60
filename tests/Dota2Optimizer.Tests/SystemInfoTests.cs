@@ -22,6 +22,8 @@ public class SystemInfoTests
     [InlineData("NVIDIA GeForce GTX 1660 SUPER", 0x10DE, 6, PcProfile.Medium)]
     [InlineData("NVIDIA GeForce GTX 1050 Ti", 0x10DE, 4, PcProfile.Weak)]
     [InlineData("NVIDIA GeForce GTX 970", 0x10DE, 4, PcProfile.Weak)]
+    [InlineData("NVIDIA GeForce GTX 470", 0x10DE, 16, PcProfile.Weak)]
+    [InlineData("NVIDIA GeForce GTX 1080", 0x10DE, 8, PcProfile.Medium)]
     [InlineData("AMD Radeon RX 7800 XT", 0x1002, 16, PcProfile.Strong)]
     [InlineData("AMD Radeon RX 580", 0x1002, 8, PcProfile.Medium)]
     [InlineData("Intel(R) UHD Graphics 620", 0x8086, 0.125, PcProfile.Weak)]

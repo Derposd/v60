@@ -1,0 +1,578 @@
+<Window x:Class="Dota2Optimizer.App.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Dota 2 Optimizer" Width="1120" Height="800" MinWidth="900" MinHeight="600"
+        WindowStartupLocation="CenterScreen" Style="{StaticResource DarkWindow}" Icon="Assets/app.ico">
+
+    <Window.Resources>
+        <!-- Advice card: severity tag, title, details, optional official link. -->
+        <DataTemplate x:Key="AdviceTemplate">
+            <Border Style="{StaticResource Card}">
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <Border Style="{StaticResource Tag}" Background="{Binding Severity, Converter={StaticResource SeverityBrush}}">
+                            <TextBlock Text="{Binding Severity, Converter={StaticResource SeverityText}}" FontSize="11" FontWeight="Bold" Foreground="#111" />
+                        </Border>
+                        <TextBlock Text="{Binding Title}" FontWeight="SemiBold" VerticalAlignment="Center" />
+                    </StackPanel>
+                    <TextBlock Text="{Binding Details}" Style="{StaticResource MutedText}" Margin="0,6,0,0" />
+                    <Button Content="Открыть официальный сайт" HorizontalAlignment="Left" Margin="0,8,0,0"
+                            Visibility="{Binding Link, Converter={StaticResource NullToCollapsed}}"
+                            Command="{Binding DataContext.OpenLinkCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                            CommandParameter="{Binding Link}" />
+                </StackPanel>
+            </Border>
+        </DataTemplate>
+    </Window.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <Border Background="{StaticResource Panel}" Padding="16,10" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
+            <StackPanel>
+                <TextBlock Text="Dota 2 Optimizer" FontSize="18" FontWeight="SemiBold" />
+                <TextBlock Style="{StaticResource MutedText}" Text="Оффлайн · без телеметрии и аккаунтов · не трогает процесс игры (VAC-безопасно) · каждое изменение с бэкапом и откатом" />
+            </StackPanel>
+        </Border>
+
+        <TabControl Grid.Row="1">
+
+            <!-- ===================== WIZARD ===================== -->
+            <TabItem Header="Оптимизация" DataContext="{Binding Wizard}">
+                <Grid Margin="16">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                            <Button Content="1. Сканирование" Command="{Binding GoToStepCommand}" CommandParameter="0" />
+                            <Button Content="2. Диагноз" Command="{Binding GoToStepCommand}" CommandParameter="1" />
+                            <Button Content="3. План" Command="{Binding GoToStepCommand}" CommandParameter="2" />
+                            <Button Content="4. Применить" Command="{Binding GoToStepCommand}" CommandParameter="3" />
+                        </StackPanel>
+                        <TextBlock Text="{Binding StepTitle}" Style="{StaticResource H1}" />
+                    </StackPanel>
+
+                    <Grid Grid.Row="1">
+                        <!-- Step 1: scan & passport -->
+                        <ScrollViewer Visibility="{Binding Step, Converter={StaticResource EqualsToVisible}, ConverterParameter=0}">
+                            <StackPanel>
+                                <Border Style="{StaticResource Card}">
+                                    <StackPanel>
+                                        <TextBlock Text="Программа определит видеокарту, драйвер, процессор, память, диск, монитор, план питания, Steam и Dota 2. Сканирование только читает данные." Style="{StaticResource MutedText}" />
+                                        <Button Content="Сканировать" Style="{StaticResource Primary}" Command="{Binding ScanCommand}" HorizontalAlignment="Left" Margin="0,10,0,0" />
+                                    </StackPanel>
+                                </Border>
+                                <TextBlock Text="Паспорт ПК" Style="{StaticResource H2}" />
+                                <ItemsControl ItemsSource="{Binding Passport}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Grid Margin="0,3">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="190" />
+                                                    <ColumnDefinition Width="*" />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Text="{Binding Label}" Style="{StaticResource MutedText}" />
+                                                <TextBlock Grid.Column="1" Text="{Binding Value}" />
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </ScrollViewer>
+
+                        <!-- Step 2: diagnosis -->
+                        <ScrollViewer Visibility="{Binding Step, Converter={StaticResource EqualsToVisible}, ConverterParameter=1}">
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource MutedText}" Margin="0,0,0,8"
+                                           Text="Сверху — самое важное. Программа ничего не закрывает и не меняет на этом шаге: фоновые программы закрывайте сами, если нужно." />
+                                <ItemsControl ItemsSource="{Binding Diagnosis}" ItemTemplate="{StaticResource AdviceTemplate}" />
+                            </StackPanel>
+                        </ScrollViewer>
+
+                        <!-- Step 3: plan -->
+                        <ScrollViewer Visibility="{Binding Step, Converter={StaticResource EqualsToVisible}, ConverterParameter=2}">
+                            <StackPanel>
+                                <TextBlock Text="Графический пресет Dota 2" Style="{StaticResource H2}" />
+                                <Border Style="{StaticResource Card}">
+                                    <StackPanel>
+                                        <StackPanel Orientation="Horizontal">
+                                            <RadioButton Content="Максимум FPS" IsChecked="{Binding IsMaxFps}" GroupName="preset" />
+                                            <RadioButton Content="Баланс" IsChecked="{Binding IsBalance}" GroupName="preset" />
+                                            <RadioButton Content="Качество" IsChecked="{Binding IsQuality}" GroupName="preset" />
+                                        </StackPanel>
+                                        <TextBlock Style="{StaticResource MutedText}" Margin="0,6,0,0"
+                                                   Text="{Binding PresetHint}" />
+                                    </StackPanel>
+                                </Border>
+
+                                <TextBlock Text="Параметры запуска" Style="{StaticResource H2}" />
+                                <Border Style="{StaticResource Card}">
+                                    <StackPanel>
+                                        <ItemsControl ItemsSource="{Binding LaunchOptions}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <StackPanel Margin="0,4">
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <CheckBox IsChecked="{Binding IsSelected}" Content="{Binding Title}" FontWeight="SemiBold" />
+                                                            <Border Style="{StaticResource Tag}" Margin="10,0,6,0"><TextBlock Text="{Binding Effect}" FontSize="11" /></Border>
+                                                            <Border Style="{StaticResource Tag}"><TextBlock Text="{Binding RecommendationLabel}" FontSize="11" /></Border>
+                                                            <Border Style="{StaticResource Tag}" Background="{StaticResource Warn}" Visibility="{Binding IsDisputed, Converter={StaticResource BoolToVis}}">
+                                                                <TextBlock Text="спорно" FontSize="11" Foreground="#111" />
+                                                            </Border>
+                                                        </StackPanel>
+                                                        <TextBlock Text="{Binding Explanation}" Style="{StaticResource MutedText}" Margin="22,2,0,0" />
+                                                    </StackPanel>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                        <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                            <TextBlock Text="Значение +fps_max:" VerticalAlignment="Center" Margin="0,0,8,0" />
+                                            <TextBox Text="{Binding FpsMaxText, UpdateSourceTrigger=PropertyChanged, Delay=400}" Width="70" />
+                                            <CheckBox Content="Монитор с G-Sync/FreeSync (ограничить на 3 кадра ниже частоты)" IsChecked="{Binding VariableRefresh}" Margin="16,0,0,0" />
+                                        </StackPanel>
+                                        <CheckBox Content="Убрать устаревшие/бесполезные параметры (-threads, -prewarm, -map dota и т. п.)" IsChecked="{Binding RemoveMyths}" Margin="0,6,0,0" />
+                                        <TextBlock Text="{Binding MythsText}" Foreground="{StaticResource Warn}" Margin="0,6,0,0" Visibility="{Binding MythsText, Converter={StaticResource NullToCollapsed}}" />
+                                        <TextBlock Text="DirectX 11 или Vulkan?" FontWeight="SemiBold" Margin="0,12,0,2" />
+                                        <TextBlock Text="{Binding ApiText}" />
+                                        <Expander Header="Как сравнить оба варианта" Foreground="{StaticResource Text}" Margin="0,6,0,0">
+                                            <TextBlock Text="{Binding HowToCompare}" Style="{StaticResource MutedText}" Margin="0,6,0,0" />
+                                        </Expander>
+                                    </StackPanel>
+                                </Border>
+
+                                <DockPanel Margin="0,12,0,6">
+                                    <Button DockPanel.Dock="Right" Content="Выбрать рекомендуемые" Command="{Binding SelectRecommendedCommand}" Margin="0" />
+                                    <TextBlock Text="Твики" Style="{StaticResource H2}" Margin="0" VerticalAlignment="Center" />
+                                </DockPanel>
+                                <ItemsControl ItemsSource="{Binding Tweaks}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border Style="{StaticResource Card}">
+                                                <StackPanel>
+                                                    <WrapPanel>
+                                                        <CheckBox IsChecked="{Binding IsSelected}" IsEnabled="{Binding CanSelect}" Content="{Binding Title}" FontWeight="SemiBold" Margin="0,0,10,0" />
+                                                        <Border Style="{StaticResource Tag}"><TextBlock Text="{Binding Effect}" FontSize="11" /></Border>
+                                                        <Border Style="{StaticResource Tag}"><TextBlock Text="{Binding RecommendationLabel}" FontSize="11" /></Border>
+                                                        <Border Style="{StaticResource Tag}" Background="{StaticResource Warn}" Visibility="{Binding IsDisputed, Converter={StaticResource BoolToVis}}">
+                                                            <TextBlock Text="спорно" FontSize="11" Foreground="#111" />
+                                                        </Border>
+                                                        <Border Style="{StaticResource Tag}" Visibility="{Binding RequiresAdmin, Converter={StaticResource BoolToVis}}">
+                                                            <TextBlock Text="нужны права администратора" FontSize="11" />
+                                                        </Border>
+                                                        <Border Style="{StaticResource Tag}" Visibility="{Binding RequiresRestart, Converter={StaticResource BoolToVis}}">
+                                                            <TextBlock Text="нужна перезагрузка" FontSize="11" />
+                                                        </Border>
+                                                    </WrapPanel>
+                                                    <TextBlock Margin="22,6,0,0">
+                                                        <Run Text="{Binding StatusLabel, Mode=OneWay}" FontWeight="SemiBold" />
+                                                        <Run Text=" — " />
+                                                        <Run Text="{Binding StatusText, Mode=OneWay}" />
+                                                    </TextBlock>
+                                                    <TextBlock Text="{Binding Explanation}" Style="{StaticResource MutedText}" Margin="22,4,0,0" />
+                                                    <TextBlock Text="{Binding Risk}" Style="{StaticResource MutedText}" Margin="22,2,0,0" FontStyle="Italic" />
+                                                    <TextBlock Text="{Binding ManualSteps}" Style="{StaticResource MutedText}" Margin="22,2,0,0" Visibility="{Binding ManualSteps, Converter={StaticResource NullToCollapsed}}" />
+                                                    <StackPanel Orientation="Horizontal" Margin="22,6,0,0" Visibility="{Binding CopyText, Converter={StaticResource NullToCollapsed}}">
+                                                        <TextBox Text="{Binding CopyText, Mode=OneWay}" IsReadOnly="True" MinWidth="320" />
+                                                        <Button Content="Копировать" Margin="8,0,0,0"
+                                                                Command="{Binding DataContext.CopyCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                                CommandParameter="{Binding CopyText}" />
+                                                    </StackPanel>
+                                                </StackPanel>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+
+                                <TextBlock Text="Драйвер видеокарты (инструкция)" Style="{StaticResource H2}" />
+                                <Border Style="{StaticResource Card}" DataContext="{Binding Vendor}">
+                                    <StackPanel>
+                                        <TextBlock Text="{Binding Title}" FontWeight="SemiBold" />
+                                        <TextBlock Text="{Binding HowToOpen}" Style="{StaticResource MutedText}" Margin="0,2,0,6" />
+                                        <Button Content="Открыть панель драйвера" HorizontalAlignment="Left"
+                                                Command="{Binding DataContext.OpenPanelCommand, RelativeSource={RelativeSource AncestorType=ScrollViewer}}" />
+                                        <TextBlock Style="{StaticResource MutedText}" Margin="0,6,0,6"
+                                                   Text="Программа не меняет профили драйвера сама: у NVIDIA/AMD нет документированного и обратимого способа сделать это безопасно." />
+                                        <ItemsControl ItemsSource="{Binding Steps}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <StackPanel Margin="0,4">
+                                                        <TextBlock>
+                                                            <Run Text="{Binding Setting, Mode=OneWay}" FontWeight="SemiBold" />
+                                                            <Run Text=" → " />
+                                                            <Run Text="{Binding Value, Mode=OneWay}" Foreground="{StaticResource Ok}" />
+                                                        </TextBlock>
+                                                        <TextBlock Text="{Binding Why}" Style="{StaticResource MutedText}" Margin="12,2,0,0" />
+                                                    </StackPanel>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                        <ItemsControl ItemsSource="{Binding Notes}" Margin="0,6,0,0">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock Text="{Binding StringFormat=• {0}}" Margin="0,2" />
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </ScrollViewer>
+
+                        <!-- Step 4: apply -->
+                        <ScrollViewer Visibility="{Binding Step, Converter={StaticResource EqualsToVisible}, ConverterParameter=3}">
+                            <StackPanel>
+                                <Border Style="{StaticResource Card}">
+                                    <StackPanel>
+                                        <CheckBox Content="Только показать, что будет изменено (dry-run)" IsChecked="{Binding DryRun}" FontWeight="SemiBold" />
+                                        <CheckBox Content="Создать точку восстановления Windows перед изменениями (нужны права администратора)" IsChecked="{Binding CreateRestorePoint}" />
+                                        <TextBlock Style="{StaticResource MutedText}" Margin="0,4,0,8"
+                                                   Text="Перед каждым шагом программа сохраняет копию файла или значения реестра. Любое изменение откатывается на вкладке «Откат». Dota 2 и Steam лучше закрыть." />
+                                        <Button Content="Применить выбранное" Style="{StaticResource Primary}" Command="{Binding ApplyCommand}" HorizontalAlignment="Left" />
+                                    </StackPanel>
+                                </Border>
+
+                                <TextBlock Text="Отчёт" Style="{StaticResource H2}" />
+                                <ItemsControl ItemsSource="{Binding Report}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding}" Margin="0,2" />
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+
+                                <TextBlock Text="Что будет / было изменено" Style="{StaticResource H2}" />
+                                <ItemsControl ItemsSource="{Binding Preview}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border Style="{StaticResource Card}" Padding="10,6">
+                                                <StackPanel>
+                                                    <TextBlock Text="{Binding Description}" FontWeight="SemiBold" />
+                                                    <TextBlock Text="{Binding Target}" Style="{StaticResource MutedText}" FontFamily="Consolas" FontSize="12" />
+                                                    <TextBlock Style="{StaticResource MutedText}">
+                                                        <Run Text="Было: " /><Run Text="{Binding Before, Mode=OneWay}" />
+                                                        <Run Text="   →   Станет: " /><Run Text="{Binding After, Mode=OneWay}" Foreground="{StaticResource Ok}" />
+                                                    </TextBlock>
+                                                </StackPanel>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </Grid>
+
+                    <DockPanel Grid.Row="2" Margin="0,10,0,0">
+                        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                            <Button Content="← Назад" Command="{Binding BackCommand}" />
+                            <Button Content="Пересканировать" Command="{Binding ScanCommand}" />
+                            <Button Content="Далее →" Style="{StaticResource Primary}" Command="{Binding NextCommand}" Margin="0" />
+                        </StackPanel>
+                        <TextBlock Text="{Binding Status}" Style="{StaticResource MutedText}" VerticalAlignment="Center" />
+                    </DockPanel>
+                </Grid>
+            </TabItem>
+
+            <!-- ===================== CRASHES ===================== -->
+            <TabItem Header="Диагностика вылетов" DataContext="{Binding Crash}">
+                <ScrollViewer Padding="16">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <Button Content="Анализировать" Style="{StaticResource Primary}" Command="{Binding AnalyzeCommand}" />
+                            <Button Content="Проверить файлы игры" Command="{Binding ValidateCommand}" />
+                            <Button Content="Очистить кеш загрузки Steam" Command="{Binding FlushDownloadCacheCommand}" />
+                        </StackPanel>
+                        <TextBlock Text="{Binding Summary}" Margin="0,10,0,0" />
+
+                        <TextBlock Text="Причины сбоев (журнал Windows, 30 дней)" Style="{StaticResource H2}" />
+                        <ItemsControl ItemsSource="{Binding Findings}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Style="{StaticResource Card}">
+                                        <StackPanel>
+                                            <StackPanel Orientation="Horizontal">
+                                                <Border Style="{StaticResource Tag}" Background="{Binding Severity, Converter={StaticResource SeverityBrush}}">
+                                                    <TextBlock Text="{Binding Category}" FontSize="11" FontWeight="Bold" Foreground="#111" />
+                                                </Border>
+                                                <TextBlock Text="{Binding Title}" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                            </StackPanel>
+                                            <TextBlock Style="{StaticResource MutedText}" Margin="0,4,0,0">
+                                                <Run Text="Раз: " /><Run Text="{Binding Count, Mode=OneWay}" />
+                                                <Run Text=" · последний: " /><Run Text="{Binding LastSeen, Mode=OneWay, StringFormat=dd.MM.yyyy HH:mm}" />
+                                            </TextBlock>
+                                            <TextBlock Text="{Binding Advice}" Margin="0,4,0,0" />
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <TextBlock Text="Логи Dota 2 и Steam" Style="{StaticResource H2}" />
+                        <ItemsControl ItemsSource="{Binding LogFindings}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Style="{StaticResource Card}">
+                                        <StackPanel>
+                                            <TextBlock Text="{Binding Title}" FontWeight="SemiBold" Foreground="{Binding Severity, Converter={StaticResource SeverityBrush}}" />
+                                            <TextBlock Text="{Binding Advice}" Margin="0,2,0,0" />
+                                            <TextBlock Text="{Binding Sample}" Style="{StaticResource MutedText}" FontFamily="Consolas" FontSize="12" Margin="0,4,0,0" />
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <TextBlock Text="Дампы сбоев" Style="{StaticResource H2}" />
+                        <TextBlock Style="{StaticResource MutedText}" Text="Дампы не разбираются автоматически: по ним можно понять время сбоя. Их можно приложить к обращению в поддержку Valve или производителя видеокарты." />
+                        <ItemsControl ItemsSource="{Binding Dumps}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <DockPanel Margin="0,3">
+                                        <Button DockPanel.Dock="Right" Content="Папка" Margin="8,0,0,0"
+                                                Command="{Binding DataContext.OpenDumpFolderCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}" CommandParameter="{Binding Path}" />
+                                        <TextBlock>
+                                            <Run Text="{Binding Time, Mode=OneWay, StringFormat=dd.MM.yyyy HH:mm}" />
+                                            <Run Text=" · " /><Run Text="{Binding Kind, Mode=OneWay}" />
+                                            <Run Text=" · " /><Run Text="{Binding Path, Mode=OneWay}" Foreground="{StaticResource Muted}" />
+                                        </TextBlock>
+                                    </DockPanel>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <TextBlock Text="Компоненты (Visual C++, DirectX, Vulkan)" Style="{StaticResource H2}" />
+                        <ItemsControl ItemsSource="{Binding Runtimes}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <StackPanel Orientation="Horizontal" Margin="0,3">
+                                        <TextBlock Text="●" Foreground="{Binding Ok, Converter={StaticResource BoolBrush}}" Margin="0,0,8,0" />
+                                        <TextBlock Text="{Binding Name}" FontWeight="SemiBold" Width="220" />
+                                        <TextBlock Text="{Binding Details}" Style="{StaticResource MutedText}" MaxWidth="600" />
+                                        <Button Content="Скачать (Microsoft)" Margin="8,0,0,0" Visibility="{Binding Link, Converter={StaticResource NullToCollapsed}}"
+                                                Command="{Binding DataContext.OpenLinkCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}" CommandParameter="{Binding Link}" />
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <TextBlock Text="Кеш шейдеров (фризы после обновления драйвера)" Style="{StaticResource H2}" />
+                        <StackPanel Orientation="Horizontal">
+                            <Button Content="Найти кеши" Command="{Binding ScanCachesCommand}" />
+                            <Button Content="Очистить выбранные" Command="{Binding CleanCachesCommand}" />
+                        </StackPanel>
+                        <ItemsControl ItemsSource="{Binding Caches}" Margin="0,6,0,0">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <StackPanel Margin="0,3">
+                                        <CheckBox IsChecked="{Binding IsSelected}" Content="{Binding Title}" />
+                                        <TextBlock Style="{StaticResource MutedText}" Margin="22,0,0,0">
+                                            <Run Text="{Binding Note, Mode=OneWay}" /><Run Text=" " /><Run Text="{Binding Path, Mode=OneWay}" FontFamily="Consolas" FontSize="11" />
+                                        </TextBlock>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <TextBlock Text="Известные конфликты" Style="{StaticResource H2}" />
+                        <ItemsControl ItemsSource="{Binding Conflicts}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <StackPanel Margin="0,4">
+                                        <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
+                                        <TextBlock Text="{Binding Advice}" Style="{StaticResource MutedText}" />
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <TextBlock Style="{StaticResource MutedText}" Margin="0,12,0,0"
+                                   Text="Нестабильный разгон/андервольт CPU, GPU и памяти (включая XMP/EXPO) — одна из самых частых причин вылетов. Программа его не трогает: проверьте игру с настройками по умолчанию сами." />
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- ===================== NETWORK ===================== -->
+            <TabItem Header="Сеть" DataContext="{Binding Network}">
+                <ScrollViewer Padding="16">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <Button Content="Запустить тест" Style="{StaticResource Primary}" Command="{Binding RunCommand}" />
+                            <Button Content="Стоп" Command="{Binding CancelCommand}" />
+                            <Button Content="Скопировать результаты" Command="{Binding CopyCommand}" />
+                            <CheckBox Content="Пинговать серверы Valve (загрузить список регионов)" IsChecked="{Binding PingValve}" VerticalAlignment="Center" />
+                        </StackPanel>
+                        <TextBlock Text="{Binding AdapterText}" Margin="0,10,0,0" />
+
+                        <Border Style="{StaticResource Card}" Margin="0,10,0,8" Visibility="{Binding VerdictTitle, Converter={StaticResource NullToCollapsed}}">
+                            <StackPanel>
+                                <TextBlock Text="{Binding VerdictTitle}" FontSize="15" FontWeight="SemiBold" />
+                                <TextBlock Text="{Binding VerdictDetails}" Margin="0,4,0,0" />
+                            </StackPanel>
+                        </Border>
+
+                        <ItemsControl ItemsSource="{Binding Results}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Margin="0,2">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="300" />
+                                            <ColumnDefinition Width="140" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="{Binding Name}" />
+                                        <TextBlock Grid.Column="1" Text="{Binding Host}" Style="{StaticResource MutedText}" />
+                                        <TextBlock Grid.Column="2" Text="{Binding Stats}" />
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <TextBlock Text="Действия" Style="{StaticResource H2}" />
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel>
+                                <TextBlock Text="Смена DNS (по желанию, эффект: низкий, откат на вкладке «Откат»)" FontWeight="SemiBold" />
+                                <StackPanel Orientation="Horizontal" Margin="0,4">
+                                    <RadioButton Content="Cloudflare 1.1.1.1" IsChecked="{Binding DnsCloudflare}" GroupName="dns" />
+                                    <RadioButton Content="Google 8.8.8.8" IsChecked="{Binding DnsGoogle}" GroupName="dns" />
+                                    <RadioButton Content="Quad9 9.9.9.9" IsChecked="{Binding DnsQuad9}" GroupName="dns" />
+                                    <Button Content="Сменить DNS" Command="{Binding ChangeDnsCommand}" />
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                    <Button Content="Очистить кеш DNS" Command="{Binding FlushDnsCommand}" />
+                                    <Button Content="Сбросить сетевой стек…" Command="{Binding ResetStackCommand}" />
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+                        <TextBlock Text="Что реально помогает" Style="{StaticResource H2}" />
+                        <TextBlock Text="• Кабель вместо Wi-Fi (или хотя бы 5 ГГц рядом с роутером).&#x0a;• Выбор ближайшего региона в самой игре: Поиск игры → Регион.&#x0a;• Пауза торрентов, облачных синхронизаций и обновлений во время игры.&#x0a;• Отключение энергосбережения сетевой карты, если связь обрывается (см. Диагноз).&#x0a;• Если потери начинаются за роутером — это провайдер: обращайтесь к нему, программа это не исправит." />
+                        <TextBlock Text="{Binding MythsText}" Style="{StaticResource MutedText}" Margin="0,10,0,0" />
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- ===================== BENCHMARK ===================== -->
+            <TabItem Header="Замер FPS" DataContext="{Binding Benchmark}">
+                <ScrollViewer Padding="16">
+                    <StackPanel>
+                        <TextBlock Text="{Binding Status}" />
+                        <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                            <TextBlock Text="Длительность, с:" VerticalAlignment="Center" Margin="0,0,8,0" />
+                            <TextBox Text="{Binding Seconds}" Width="60" Margin="0,0,12,0" />
+                            <Button Content="Замер «до»" Command="{Binding CaptureBeforeCommand}" />
+                            <Button Content="Замер «после»" Style="{StaticResource Primary}" Command="{Binding CaptureAfterCommand}" />
+                        </StackPanel>
+                        <Border Style="{StaticResource Card}" Margin="0,10,0,8" Visibility="{Binding Comparison, Converter={StaticResource NullToCollapsed}}">
+                            <StackPanel>
+                                <TextBlock Text="До / после" FontWeight="SemiBold" />
+                                <TextBlock Text="{Binding Comparison}" Margin="0,4,0,0" />
+                            </StackPanel>
+                        </Border>
+                        <TextBlock Text="История замеров" Style="{StaticResource H2}" />
+                        <ItemsControl ItemsSource="{Binding Records}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Margin="0,2">
+                                        <Run Text="{Binding Time, Mode=OneWay, StringFormat=dd.MM.yyyy HH:mm}" />
+                                        <Run Text=" · " /><Run Text="{Binding Label, Mode=OneWay}" FontWeight="SemiBold" />
+                                        <Run Text=" · средний " /><Run Text="{Binding Stats.AvgFps, Mode=OneWay, StringFormat=0}" />
+                                        <Run Text=" FPS · 1% low " /><Run Text="{Binding Stats.OnePercentLowFps, Mode=OneWay, StringFormat=0}" />
+                                        <Run Text=" · 0.1% low " /><Run Text="{Binding Stats.PointOnePercentLowFps, Mode=OneWay, StringFormat=0}" />
+                                        <Run Text=" · просадок " /><Run Text="{Binding Stats.Stutters, Mode=OneWay}" />
+                                        <Run Text=" · кадров " /><Run Text="{Binding Stats.Frames, Mode=OneWay}" />
+                                    </TextBlock>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <TextBlock Text="Ручная проверка" Style="{StaticResource H2}" />
+                        <TextBlock Text="{Binding ManualInstructions}" Style="{StaticResource MutedText}" />
+                        <TextBlock Style="{StaticResource MutedText}" Margin="0,10,0,0"
+                                   Text="Замер использует Intel PresentMon (лицензия MIT): он читает системные события Windows о выводе кадров и не обращается к процессу игры. 1% low — средний FPS по 1% самых медленных кадров. Просадка — кадр дольше двух медианных и не короче 25 мс." />
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- ===================== ROLLBACK ===================== -->
+            <TabItem Header="Откат" DataContext="{Binding Rollback}">
+                <ScrollViewer Padding="16">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <Button Content="Откатить всё" Style="{StaticResource Primary}" Command="{Binding RollbackAllCommand}" />
+                            <Button Content="Обновить" Command="{Binding RefreshCommand}" />
+                            <Button Content="Открыть папку бэкапов" Command="{Binding OpenFolderCommand}" />
+                        </StackPanel>
+                        <TextBlock Text="{Binding Status}" Margin="0,10,0,0" Visibility="{Binding Status, Converter={StaticResource NullToCollapsed}}" />
+                        <TextBlock Text="Изменения" Style="{StaticResource H2}" />
+                        <ItemsControl ItemsSource="{Binding Sets}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Style="{StaticResource Card}">
+                                        <DockPanel>
+                                            <Button DockPanel.Dock="Right" Content="Откатить" VerticalAlignment="Top" Margin="8,0,0,0"
+                                                    IsEnabled="{Binding CanRollback}"
+                                                    Command="{Binding DataContext.RollbackCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                    CommandParameter="{Binding}" />
+                                            <StackPanel>
+                                                <TextBlock FontWeight="SemiBold">
+                                                    <Run Text="{Binding Title, Mode=OneWay}" />
+                                                    <Run Text=" · " Foreground="{StaticResource Muted}" /><Run Text="{Binding When, Mode=OneWay}" Foreground="{StaticResource Muted}" />
+                                                    <Run Text=" · " Foreground="{StaticResource Muted}" /><Run Text="{Binding State, Mode=OneWay}" Foreground="{StaticResource Muted}" />
+                                                </TextBlock>
+                                                <TextBlock Text="{Binding Details}" Style="{StaticResource MutedText}" Margin="0,4,0,0" />
+                                                <TextBlock Text="{Binding AdminText}" Style="{StaticResource MutedText}" FontStyle="Italic" />
+                                            </StackPanel>
+                                        </DockPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <TextBlock Text="История действий" Style="{StaticResource H2}" />
+                        <ItemsControl ItemsSource="{Binding History}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Margin="0,2">
+                                        <Run Text="{Binding Time, Mode=OneWay, StringFormat=dd.MM.yyyy HH:mm}" />
+                                        <Run Text=" · " /><Run Text="{Binding Kind, Mode=OneWay}" FontWeight="SemiBold" />
+                                        <Run Text=" · " /><Run Text="{Binding Title, Mode=OneWay}" />
+                                        <Run Text=" — " Foreground="{StaticResource Muted}" /><Run Text="{Binding Details, Mode=OneWay}" Foreground="{StaticResource Muted}" />
+                                    </TextBlock>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- ===================== ABOUT ===================== -->
+            <TabItem Header="О программе / логи" DataContext="{Binding About}">
+                <Grid Margin="16">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <StackPanel>
+                        <TextBlock Text="Dota 2 Optimizer" Style="{StaticResource H1}" />
+                        <TextBlock Text="{Binding Version}" Style="{StaticResource MutedText}" />
+                        <TextBlock Text="Принципы" Style="{StaticResource H2}" />
+                        <TextBlock Text="• Полностью оффлайн: нет аккаунтов, телеметрии и обновлений через интернет. Сеть нужна только для необязательного теста пинга.&#x0a;• Честно: у каждого твика есть метка эффективности и объяснение; спорные выключены по умолчанию.&#x0a;• Безопасно: никакого вмешательства в процесс игры, памяти и инъекций (VAC-безопасно). Меняются только конфиги игры, настройки Windows и пользователя.&#x0a;• Обратимо: перед изменением сохраняется копия, можно создать точку восстановления, у всего есть откат. Dry-run включён по умолчанию." />
+                        <TextBlock Text="Что программа намеренно НЕ делает" Style="{StaticResource H2}" />
+                        <TextBlock Style="{StaticResource MutedText}" Text="Не отключает Windows Defender, обновления и UAC; не «чистит реестр» и не «освобождает RAM»; не убивает процессы; не правит профили драйвера; не меняет TCP/Nagle/MTU; не разгоняет и не меняет BIOS; не скачивает драйверы сама." />
+                        <TextBlock Style="{StaticResource MutedText}" Margin="0,8,0,0">
+                            <Run Text="Данные программы (логи, бэкапы, история): " /><Run Text="{Binding DataFolder, Mode=OneWay}" FontFamily="Consolas" />
+                        </TextBlock>
+                        <StackPanel Orientation="Horizontal" Margin="0,8,0,8">
+                            <Button Content="Открыть папку логов" Command="{Binding OpenLogsCommand}" />
+                            <Button Content="Обновить лог" Command="{Binding RefreshLogCommand}" />
+                        </StackPanel>
+                    </StackPanel>
+                    <TextBox Grid.Row="1" Text="{Binding LogText, Mode=OneWay}" IsReadOnly="True" FontFamily="Consolas" FontSize="12"
+                             VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" TextWrapping="NoWrap" />
+                </Grid>
+            </TabItem>
+        </TabControl>
+    </Grid>
+</Window>

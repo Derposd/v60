@@ -41,7 +41,7 @@ public sealed partial class HealthChecks
         {
             a();
         }
-        catch (Exception ex) when (ex is ManagementException or UnauthorizedAccessException or IOException or InvalidOperationException or PlatformNotSupportedException)
+        catch (Exception ex) when (ex is not OutOfMemoryException)
         {
             Log.Warn($"Проверка не выполнена: {ex.Message}");
         }

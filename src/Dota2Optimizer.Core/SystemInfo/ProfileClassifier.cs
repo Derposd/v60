@@ -11,7 +11,7 @@ public static partial class ProfileClassifier
     private const double OneGb = 1024d * 1024 * 1024;
 
     // Old/entry discrete cards that struggle with Dota 2 at 1080p high.
-    [GeneratedRegex(@"\bGT\s?\d{3,4}\b|GTX\s?(6|7|9)\d\d\b|GTX\s?10(3|5)0|\bMX\s?\d{3}|Radeon\s?HD|\bR[579]\s?\d{3}|\bRX\s?(4\d0|5[56]0)\b|Arc.*A3[18]0", RegexOptions.IgnoreCase)]
+    [GeneratedRegex(@"\bGT\s?\d{3,4}\b|\bGTS\s?\d{3}\b|GTX\s?[4-79]\d\d\b|GTX\s?10(3|5)0|\bMX\s?\d{3}|Radeon\s?HD|\bR[579]\s?\d{3}|\bRX\s?(4\d0|5[56]0)\b|Arc.*A3[18]0", RegexOptions.IgnoreCase)]
     private static partial Regex WeakDiscrete();
 
     // Mid-range: still fine for "Balance" at 1080p.

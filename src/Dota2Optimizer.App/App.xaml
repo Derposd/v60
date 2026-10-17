@@ -1,0 +1,20 @@
+<Application x:Class="Dota2Optimizer.App.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:Dota2Optimizer.App.ViewModels"
+             ShutdownMode="OnMainWindowClose">
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="Themes/Dark.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+            <BooleanToVisibilityConverter x:Key="BoolToVis" />
+            <vm:SeverityBrushConverter x:Key="SeverityBrush" />
+            <vm:SeverityTextConverter x:Key="SeverityText" />
+            <vm:BoolBrushConverter x:Key="BoolBrush" />
+            <vm:NullToCollapsedConverter x:Key="NullToCollapsed" />
+            <vm:InverseBoolConverter x:Key="Not" />
+            <vm:EqualsToVisibleConverter x:Key="EqualsToVisible" />
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>
