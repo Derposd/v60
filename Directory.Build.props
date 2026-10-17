@@ -9,4 +9,8 @@
     <!-- Windows-only API is guarded at runtime; Core also compiles for tests on any OS. -->
     <NoWarn>$(NoWarn);CA1416</NoWarn>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <!-- Keep symbols inside the single-file exe so stack traces in logs stay readable. -->
+    <DebugType>embedded</DebugType>
+  </PropertyGroup>
 </Project>

@@ -13,7 +13,7 @@ public sealed class ElevatedItem
 
 public sealed class ElevatedRequest
 {
-    public string Mode { get; set; } = "apply"; // apply | rollback | rollbackAll | restorePoint
+    public string Mode { get; set; } = "apply"; // apply | rollback | restorePoint
     public bool CreateRestorePoint { get; set; }
     public List<ElevatedItem> Items { get; set; } = new();
     public List<string> ChangeSetIds { get; set; } = new();
@@ -118,9 +118,6 @@ public static class ElevatedHost
                     result.Messages.AddRange(r.Messages);
                 }
 
-                break;
-            case "rollbackAll":
-                result.Messages.AddRange(executor.RollbackAll(includeAdmin: true).Messages);
                 break;
         }
 
