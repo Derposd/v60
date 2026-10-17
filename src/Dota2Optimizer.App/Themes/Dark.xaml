@@ -22,6 +22,28 @@
     <SolidColorBrush x:Key="Warn" Color="#E0A33A" />
     <SolidColorBrush x:Key="Crit" Color="#E5534B" />
     <SolidColorBrush x:Key="Info" Color="#5B9BD5" />
+    <SolidColorBrush x:Key="Hover" Color="#2C313D" />
+    <SolidColorBrush x:Key="Subtle" Color="#6B7385" />
+
+    <LinearGradientBrush x:Key="AccentGradient" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#E8573B" Offset="0" />
+        <GradientStop Color="#A3271A" Offset="1" />
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="HeroGradient" StartPoint="0,0" EndPoint="1,0">
+        <GradientStop Color="#2A1A1C" Offset="0" />
+        <GradientStop Color="#1E2129" Offset="0.6" />
+    </LinearGradientBrush>
+
+    <!-- 24x24 line icons, drawn with Stroke so they follow the text colour. -->
+    <StreamGeometry x:Key="IconBolt">M13,2 L4,14 L12,14 L11,22 L20,10 L12,10 Z</StreamGeometry>
+    <StreamGeometry x:Key="IconAlert">M12,3 L22,20 L2,20 Z M12,9.5 L12,14 M12,17 L12,17.4</StreamGeometry>
+    <StreamGeometry x:Key="IconPulse">M2,12 L6,12 L9,5 L14,19 L17,12 L22,12</StreamGeometry>
+    <StreamGeometry x:Key="IconShield">M12,2.5 L20,5.5 L20,11 C20,16 16.5,19.8 12,21.5 C7.5,19.8 4,16 4,11 L4,5.5 Z M9.2,9.2 L14.8,14.8 M14.8,9.2 L9.2,14.8</StreamGeometry>
+    <StreamGeometry x:Key="IconWifi">M2.5,9 C8,4 16,4 21.5,9 M5.5,12.5 C9.5,9 14.5,9 18.5,12.5 M8.8,16 C10.6,14.5 13.4,14.5 15.2,16 M12,19.5 L12,19.9</StreamGeometry>
+    <StreamGeometry x:Key="IconGauge">M4.2,17.5 A9,9 0 1 1 19.8,17.5 M12,15 L16.5,9.5 M12,15 L12,15.3</StreamGeometry>
+    <StreamGeometry x:Key="IconUndo">M9,5.5 L4,10.5 L9,15.5 M4,10.5 L14.5,10.5 C17.5,10.5 20,13 20,16 L20,18.5</StreamGeometry>
+    <StreamGeometry x:Key="IconInfo">M12,3 A9,9 0 1 1 11.99,3 Z M12,11 L12,16.5 M12,7.6 L12,8</StreamGeometry>
+    <StreamGeometry x:Key="IconCheck">M5,12.5 L10,17.5 L19,7</StreamGeometry>
 
     <Style TargetType="Window" x:Key="DarkWindow">
         <Setter Property="Background" Value="{StaticResource Bg}" />
@@ -58,9 +80,45 @@
         <Setter Property="Background" Value="{StaticResource Panel}" />
         <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}" />
         <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="CornerRadius" Value="6" />
-        <Setter Property="Padding" Value="12" />
-        <Setter Property="Margin" Value="0,0,0,8" />
+        <Setter Property="CornerRadius" Value="10" />
+        <Setter Property="Padding" Value="16,14" />
+        <Setter Property="Margin" Value="0,0,0,10" />
+    </Style>
+
+    <!-- Card with a coloured stripe on the left: set BorderBrush to the stripe colour. -->
+    <Style TargetType="Border" x:Key="StripeCard">
+        <Setter Property="Background" Value="{StaticResource Panel}" />
+        <Setter Property="BorderThickness" Value="4,0,0,0" />
+        <Setter Property="CornerRadius" Value="10" />
+        <Setter Property="Padding" Value="16,14" />
+        <Setter Property="Margin" Value="0,0,0,10" />
+    </Style>
+
+    <Style TargetType="Border" x:Key="StatTile">
+        <Setter Property="Background" Value="{StaticResource Panel}" />
+        <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="10" />
+        <Setter Property="Padding" Value="16,12" />
+        <Setter Property="Margin" Value="0,0,10,10" />
+    </Style>
+
+    <Style TargetType="TextBlock" x:Key="StatNumber">
+        <Setter Property="FontSize" Value="26" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground" Value="{StaticResource Text}" />
+    </Style>
+
+    <Style TargetType="TextBlock" x:Key="Caption">
+        <Setter Property="FontSize" Value="11" />
+        <Setter Property="Foreground" Value="{StaticResource Subtle}" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+
+    <Style TargetType="TextBlock" x:Key="PageTitle">
+        <Setter Property="FontSize" Value="24" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground" Value="{StaticResource Text}" />
     </Style>
 
     <Style TargetType="Border" x:Key="Tag">
@@ -81,12 +139,15 @@
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
                     <Border x:Name="b" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
-                            BorderThickness="1" CornerRadius="4" Padding="{TemplateBinding Padding}">
+                            BorderThickness="1" CornerRadius="6" Padding="{TemplateBinding Padding}">
                         <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="b" Property="BorderBrush" Value="{StaticResource Accent}" />
+                            <Setter TargetName="b" Property="BorderBrush" Value="{StaticResource AccentHover}" />
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="b" Property="Opacity" Value="0.85" />
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="b" Property="Opacity" Value="0.45" />
@@ -98,9 +159,46 @@
     </Style>
 
     <Style TargetType="Button" x:Key="Primary" BasedOn="{StaticResource {x:Type Button}}">
-        <Setter Property="Background" Value="{StaticResource Accent}" />
-        <Setter Property="BorderBrush" Value="{StaticResource Accent}" />
+        <Setter Property="Background" Value="{StaticResource AccentGradient}" />
+        <Setter Property="BorderBrush" Value="#00000000" />
+        <Setter Property="Foreground" Value="White" />
         <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Padding" Value="18,8" />
+    </Style>
+
+    <!-- Borderless button for the wizard stepper. -->
+    <Style TargetType="Button" x:Key="Flat">
+        <Setter Property="Foreground" Value="{StaticResource Text}" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="c" Background="Transparent" Padding="0,4">
+                        <ContentPresenter />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="c" Property="Opacity" Value="0.8" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="c" Property="Opacity" Value="0.55" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style TargetType="Button" x:Key="Ghost" BasedOn="{StaticResource {x:Type Button}}">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}" />
+    </Style>
+
+    <Style TargetType="Button" x:Key="Undo" BasedOn="{StaticResource {x:Type Button}}">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderBrush" Value="{StaticResource Ok}" />
+        <Setter Property="Foreground" Value="{StaticResource Ok}" />
+        <Setter Property="Padding" Value="12,4" />
     </Style>
 
     <Style TargetType="CheckBox">
@@ -175,27 +273,111 @@
         <Setter Property="Padding" Value="4,3" />
     </Style>
 
-    <Style TargetType="TabControl">
+    <Style TargetType="TabControl" x:Key="SideNav">
         <Setter Property="Background" Value="{StaticResource Bg}" />
         <Setter Property="BorderThickness" Value="0" />
-        <Setter Property="Padding" Value="0" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="TabControl">
+                    <Grid Background="{TemplateBinding Background}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="240" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Border Background="{StaticResource Panel}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,1,0">
+                            <DockPanel>
+                                <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="20,22,16,20">
+                                    <Border Width="38" Height="38" CornerRadius="10" Background="{StaticResource AccentGradient}">
+                                        <Viewbox Width="20" Height="20">
+                                            <Canvas Width="24" Height="24">
+                                                <Path Data="{StaticResource IconBolt}" Fill="White" />
+                                            </Canvas>
+                                        </Viewbox>
+                                    </Border>
+                                    <StackPanel Margin="12,0,0,0" VerticalAlignment="Center">
+                                        <TextBlock Text="Dota 2 Optimizer" FontWeight="SemiBold" FontSize="15" />
+                                        <TextBlock Text="оффлайн · всё обратимо" Style="{StaticResource Caption}" />
+                                    </StackPanel>
+                                </StackPanel>
+                                <Border DockPanel.Dock="Bottom" Margin="12,8,12,14" Padding="12,10" CornerRadius="10" Background="{StaticResource PanelAlt}">
+                                    <StackPanel>
+                                        <TextBlock Text="{Binding Wizard.ProfileShort}" FontWeight="SemiBold" />
+                                        <TextBlock Text="{Binding Wizard.GpuShort}" Style="{StaticResource Caption}" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" />
+                                    </StackPanel>
+                                </Border>
+                                <StackPanel IsItemsHost="True" Margin="0,2,0,0" />
+                            </DockPanel>
+                        </Border>
+                        <ContentPresenter x:Name="PART_SelectedContentHost" Grid.Column="1" ContentSource="SelectedContent" />
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
     </Style>
 
     <Style TargetType="TabItem">
         <Setter Property="Foreground" Value="{StaticResource Muted}" />
+        <Setter Property="Cursor" Value="Hand" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="TabItem">
-                    <Border x:Name="b" Padding="16,10" Background="Transparent" BorderThickness="0,0,0,2" BorderBrush="Transparent">
-                        <ContentPresenter ContentSource="Header" />
+                    <Border x:Name="b" Margin="10,1" Padding="12,9" CornerRadius="8" Background="Transparent">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Viewbox Width="18" Height="18" VerticalAlignment="Center">
+                                <Canvas Width="24" Height="24">
+                                    <Path Data="{Binding Tag, RelativeSource={RelativeSource TemplatedParent}}" Stroke="{TemplateBinding Foreground}"
+                                          StrokeThickness="2" StrokeLineJoin="Round" StrokeStartLineCap="Round" StrokeEndLineCap="Round" />
+                                </Canvas>
+                            </Viewbox>
+                            <ContentPresenter Grid.Column="1" ContentSource="Header" Margin="12,0,0,0" VerticalAlignment="Center" />
+                        </Grid>
                     </Border>
                     <ControlTemplate.Triggers>
-                        <Trigger Property="IsSelected" Value="True">
-                            <Setter TargetName="b" Property="BorderBrush" Value="{StaticResource Accent}" />
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="b" Property="Background" Value="{StaticResource Hover}" />
                             <Setter Property="Foreground" Value="{StaticResource Text}" />
                         </Trigger>
-                        <Trigger Property="IsMouseOver" Value="True">
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter TargetName="b" Property="Background" Value="{StaticResource PanelAlt}" />
                             <Setter Property="Foreground" Value="{StaticResource Text}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style TargetType="Expander">
+        <Setter Property="Foreground" Value="{StaticResource Text}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Expander">
+                    <StackPanel>
+                        <ToggleButton x:Name="t" IsChecked="{Binding IsExpanded, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}" Cursor="Hand">
+                            <ToggleButton.Template>
+                                <ControlTemplate TargetType="ToggleButton">
+                                    <StackPanel Orientation="Horizontal" Background="Transparent">
+                                        <TextBlock x:Name="arrow" Text="▸" Foreground="{StaticResource Accent}" Margin="0,0,6,0" />
+                                        <ContentPresenter />
+                                    </StackPanel>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsChecked" Value="True">
+                                            <Setter TargetName="arrow" Property="Text" Value="▾" />
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </ToggleButton.Template>
+                            <ContentPresenter ContentSource="Header" RecognizesAccessKey="False" />
+                        </ToggleButton>
+                        <ContentPresenter x:Name="body" Visibility="Collapsed" />
+                    </StackPanel>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsExpanded" Value="True">
+                            <Setter TargetName="body" Property="Visibility" Value="Visible" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>

@@ -181,3 +181,84 @@ public static class Ui
         _ => $"{bytes / 1024.0:0} КБ",
     };
 }
+
+/// <summary>Wizard stepper: colour of step circle N relative to the current step.</summary>
+public sealed class StepFillConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        var step = value is int i ? i : 0;
+        var idx = int.Parse((string)parameter, CultureInfo.InvariantCulture);
+        return Application.Current.Resources[idx == step ? "AccentGradient" : idx < step ? "Ok" : "PanelAlt"];
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => Binding.DoNothing;
+}
+
+public sealed class StepGlyphConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        var step = value is int i ? i : 0;
+        var idx = int.Parse((string)parameter, CultureInfo.InvariantCulture);
+        return idx < step ? "✓" : (idx + 1).ToString(CultureInfo.InvariantCulture);
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => Binding.DoNothing;
+}
+
+public sealed class StepLineConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        var step = value is int i ? i : 0;
+        var idx = int.Parse((string)parameter, CultureInfo.InvariantCulture);
+        return Application.Current.Resources[idx < step ? "Ok" : "BorderBrush"];
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => Binding.DoNothing;
+}
+
+/// <summary>Left stripe of a tweak card: how much the tweak helps.</summary>
+public sealed class EffectBrushConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture) => Application.Current.Resources[value switch
+    {
+        Core.Tweaks.Effectiveness.High => "Ok",
+        Core.Tweaks.Effectiveness.Medium => "Info",
+        Core.Tweaks.Effectiveness.HardwareDependent => "Warn",
+        _ => "Subtle",
+    }];
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => Binding.DoNothing;
+}
+
+public sealed class StatusBrushConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture) => Application.Current.Resources[value switch
+    {
+        Core.Tweaks.TweakStatus.CanApply => "Accent",
+        Core.Tweaks.TweakStatus.AlreadyOptimal => "Ok",
+        Core.Tweaks.TweakStatus.ManualOnly => "Info",
+        Core.Tweaks.TweakStatus.Blocked => "Warn",
+        _ => "Subtle",
+    }];
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => Binding.DoNothing;
+}
+
+public sealed class CountToVisibleConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture) =>
+        value is int n && n > 0 ? Visibility.Visible : Visibility.Collapsed;
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => Binding.DoNothing;
+}
+
+public sealed class SizeTextConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture) =>
+        value is long bytes ? Ui.Size(bytes) : string.Empty;
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => Binding.DoNothing;
+}

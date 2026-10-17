@@ -285,12 +285,21 @@ public sealed class AboutViewModel : ObservableObject
     }
 }
 
-public sealed class MainViewModel
+public sealed class MainViewModel : ObservableObject
 {
+    public const int OptimizeTab = 0;
+    public const int IssuesTab = 1;
+    public const int MonitorTab = 2;
+    public const int NetworkTab = 4;
+
+    private int _selectedTab;
+
     public MainViewModel()
     {
         var services = new AppServices();
         Wizard = new WizardViewModel(services);
+        Issues = new KnownIssuesViewModel(services, i => SelectedTab = i);
+        Monitor = new MatchMonitorViewModel(services);
         Crash = new CrashViewModel(services);
         Network = new NetworkViewModel(services);
         Benchmark = new BenchmarkViewModel(services);
@@ -298,7 +307,15 @@ public sealed class MainViewModel
         About = new AboutViewModel();
     }
 
+    public int SelectedTab
+    {
+        get => _selectedTab;
+        set => Set(ref _selectedTab, value);
+    }
+
     public WizardViewModel Wizard { get; }
+    public KnownIssuesViewModel Issues { get; }
+    public MatchMonitorViewModel Monitor { get; }
     public CrashViewModel Crash { get; }
     public NetworkViewModel Network { get; }
     public BenchmarkViewModel Benchmark { get; }

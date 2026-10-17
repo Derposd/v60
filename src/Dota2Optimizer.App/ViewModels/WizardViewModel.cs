@@ -44,6 +44,8 @@ public sealed class TweakItemVm : ObservableObject
     public bool RequiresAdmin => Plan.RequiresAdmin;
     public bool RequiresRestart => Plan.Tweak.RequiresRestart;
     public bool CanSelect => Plan.Status == TweakStatus.CanApply;
+    public TweakStatus Status => Plan.Status;
+    public Effectiveness EffectValue => Plan.Tweak.Effectiveness;
 
     public string StatusLabel => Plan.Status switch
     {
@@ -229,6 +231,30 @@ public sealed class WizardViewModel : ObservableObject
 
     public string ProfileText => _s.Snapshot is null ? string.Empty : ProfileClassifier.Describe(_s.Snapshot.Profile);
 
+    public string ProfileShort => _s.Snapshot?.Profile switch
+    {
+        PcProfile.Weak => "Слабый ПК",
+        PcProfile.Medium => "Средний ПК",
+        PcProfile.Strong => "Мощный ПК",
+        _ => "Не сканировано",
+    };
+
+    public string GpuShort => _s.Snapshot?.PrimaryGpu?.Name ?? "Нажмите «Сканировать»";
+
+    public int CriticalCount => Diagnosis.Count(d => d.Severity == Severity.Critical);
+    public int WarningCount => Diagnosis.Count(d => d.Severity == Severity.Warning);
+    public int ImproveCount => Tweaks.Count(t => t.CanSelect && t.Plan.RecommendedHere && !t.IsDisputed);
+    public int OptimalCount => Tweaks.Count(t => t.Plan.Status == TweakStatus.AlreadyOptimal);
+    public bool Scanned => _s.Snapshot is not null;
+
+    private void RaiseSummary()
+    {
+        foreach (var n in new[] { nameof(ProfileShort), nameof(GpuShort), nameof(CriticalCount), nameof(WarningCount), nameof(ImproveCount), nameof(OptimalCount), nameof(Scanned) })
+        {
+            OnPropertyChanged(n);
+        }
+    }
+
     public string PresetHint =>
         $"Пресет по умолчанию подобран под профиль: {ProfileText}. Меняются только существующие ключи video.txt. " +
         "Разрешение экрана не трогается: на слабых ПК снижается рендер-масштаб, чтобы интерфейс оставался чётким.";
@@ -399,6 +425,8 @@ public sealed class WizardViewModel : ObservableObject
                 Diagnosis.Add(a);
             }
 
+            RaiseSummary();
+
             Status = snapshot.ScanWarnings.Count == 0
                 ? $"Готово. Профиль: {ProfileClassifier.Describe(snapshot.Profile)}. Нажмите «Далее»."
                 : $"Готово с предупреждениями ({snapshot.ScanWarnings.Count}). Профиль: {ProfileClassifier.Describe(snapshot.Profile)}.";
@@ -541,6 +569,8 @@ public sealed class WizardViewModel : ObservableObject
         {
             Tweaks.Add(new TweakItemVm(p, _userChoices.TryGetValue(p.Tweak.Id, out var chosen) ? chosen : p.DefaultSelected, _s.ActiveChangeFor(p.Tweak.Id)));
         }
+
+        RaiseSummary();
     }
 
     private void OpenVendorPanel()
