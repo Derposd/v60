@@ -71,7 +71,7 @@ public static class VendorAdvice
             notes.Add("Ноутбук с гибридной графикой: в той же панели в «Программных настройках» выберите для dota2.exe «Высокопроизводительный процессор NVIDIA», либо используйте твик предпочтения GPU в Windows.");
         }
 
-        return new VendorGuide($"NVIDIA {gpu.Name}", "ПКМ по рабочему столу → Панель управления NVIDIA (или кнопка ниже)", steps, notes, new[]
+        return new VendorGuide(gpu.Name, "ПКМ по рабочему столу → Панель управления NVIDIA (или кнопка ниже)", steps, notes, new[]
         {
             @"shell:AppsFolder\NVIDIACorp.NVIDIAControlPanel_56jybvy8sckqj!NVIDIACorp.NVIDIAControlPanel",
             @"C:\Program Files\NVIDIA Corporation\Control Panel Client\nvcplui.exe",
@@ -113,7 +113,7 @@ public static class VendorAdvice
             notes.Add("RX 5000/6000: с драйвера 25.10.2 AMD перевела эти карты в отдельную ветку обслуживания; игровые исправления выходят по мере необходимости и реже.");
         }
 
-        return new VendorGuide($"AMD {gpu.Name}", "ПКМ по рабочему столу → AMD Software: Adrenalin Edition (или кнопка ниже)", steps, notes, new[]
+        return new VendorGuide(gpu.Name, "ПКМ по рабочему столу → AMD Software: Adrenalin Edition (или кнопка ниже)", steps, notes, new[]
         {
             @"C:\Program Files\AMD\CNext\CNext\RadeonSoftware.exe",
         });
@@ -160,7 +160,7 @@ public static class VendorAdvice
             notes.Insert(0, "Похоже, установлен один модуль памяти — для встроенной графики это большая потеря FPS.");
         }
 
-        return new VendorGuide($"Intel {gpu.Name}", "Пуск → Intel Graphics Software (или Intel Graphics Command Center)", steps, notes, new[]
+        return new VendorGuide(gpu.Name, "Пуск → Intel Graphics Software (или Intel Graphics Command Center)", steps, notes, new[]
         {
             @"shell:AppsFolder\AppUp.IntelGraphicsExperience_8j3eq9eme6ctt!App",
         });

@@ -18,11 +18,17 @@ public sealed class TweakItemVm : ObservableObject
 {
     private bool _isSelected;
 
-    public TweakItemVm(TweakPlan plan, bool selected)
+    public TweakItemVm(TweakPlan plan, bool selected, ChangeSet? applied)
     {
         Plan = plan;
+        Applied = applied;
         _isSelected = selected && CanSelect;
     }
+
+    /// <summary>Still-active change made by this tweak; drives the inline "Отменить" button.</summary>
+    public ChangeSet? Applied { get; }
+    public bool CanUndo => Applied is not null;
+    public string? AppliedText => Applied is null ? null : $"Изменено программой {Applied.CreatedUtc.ToLocalTime():dd.MM.yyyy HH:mm}";
 
     public TweakPlan Plan { get; }
     public string Id => Plan.Tweak.Id;
@@ -88,6 +94,34 @@ public sealed class LaunchOptionVm : ObservableObject
     }
 }
 
+/// <summary>One line of the apply report; lines for applied changes carry an inline undo.</summary>
+public sealed class ReportLine : ObservableObject
+{
+    private string _text;
+    private bool _canUndo;
+
+    public ReportLine(string text, string? changeSetId = null)
+    {
+        _text = text;
+        ChangeSetId = changeSetId;
+        _canUndo = changeSetId is not null;
+    }
+
+    public string? ChangeSetId { get; }
+
+    public string Text
+    {
+        get => _text;
+        set => Set(ref _text, value);
+    }
+
+    public bool CanUndo
+    {
+        get => _canUndo;
+        set => Set(ref _canUndo, value);
+    }
+}
+
 /// <summary>Four-step wizard: scan → diagnosis → plan → apply.</summary>
 public sealed class WizardViewModel : ObservableObject
 {
@@ -129,6 +163,9 @@ public sealed class WizardViewModel : ObservableObject
             }
         });
         OpenPanelCommand = new RelayCommand(OpenVendorPanel, () => Vendor?.PanelCandidates.Count > 0);
+        UndoTweakCommand = new AsyncCommand<TweakItemVm>(UndoTweakAsync);
+        UndoReportLineCommand = new AsyncCommand<ReportLine>(UndoReportLineAsync);
+        _s.ChangesApplied += () => _ = RefreshAfterChangeAsync();
         SelectRecommendedCommand = new RelayCommand(() =>
         {
             _userChoices.Clear();
@@ -148,13 +185,15 @@ public sealed class WizardViewModel : ObservableObject
     public ICommand CopyCommand { get; }
     public ICommand OpenPanelCommand { get; }
     public ICommand SelectRecommendedCommand { get; }
+    public ICommand UndoTweakCommand { get; }
+    public ICommand UndoReportLineCommand { get; }
 
     public ObservableCollection<PassportRow> Passport { get; } = new();
     public ObservableCollection<Advice> Diagnosis { get; } = new();
     public ObservableCollection<TweakItemVm> Tweaks { get; } = new();
     public ObservableCollection<LaunchOptionVm> LaunchOptions { get; } = new();
     public ObservableCollection<PreviewLine> Preview { get; } = new();
-    public ObservableCollection<string> Report { get; } = new();
+    public ObservableCollection<ReportLine> Report { get; } = new();
 
     public int Step
     {
@@ -500,7 +539,7 @@ public sealed class WizardViewModel : ObservableObject
         Tweaks.Clear();
         foreach (var p in plans)
         {
-            Tweaks.Add(new TweakItemVm(p, _userChoices.TryGetValue(p.Tweak.Id, out var chosen) ? chosen : p.DefaultSelected));
+            Tweaks.Add(new TweakItemVm(p, _userChoices.TryGetValue(p.Tweak.Id, out var chosen) ? chosen : p.DefaultSelected, _s.ActiveChangeFor(p.Tweak.Id)));
         }
     }
 
@@ -552,7 +591,7 @@ public sealed class WizardViewModel : ObservableObject
             var selected = Tweaks.Where(t => t.IsSelected).Select(t => t.Plan).ToList();
             if (selected.Count == 0)
             {
-                Report.Add("Нет выбранных изменений, которые можно применить прямо сейчас (проверьте статусы в плане).");
+                Say("Нет выбранных изменений, которые можно применить прямо сейчас (проверьте статусы в плане).");
                 return;
             }
 
@@ -566,8 +605,8 @@ public sealed class WizardViewModel : ObservableObject
 
             if (DryRun)
             {
-                Report.Add($"Режим dry-run: показано {Preview.Count} изменений, ничего не изменено.");
-                Report.Add("Снимите галочку «Только показать (dry-run)» и нажмите «Применить» ещё раз, чтобы применить.");
+                Say($"Режим dry-run: показано {Preview.Count} изменений, ничего не изменено.");
+                Say("Снимите галочку «Только показать (dry-run)» и нажмите «Применить» ещё раз, чтобы применить.");
                 Status = "Dry-run выполнен — ничего не изменено.";
                 return;
             }
@@ -589,20 +628,20 @@ public sealed class WizardViewModel : ObservableObject
                     CreateRestorePoint = CreateRestorePoint,
                     Items = admin.Select(p => new ElevatedItem { TweakId = p.Tweak.Id, Title = p.Tweak.Title, Actions = p.Actions.ToList() }).ToList(),
                 };
-                Report.Add(admin.Count > 0 ? "Запрашиваю права администратора (точка восстановления и системные настройки)…" : "Запрашиваю права администратора для точки восстановления…");
+                Say(admin.Count > 0 ? "Запрашиваю права администратора (точка восстановления и системные настройки)…" : "Запрашиваю права администратора для точки восстановления…");
                 var result = await Task.Run(() => AppServices.RunElevated(request));
                 if (result is null)
                 {
-                    Report.Add("Запрос прав администратора отклонён.");
+                    Say("Запрос прав администратора отклонён.");
                     if (admin.Count > 0)
                     {
-                        Report.Add("Пропущено (нужны права администратора): " + string.Join(", ", admin.Select(a => a.Tweak.Title)));
+                        Say("Пропущено (нужны права администратора): " + string.Join(", ", admin.Select(a => a.Tweak.Title)));
                     }
 
                     if (user.Count > 0 && CreateRestorePoint &&
                         !Ui.Confirm("Точку восстановления создать не удалось (нужны права администратора).\n\nПродолжить без неё? Собственные копии файлов и реестра всё равно будут сохранены."))
                     {
-                        Report.Add("Отменено пользователем.");
+                        Say("Отменено пользователем.");
                         return;
                     }
                 }
@@ -610,13 +649,13 @@ public sealed class WizardViewModel : ObservableObject
                 {
                     if (result.RestorePointMessage is not null)
                     {
-                        Report.Add((result.RestorePointCreated == true ? "✓ " : "⚠ ") + "Точка восстановления: " + result.RestorePointMessage);
+                        Say((result.RestorePointCreated == true ? "✓ " : "⚠ ") + "Точка восстановления: " + result.RestorePointMessage);
                     }
 
                     foreach (var r in result.Items)
                     {
                         var title = admin.FirstOrDefault(a => a.Tweak.Id == r.TweakId)?.Tweak.Title ?? r.TweakId;
-                        Report.Add(r.Success ? $"✓ {title}" : $"✗ {title}: {r.Error} (изменения этого пункта откачены)");
+                        Say(r.Success ? $"✓ {title}" : $"✗ {title}: {r.Error} (изменения этого пункта откачены)", r.Success ? r.ChangeSetId : null);
                         _s.History.Add(new HistoryEntry(DateTime.Now, r.Success ? "Применено" : "Ошибка", title, r.Error ?? string.Empty));
                     }
                 }
@@ -625,22 +664,68 @@ public sealed class WizardViewModel : ObservableObject
             foreach (var p in user)
             {
                 var r = await Task.Run(() => _s.Executor.Apply(p.Tweak.Id, p.Tweak.Title, p.Actions, dryRun: false));
-                Report.Add(r.Success ? $"✓ {p.Tweak.Title}" : $"✗ {p.Tweak.Title}: {r.Error} (изменения этого пункта откачены)");
+                Say(r.Success ? $"✓ {p.Tweak.Title}" : $"✗ {p.Tweak.Title}: {r.Error} (изменения этого пункта откачены)", r.Success ? r.ChangeSetId : null);
                 _s.History.Add(new HistoryEntry(DateTime.Now, r.Success ? "Применено" : "Ошибка", p.Tweak.Title,
                     string.Join("; ", p.Actions.Select(a => a.Description))));
             }
 
             if (selected.Any(p => p.Tweak.RequiresRestart))
             {
-                Report.Add("Перезагрузите компьютер, чтобы изменения HAGS вступили в силу.");
+                Say("Перезагрузите компьютер, чтобы изменения HAGS вступили в силу.");
             }
 
-            Report.Add("Готово. Откатить любое изменение можно на вкладке «Откат». Сделайте «Замер FPS» после, чтобы сравнить с «до».");
+            Say("Готово. Любой пункт можно отменить кнопкой «Отменить» рядом с ним, в плане (шаг 3) или на вкладке «Откат». Сделайте «Замер FPS» после, чтобы сравнить с «до».");
             Status = "Изменения применены.";
-            _s.NotifyChangesApplied();
+        }
+        finally
+        {
+            Busy = false;
+        }
 
-            var fresh = await Task.Run(_s.Scan);
-            _s.Snapshot = fresh;
+        _s.NotifyChangesApplied();
+    }
+
+    private void Say(string text, string? changeSetId = null) => Report.Add(new ReportLine(text, changeSetId));
+
+    private async Task UndoTweakAsync(TweakItemVm? item)
+    {
+        if (item?.Applied is { } set && await _s.UndoAsync(set.Id) is { } messages)
+        {
+            Status = $"Отменено: {item.Title}. " + string.Join(" ", messages);
+        }
+    }
+
+    private async Task UndoReportLineAsync(ReportLine? line)
+    {
+        if (line?.ChangeSetId is { } id && await _s.UndoAsync(id) is not null)
+        {
+            Status = "Изменение отменено.";
+        }
+    }
+
+    /// <summary>After any apply/undo (here or on other tabs): rescan, so statuses and undo buttons reflect reality.</summary>
+    private async Task RefreshAfterChangeAsync()
+    {
+        foreach (var line in Report.Where(l => l.ChangeSetId is not null))
+        {
+            var active = _s.Store.Find(line.ChangeSetId!) is { RolledBack: false };
+            if (line.CanUndo && !active)
+            {
+                line.Text += " — отменено";
+            }
+
+            line.CanUndo = active;
+        }
+
+        if (_s.Snapshot is null || Busy)
+        {
+            return;
+        }
+
+        Busy = true;
+        try
+        {
+            _s.Snapshot = await Task.Run(_s.Scan);
             Replan();
         }
         finally
@@ -654,7 +739,7 @@ public sealed class WizardViewModel : ObservableObject
         var sb = new StringBuilder();
         foreach (var line in Report)
         {
-            sb.AppendLine(line);
+            sb.AppendLine(line.Text);
         }
 
         return sb.ToString();

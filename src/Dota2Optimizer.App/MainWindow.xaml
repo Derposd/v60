@@ -184,6 +184,15 @@
                                                                 Command="{Binding DataContext.CopyCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                                                 CommandParameter="{Binding CopyText}" />
                                                     </StackPanel>
+                                                    <Border Margin="22,8,0,0" Padding="10,6" CornerRadius="4" Background="{StaticResource PanelAlt}"
+                                                            Visibility="{Binding CanUndo, Converter={StaticResource BoolToVis}}">
+                                                        <DockPanel>
+                                                            <Button DockPanel.Dock="Right" Content="Отменить это изменение" Margin="8,0,0,0"
+                                                                    Command="{Binding DataContext.UndoTweakCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                                    CommandParameter="{Binding}" />
+                                                            <TextBlock Text="{Binding AppliedText}" Foreground="{StaticResource Ok}" VerticalAlignment="Center" />
+                                                        </DockPanel>
+                                                    </Border>
                                                 </StackPanel>
                                             </Border>
                                         </DataTemplate>
@@ -233,7 +242,7 @@
                                         <CheckBox Content="Только показать, что будет изменено (dry-run)" IsChecked="{Binding DryRun}" FontWeight="SemiBold" />
                                         <CheckBox Content="Создать точку восстановления Windows перед изменениями (нужны права администратора)" IsChecked="{Binding CreateRestorePoint}" />
                                         <TextBlock Style="{StaticResource MutedText}" Margin="0,4,0,8"
-                                                   Text="Перед каждым шагом программа сохраняет копию файла или значения реестра. Любое изменение откатывается на вкладке «Откат». Dota 2 и Steam лучше закрыть." />
+                                                   Text="Перед каждым шагом программа сохраняет копию файла или значения реестра. Любой пункт можно отменить кнопкой «Отменить» рядом с ним — в отчёте ниже, в плане (шаг 3) или на вкладке «Откат». Dota 2 и Steam лучше закрыть." />
                                         <Button Content="Применить выбранное" Style="{StaticResource Primary}" Command="{Binding ApplyCommand}" HorizontalAlignment="Left" />
                                     </StackPanel>
                                 </Border>
@@ -242,7 +251,13 @@
                                 <ItemsControl ItemsSource="{Binding Report}">
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
-                                            <TextBlock Text="{Binding}" Margin="0,2" />
+                                            <DockPanel Margin="0,2">
+                                                <Button DockPanel.Dock="Right" Content="Отменить" Padding="10,2" Margin="8,0,0,0"
+                                                        Visibility="{Binding CanUndo, Converter={StaticResource BoolToVis}}"
+                                                        Command="{Binding DataContext.UndoReportLineCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                        CommandParameter="{Binding}" />
+                                                <TextBlock Text="{Binding Text}" VerticalAlignment="Center" />
+                                            </DockPanel>
                                         </DataTemplate>
                                     </ItemsControl.ItemTemplate>
                                 </ItemsControl>
@@ -442,6 +457,10 @@
                                     <RadioButton Content="Quad9 9.9.9.9" IsChecked="{Binding DnsQuad9}" GroupName="dns" />
                                     <Button Content="Сменить DNS" Command="{Binding ChangeDnsCommand}" />
                                 </StackPanel>
+                                <DockPanel Margin="0,6,0,0" Visibility="{Binding DnsChangedText, Converter={StaticResource NullToCollapsed}}">
+                                    <Button DockPanel.Dock="Right" Content="Отменить смену DNS" Command="{Binding UndoDnsCommand}" Margin="8,0,0,0" />
+                                    <TextBlock Text="{Binding DnsChangedText}" Foreground="{StaticResource Ok}" VerticalAlignment="Center" />
+                                </DockPanel>
                                 <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
                                     <Button Content="Очистить кеш DNS" Command="{Binding FlushDnsCommand}" />
                                     <Button Content="Сбросить сетевой стек…" Command="{Binding ResetStackCommand}" />

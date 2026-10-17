@@ -39,6 +39,83 @@ public sealed class AppServices
 
     public void NotifyChangesApplied() => ChangesApplied?.Invoke();
 
+    /// <summary>Latest still-active change set made by a given tweak, if any (used for the inline "Отменить" buttons).</summary>
+    public ChangeSet? ActiveChangeFor(string tweakId) =>
+        Store.Active().Where(c => c.TweakId == tweakId).OrderByDescending(c => c.CreatedUtc).FirstOrDefault();
+
+    /// <summary>
+    /// Undoes one change set after confirmation: warns about later overlapping changes, refuses while the
+    /// game/Steam would overwrite the restored file, elevates only when the set needs admin rights.
+    /// Returns null when the user cancelled or something blocked the undo.
+    /// </summary>
+    public async Task<IReadOnlyList<string>?> UndoAsync(string changeSetId)
+    {
+        var set = Store.Find(changeSetId);
+        if (set is null || set.RolledBack)
+        {
+            return null;
+        }
+
+        var details = string.Join("\n", set.Records.Select(r => $"• {r.Description} — {r.Target}"));
+        var conflicts = Store.LaterConflicts(changeSetId);
+        var warn = conflicts.Count > 0
+            ? $"\n\nВнимание: позже эти же настройки меняли: {string.Join(", ", conflicts.Select(c => c.Title))}. Лучше сначала отменить их (или «Откатить всё» на вкладке «Откат»)."
+            : string.Empty;
+        if (!Ui.Confirm($"Отменить «{set.Title}»?\n\n{details}{warn}"))
+        {
+            return null;
+        }
+
+        if (GameOrSteamFileInvolved(set) is { } blocker)
+        {
+            Ui.Info(blocker);
+            return null;
+        }
+
+        IReadOnlyList<string> messages;
+        if (set.RequiresAdminToRollback && !Elevation.IsElevated)
+        {
+            var result = await Task.Run(() => RunElevated(new ElevatedRequest { Mode = "rollback", ChangeSetIds = { set.Id } }));
+            if (result is null)
+            {
+                Ui.Info("Запрос прав администратора отклонён — ничего не изменено.");
+                return null;
+            }
+
+            messages = result.Messages;
+        }
+        else
+        {
+            messages = (await Task.Run(() => Executor.Rollback(set.Id))).Messages;
+        }
+
+        History.Add(new HistoryEntry(DateTime.Now, "Откат", set.Title, string.Join("; ", messages)));
+        if (set.Records.Any(r => r.Target.Contains("HwSchMode", StringComparison.OrdinalIgnoreCase)))
+        {
+            messages = messages.Append("Перезагрузите компьютер, чтобы отмена HAGS вступила в силу.").ToList();
+        }
+
+        NotifyChangesApplied();
+        return messages;
+    }
+
+    /// <summary>Restoring video.txt or localconfig.vdf while the game/Steam runs would be overwritten by them on exit.</summary>
+    public static string? GameOrSteamFileInvolved(ChangeSet set)
+    {
+        var files = set.Records.Where(r => r.Kind == BackupKind.File && !set.RolledBack).Select(r => r.Path ?? string.Empty).ToList();
+        if (files.Any(f => f.EndsWith("video.txt", StringComparison.OrdinalIgnoreCase)) && SystemScanner.IsProcessRunning("dota2"))
+        {
+            return "Закройте Dota 2: иначе при выходе игра перезапишет восстановленный video.txt.";
+        }
+
+        if (files.Any(f => f.EndsWith("localconfig.vdf", StringComparison.OrdinalIgnoreCase)) && SystemScanner.IsProcessRunning("steam"))
+        {
+            return "Закройте Steam полностью: иначе он перезапишет восстановленный localconfig.vdf.";
+        }
+
+        return null;
+    }
+
     public SystemSnapshot Scan() => new SystemScanner(Registry, Fs, Commands).Scan();
 
     /// <summary>
