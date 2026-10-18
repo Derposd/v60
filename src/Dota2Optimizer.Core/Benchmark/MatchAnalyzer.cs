@@ -48,7 +48,8 @@ public static class MatchAnalyzer
             .ToList();
     }
 
-    public static MatchReport Analyze(IReadOnlyList<MatchSample> samples, IReadOnlyList<MinuteFps> minutes, double vramTotalMb, double ramTotalMb)
+    /// <param name="fpsProblem">Why the FPS capture produced nothing (shown to the user), if it did.</param>
+    public static MatchReport Analyze(IReadOnlyList<MatchSample> samples, IReadOnlyList<MinuteFps> minutes, double vramTotalMb, double ramTotalMb, string? fpsProblem = null)
     {
         var findings = new List<Advice>();
 
@@ -125,7 +126,7 @@ public static class MatchAnalyzer
         if (drop is null)
         {
             summary = minutes.Count == 0
-                ? "FPS не записан (нет PresentMon или прав администратора) — выводы сделаны только по системным счётчикам."
+                ? $"FPS не записан: {fpsProblem ?? "PresentMon недоступен"}. Выводы сделаны только по системным счётчикам."
                 : $"Запись слишком короткая для оценки тренда FPS (нужно хотя бы {MinMinutesForTrend} минут игры).";
         }
         else if (drop > 10)

@@ -45,7 +45,7 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 Source: "..\artifacts\publish\{#AppExe}"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\README.md"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\THIRD-PARTY-NOTICES.md"; DestDir: "{app}"; Flags: ignoreversion
-; PresentMon (Intel, MIT license) for the FPS benchmark. Optional: the app falls back to manual instructions.
+; PresentMon (Intel, MIT license) for FPS in the match monitor. Optional: the exe also carries an embedded copy.
 Source: "tools\PresentMon-*.exe"; DestDir: "{app}\tools"; Flags: ignoreversion skipifsourcedoesntexist
 Source: "tools\PresentMon-LICENSE.txt"; DestDir: "{app}\tools"; Flags: ignoreversion skipifsourcedoesntexist
 

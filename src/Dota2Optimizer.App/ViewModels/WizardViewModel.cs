@@ -36,6 +36,7 @@ public sealed class TweakItemVm : ObservableObject
     public string Explanation => Plan.Tweak.Explanation;
     public string Effect => "Эффект: " + Plan.Tweak.Effectiveness.Ru();
     public string RecommendationLabel => Plan.RecommendedHere ? "Рекомендуется" : "По желанию";
+    public bool IsRecommended => Plan.RecommendedHere;
     public bool IsDisputed => Plan.Tweak.Disputed;
     public string StatusText => Plan.StatusText;
     public string Risk => "Риск: " + Plan.Tweak.Risk;
@@ -81,6 +82,8 @@ public sealed class LaunchOptionVm : ObservableObject
     public string Explanation => Info.Explanation;
     public string Effect => "Эффект: " + Info.Effectiveness.Ru();
     public string RecommendationLabel => Info.Recommended ? "Рекомендуется" : "По желанию";
+    public bool IsRecommended => Info.Recommended;
+    public Effectiveness EffectValue => Info.Effectiveness;
     public bool IsDisputed => Info.Disputed;
 
     public bool IsSelected
@@ -704,7 +707,7 @@ public sealed class WizardViewModel : ObservableObject
                 Say("Перезагрузите компьютер, чтобы изменения HAGS вступили в силу.");
             }
 
-            Say("Готово. Любой пункт можно отменить кнопкой «Отменить» рядом с ним, в плане (шаг 3) или на вкладке «Откат». Сделайте «Замер FPS» после, чтобы сравнить с «до».");
+            Say("Готово. Любой пункт можно отменить кнопкой «Отменить» рядом с ним, в плане (шаг 3) или на вкладке «Откат». Чтобы проверить эффект, запишите матч на вкладке «Монитор матча».");
             Status = "Изменения применены.";
         }
         finally

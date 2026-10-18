@@ -13,7 +13,6 @@ public static class AppPaths
     public static string Logs => Path.Combine(Root, "logs");
     public static string Backups => Path.Combine(Root, "backups");
     public static string History => Path.Combine(Root, "history.json");
-    public static string Benchmarks => Path.Combine(Root, "benchmarks");
 
     public static void OverrideRoot(string root) => _rootOverride = root;
 }

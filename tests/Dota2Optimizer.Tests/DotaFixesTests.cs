@@ -221,4 +221,12 @@ public class DotaFixesTests
         Assert.Contains("FPS не записан", r.Summary);
         Assert.Contains(r.Findings, f => f.Title == "Профилактика");
     }
+
+    [Fact]
+    public void Match_WithoutFps_ExplainsWhy()
+    {
+        var r = MatchAnalyzer.Analyze(Samples(10, i => new MatchSample(i * 60, 2000, 2500, 6000, 100, 50, 80, 2000)), Array.Empty<MinuteFps>(), 8192, 16384,
+            "вы отклонили запрос прав администратора");
+        Assert.Contains("вы отклонили запрос прав администратора", r.Summary);
+    }
 }

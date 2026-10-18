@@ -7,95 +7,6 @@ using Dota2Optimizer.Core.Infrastructure;
 
 namespace Dota2Optimizer.App.ViewModels;
 
-public sealed class BenchmarkViewModel : ObservableObject
-{
-    private readonly AppServices _s;
-    private string _seconds = "60";
-    private string _status;
-    private string? _comparison;
-    private bool _busy;
-
-    public BenchmarkViewModel(AppServices services)
-    {
-        _s = services;
-        PresentMonPath = BenchmarkService.FindPresentMon();
-        _status = PresentMonPath is null
-            ? "PresentMon не найден рядом с программой (папка tools). Используйте ручную инструкцию ниже."
-            : "Запустите Dota 2, зайдите в одну и ту же сцену (демо героя или повтор матча) и нажмите «Замер». Понадобятся права администратора — так работает трассировка событий Windows (ETW).";
-        CaptureBeforeCommand = new AsyncCommand(() => CaptureAsync("до"), () => !_busy && PresentMonPath is not null);
-        CaptureAfterCommand = new AsyncCommand(() => CaptureAsync("после"), () => !_busy && PresentMonPath is not null);
-        Reload();
-    }
-
-    public string? PresentMonPath { get; }
-    public ICommand CaptureBeforeCommand { get; }
-    public ICommand CaptureAfterCommand { get; }
-    public ObservableCollection<BenchmarkRecord> Records { get; } = new();
-    public string ManualInstructions => BenchmarkService.ManualInstructions;
-
-    public string Seconds
-    {
-        get => _seconds;
-        set => Set(ref _seconds, value);
-    }
-
-    public string Status
-    {
-        get => _status;
-        private set => Set(ref _status, value);
-    }
-
-    public string? Comparison
-    {
-        get => _comparison;
-        private set => Set(ref _comparison, value);
-    }
-
-    private async Task CaptureAsync(string label)
-    {
-        if (!BenchmarkService.DotaRunning())
-        {
-            Ui.Info("Сначала запустите Dota 2 и зайдите в сцену для замера.");
-            return;
-        }
-
-        var secs = int.TryParse(Seconds, out var v) ? Math.Clamp(v, 10, 600) : 60;
-        _busy = true;
-        Status = $"Идёт замер {secs} с… Не сворачивайте игру и оставайтесь в той же сцене.";
-        try
-        {
-            var stats = await BenchmarkService.CaptureAsync(PresentMonPath!, secs, CancellationToken.None);
-            if (stats is null)
-            {
-                Status = "Замер не удался: права администратора не выданы или PresentMon не увидел кадров dota2.exe. Попробуйте ещё раз или используйте ручную инструкцию.";
-                return;
-            }
-
-            var record = new BenchmarkRecord(DateTime.Now, label, stats, null);
-            _s.History.Add(record);
-            Status = $"Замер «{label}»: средний {stats.AvgFps:0} FPS, 1% low {stats.OnePercentLowFps:0} FPS, просадок {stats.Stutters}.";
-            Reload();
-        }
-        finally
-        {
-            _busy = false;
-        }
-    }
-
-    public void Reload()
-    {
-        Records.Clear();
-        foreach (var r in _s.History.Benchmarks.OrderByDescending(r => r.Time))
-        {
-            Records.Add(r);
-        }
-
-        var before = Records.FirstOrDefault(r => r.Label == "до");
-        var after = Records.FirstOrDefault(r => r.Label == "после" && before is not null && r.Time > before.Time);
-        Comparison = before is not null && after is not null ? HistoryStore.Compare(before, after) : null;
-    }
-}
-
 public sealed class ChangeSetVm
 {
     public ChangeSetVm(ChangeSet set)
@@ -302,7 +213,6 @@ public sealed class MainViewModel : ObservableObject
         Monitor = new MatchMonitorViewModel(services);
         Crash = new CrashViewModel(services);
         Network = new NetworkViewModel(services);
-        Benchmark = new BenchmarkViewModel(services);
         Rollback = new RollbackViewModel(services);
         About = new AboutViewModel();
     }
@@ -318,7 +228,6 @@ public sealed class MainViewModel : ObservableObject
     public MatchMonitorViewModel Monitor { get; }
     public CrashViewModel Crash { get; }
     public NetworkViewModel Network { get; }
-    public BenchmarkViewModel Benchmark { get; }
     public RollbackViewModel Rollback { get; }
     public AboutViewModel About { get; }
 }

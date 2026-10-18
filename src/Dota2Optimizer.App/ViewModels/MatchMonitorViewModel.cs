@@ -18,7 +18,8 @@ public sealed class MatchMonitorViewModel : ObservableObject
     private readonly AppServices _s;
     private readonly DispatcherTimer _timer = new() { Interval = Interval };
     private MatchMonitor? _monitor;
-    private string? _csv;
+    private FpsCapture? _capture;
+    private string? _noPresentMon;
     private bool _running;
     private string _status = "Запустите Dota 2, затем нажмите «Начать запись» и сыграйте матч целиком. В конце нажмите «Стоп и анализ» или просто закройте игру.";
     private string _elapsed = "—";
@@ -42,8 +43,6 @@ public sealed class MatchMonitorViewModel : ObservableObject
     public ObservableCollection<Advice> Findings { get; } = new();
     public ObservableCollection<FpsBar> Bars { get; } = new();
 
-    public bool HasPresentMon => BenchmarkService.FindPresentMon() is not null;
-
     public bool Running
     {
         get => _running;
@@ -61,7 +60,7 @@ public sealed class MatchMonitorViewModel : ObservableObject
 
     public string Explanation =>
         "Что записывается: частота процессора относительно базовой (падает при перегреве), загрузка CPU и видеокарты, свободная ОЗУ, память и видеопамять игры — " +
-        "из системных счётчиков Windows, к процессу игры программа не обращается. FPS по минутам пишет PresentMon (нужны права администратора). " +
+        "из системных счётчиков Windows, к процессу игры программа не обращается. FPS по минутам пишет Intel PresentMon (встроен в программу, нужны права администратора — Windows спросит один раз). " +
         "Данные остаются на компьютере.";
 
     private async Task StartAsync()
@@ -78,23 +77,41 @@ public sealed class MatchMonitorViewModel : ObservableObject
         _monitor?.Dispose();
         _monitor = await Task.Run(() => new MatchMonitor());
         Running = true;
-        _csv = null;
+        _capture = null;
+        _noPresentMon = null;
 
-        var pm = BenchmarkService.FindPresentMon();
+        var pm = await Task.Run(PresentMonTool.Find);
         if (pm is not null)
         {
-            Directory.CreateDirectory(AppPaths.Benchmarks);
-            _csv = Path.Combine(AppPaths.Benchmarks, $"match-{DateTime.Now:yyyyMMdd-HHmmss}.csv");
-            _ = MatchMonitor.StartFpsCaptureAsync(pm, _csv);
-            Status = "Идёт запись. Если Windows спросит права администратора — разрешите, это нужно для записи FPS. Можно свернуть программу.";
+            _capture = await Task.Run(() => FpsCapture.Start(pm));
+            Status = _capture.Problem(0) is { } early && (_capture.Declined || _capture.StartError is not null)
+                ? $"Идёт запись без FPS: {early}. Выводы будут по нагреву, памяти и загрузке."
+                : "Идёт запись. Можно свернуть программу и играть — в конце нажмите «Стоп и анализ» или просто закройте игру.";
         }
         else
         {
-            Status = "Идёт запись (без FPS: PresentMon не найден — выводы будут по нагреву, памяти и загрузке).";
+            _noPresentMon = "PresentMon не найден (сборка без него) — выводы будут по нагреву, памяти и загрузке";
+            Status = $"Идёт запись без FPS: {_noPresentMon}.";
         }
 
         await TickAsync();
         _timer.Start();
+        _ = WatchCaptureStartAsync(_capture);
+    }
+
+    /// <summary>PresentMon fails fast when it can't start tracing; tell the user right away instead of at the end of the match.</summary>
+    private async Task WatchCaptureStartAsync(FpsCapture? capture)
+    {
+        if (capture is null || capture.Declined || capture.StartError is not null)
+        {
+            return;
+        }
+
+        await Task.Delay(TimeSpan.FromSeconds(6));
+        if (capture == _capture && Running && capture.HasExited && SystemScanner.IsProcessRunning("dota2"))
+        {
+            Status = $"Идёт запись без FPS: {capture.Problem(0)}. Выводы будут по нагреву, памяти и загрузке.";
+        }
     }
 
     private async Task TickAsync()
@@ -136,25 +153,24 @@ public sealed class MatchMonitorViewModel : ObservableObject
         }
 
         var minutes = new List<MinuteFps>();
-        if (_csv is not null && File.Exists(_csv))
+        var frames = 0;
+        // PresentMon may still be writing (it stops by itself when Dota closes); the capture reads the file shared.
+        if (_capture is not null && await Task.Run(_capture.ReadCsv) is { } text)
         {
-            try
-            {
-                // PresentMon may still be writing (it stops by itself when Dota closes), so open shared.
-                await using var fs = new FileStream(_csv, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
-                using var reader = new StreamReader(fs);
-                var text = await reader.ReadToEndAsync();
-                minutes = MatchAnalyzer.FpsPerMinute(PresentMonCsv.ReadTimedFrames(text)).ToList();
-            }
-            catch (IOException ex)
-            {
-                Log.Warn($"Не удалось прочитать запись FPS: {ex.Message}");
-            }
+            var timed = PresentMonCsv.ReadTimedFrames(text);
+            frames = timed.Count;
+            minutes = MatchAnalyzer.FpsPerMinute(timed).ToList();
+        }
+
+        var problem = _noPresentMon ?? _capture?.Problem(frames);
+        if (problem is not null)
+        {
+            Log.Warn($"FPS не записан: {problem}");
         }
 
         var vram = (_s.Snapshot?.PrimaryGpu?.VramGb ?? 0) * 1024;
         var ram = (_s.Snapshot?.Memory?.TotalGb ?? 0) * 1024;
-        var report = MatchAnalyzer.Analyze(monitor.Samples, minutes, vram, ram);
+        var report = MatchAnalyzer.Analyze(monitor.Samples, minutes, vram, ram, problem);
         Summary = report.Summary;
         foreach (var f in report.Findings)
         {
