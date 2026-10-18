@@ -16,4 +16,10 @@
     <InternalsVisibleTo Include="Dota2Optimizer.Tests" />
   </ItemGroup>
 
+  <!-- Intel PresentMon (MIT), downloaded by CI into installer\tools before the build. Embedded so the
+       single-file exe can record FPS without the installer; extracted to %LOCALAPPDATA% on first use. -->
+  <ItemGroup>
+    <EmbeddedResource Include="..\..\installer\tools\PresentMon-*.exe" LogicalName="PresentMon.exe" />
+  </ItemGroup>
+
 </Project>

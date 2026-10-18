@@ -11,22 +11,56 @@ namespace Dota2Optimizer.App.ViewModels;
 
 public sealed record FixButton(QuickFix Fix, string Title, bool Reversible);
 
+public sealed record IssueStep(int Number, string Text);
+
 public sealed class IssueVm
 {
     public IssueVm(KnownIssue issue)
     {
         Issue = issue;
-        Steps = issue.Steps.Select((s, i) => $"{i + 1}. {s}").ToList();
+        Steps = issue.Steps.Select((s, i) => new IssueStep(i + 1, s)).ToList();
         Fixes = issue.Fixes.Select(f => new FixButton(f, KnownIssuesViewModel.FixTitle(f), KnownIssuesViewModel.IsReversible(f))).ToList();
+        (IconKey, Tone) = issue.Id switch
+        {
+            "late-game-fps" => ("IconPulse", "Accent"),
+            "stutter-after-update" => ("IconBolt", "Warn"),
+            "microstutter" => ("IconClock", "Warn"),
+            "black-screen" => ("IconAlertCircle", "Crit"),
+            "wrong-resolution" => ("IconMonitor", "Info"),
+            "crash-in-game" => ("IconShield", "Crit"),
+            "lag-ping" => ("IconWifi", "Info"),
+            "update-stuck" => ("IconDisk", "Info"),
+            _ => ("IconAlert", "Accent"),
+        };
     }
 
     public KnownIssue Issue { get; }
     public string Symptom => Issue.Symptom;
     public string Cause => Issue.Cause;
-    public string Evidence => "Источник/уверенность: " + Issue.Evidence;
-    public IReadOnlyList<string> Steps { get; }
+    public string Evidence => "Источник и уверенность: " + Issue.Evidence;
+    public IReadOnlyList<IssueStep> Steps { get; }
     public IReadOnlyList<FixButton> Fixes { get; }
     public bool HasFixes => Fixes.Count > 0;
+
+    public string FixCountText => Fixes.Count switch
+    {
+        0 => Steps.Count switch { 1 => "1 шаг", < 5 => $"{Steps.Count} шага", _ => $"{Steps.Count} шагов" },
+        1 => "1 исправление",
+        < 5 => $"{Fixes.Count} исправления",
+        _ => $"{Fixes.Count} исправлений",
+    };
+
+    /// <summary>Resource keys of the card's icon and colour ("Accent", "Warn", ...).</summary>
+    public string IconKey { get; }
+    public string Tone { get; }
+    public object? Icon => System.Windows.Application.Current?.TryFindResource(IconKey);
+    public object? ToneBrush => System.Windows.Application.Current?.TryFindResource(Tone);
+    public object? ToneSoft => System.Windows.Application.Current?.TryFindResource(Tone + "Soft");
+
+    public bool Matches(string query) =>
+        Symptom.Contains(query, StringComparison.CurrentCultureIgnoreCase) ||
+        Cause.Contains(query, StringComparison.CurrentCultureIgnoreCase) ||
+        Steps.Any(s => s.Text.Contains(query, StringComparison.CurrentCultureIgnoreCase));
 }
 
 public sealed class AppliedFixVm
@@ -46,12 +80,14 @@ public sealed class KnownIssuesViewModel : ObservableObject
     private readonly AppServices _s;
     private readonly Action<int> _navigate;
     private string? _status;
+    private string _searchText = string.Empty;
 
     public KnownIssuesViewModel(AppServices services, Action<int> navigate)
     {
         _s = services;
         _navigate = navigate;
         Issues = KnownIssues.All.Select(i => new IssueVm(i)).ToList();
+        VisibleIssues = new ObservableCollection<IssueVm>(Issues);
         RunFixCommand = new AsyncCommand<FixButton>(RunFixAsync);
         UndoFixCommand = new AsyncCommand<AppliedFixVm>(async vm =>
         {
@@ -73,6 +109,27 @@ public sealed class KnownIssuesViewModel : ObservableObject
     }
 
     public IReadOnlyList<IssueVm> Issues { get; }
+    public ObservableCollection<IssueVm> VisibleIssues { get; }
+    public bool NothingFound => VisibleIssues.Count == 0;
+
+    public string SearchText
+    {
+        get => _searchText;
+        set
+        {
+            if (Set(ref _searchText, value ?? string.Empty))
+            {
+                var q = _searchText.Trim();
+                VisibleIssues.Clear();
+                foreach (var i in Issues.Where(i => q.Length == 0 || i.Matches(q)))
+                {
+                    VisibleIssues.Add(i);
+                }
+
+                OnPropertyChanged(nameof(NothingFound));
+            }
+        }
+    }
     public ObservableCollection<AppliedFixVm> AppliedFixes { get; } = new();
     public ObservableCollection<DiskUsageItem> DiskUsage { get; } = new();
     public ICommand RunFixCommand { get; }

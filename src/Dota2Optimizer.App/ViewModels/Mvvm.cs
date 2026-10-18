@@ -111,6 +111,31 @@ public sealed class SeverityBrushConverter : IValueConverter
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => Binding.DoNothing;
 }
 
+/// <summary>Soft background behind a severity-coloured icon or label.</summary>
+public sealed class SeveritySoftConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture) => value switch
+    {
+        Severity.Critical => Application.Current.Resources["CritSoft"],
+        Severity.Warning => Application.Current.Resources["WarnSoft"],
+        _ => Application.Current.Resources["InfoSoft"],
+    };
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => Binding.DoNothing;
+}
+
+public sealed class SeverityIconConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture) => value switch
+    {
+        Severity.Critical => Application.Current.Resources["IconAlertCircle"],
+        Severity.Warning => Application.Current.Resources["IconAlert"],
+        _ => Application.Current.Resources["IconInfo"],
+    };
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => Binding.DoNothing;
+}
+
 public sealed class SeverityTextConverter : IValueConverter
 {
     public object Convert(object value, Type targetType, object parameter, CultureInfo culture) => value switch
@@ -144,6 +169,13 @@ public sealed class InverseBoolConverter : IValueConverter
     public object Convert(object value, Type targetType, object parameter, CultureInfo culture) => value is not true;
 
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => value is not true;
+}
+
+public sealed class InverseBoolToVisibilityConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture) => value is true ? Visibility.Collapsed : Visibility.Visible;
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => Binding.DoNothing;
 }
 
 public sealed class EqualsToVisibleConverter : IValueConverter
@@ -189,7 +221,7 @@ public sealed class StepFillConverter : IValueConverter
     {
         var step = value is int i ? i : 0;
         var idx = int.Parse((string)parameter, CultureInfo.InvariantCulture);
-        return Application.Current.Resources[idx == step ? "AccentGradient" : idx < step ? "Ok" : "PanelAlt"];
+        return Application.Current.Resources[idx == step ? "Accent" : idx < step ? "OkSoft" : "PanelAlt"];
     }
 
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => Binding.DoNothing;
@@ -233,6 +265,46 @@ public sealed class EffectBrushConverter : IValueConverter
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => Binding.DoNothing;
 }
 
+public sealed class EffectSoftConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture) => Application.Current.Resources[value switch
+    {
+        Core.Tweaks.Effectiveness.High => "OkSoft",
+        Core.Tweaks.Effectiveness.Medium => "InfoSoft",
+        Core.Tweaks.Effectiveness.HardwareDependent => "WarnSoft",
+        _ => "NeutralSoft",
+    }];
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => Binding.DoNothing;
+}
+
+public sealed class StatusSoftConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture) => Application.Current.Resources[value switch
+    {
+        Core.Tweaks.TweakStatus.CanApply => "AccentSoft",
+        Core.Tweaks.TweakStatus.AlreadyOptimal => "OkSoft",
+        Core.Tweaks.TweakStatus.ManualOnly => "InfoSoft",
+        Core.Tweaks.TweakStatus.Blocked => "WarnSoft",
+        _ => "NeutralSoft",
+    }];
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => Binding.DoNothing;
+}
+
+/// <summary>Wizard stepper: label colour of step N (current and done steps are bright).</summary>
+public sealed class StepTextConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        var step = value is int i ? i : 0;
+        var idx = int.Parse((string)parameter, CultureInfo.InvariantCulture);
+        return Application.Current.Resources[idx == step ? "Text" : idx < step ? "Ok" : "Subtle"];
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => Binding.DoNothing;
+}
+
 public sealed class StatusBrushConverter : IValueConverter
 {
     public object Convert(object value, Type targetType, object parameter, CultureInfo culture) => Application.Current.Resources[value switch
@@ -247,10 +319,11 @@ public sealed class StatusBrushConverter : IValueConverter
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => Binding.DoNothing;
 }
 
+/// <summary>Visible when the count is above zero; with parameter "empty" — visible only when it is zero.</summary>
 public sealed class CountToVisibleConverter : IValueConverter
 {
     public object Convert(object value, Type targetType, object parameter, CultureInfo culture) =>
-        value is int n && n > 0 ? Visibility.Visible : Visibility.Collapsed;
+        (value is int n && n > 0) != (parameter as string == "empty") ? Visibility.Visible : Visibility.Collapsed;
 
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => Binding.DoNothing;
 }

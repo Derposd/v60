@@ -149,13 +149,6 @@ public sealed partial class MatchMonitor : IDisposable
         }
     }
 
-    /// <summary>Starts a long PresentMon capture that ends by itself when Dota 2 closes (or after 90 minutes).</summary>
-    public static Task<int> StartFpsCaptureAsync(string presentMon, string csvPath) =>
-        Task.Run(() => ElevatedProcess.RunAs(presentMon,
-            $"--process_name dota2.exe --output_file \"{csvPath}\" --timed 5400 --terminate_after_timed --terminate_on_proc_exit " +
-            "--stop_existing_session --session_name D2OMatch --no_console_stats",
-            TimeSpan.FromMinutes(95)));
-
     public void Dispose()
     {
         _cpuPerf?.Dispose();
