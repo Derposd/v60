@@ -2,6 +2,16 @@
 
 Оффлайн-утилита для Windows 10/11. Диагностирует и настраивает Dota 2 под видеокарты NVIDIA, AMD и Intel.
 
+## Скачать
+
+**[⬇ Скачать установщик (Dota2Optimizer-Setup.exe)](https://github.com/Derposd/v60/releases/latest/download/Dota2Optimizer-Setup.exe)**
+
+1. Скачайте файл по ссылке выше и запустите его. Права администратора для установки не нужны.
+2. Если Windows покажет «Windows защитила ваш компьютер», нажмите «Подробнее» → «Выполнить в любом случае». Так бывает с любой программой без платной цифровой подписи.
+3. Запустите «Dota 2 Optimizer» из меню «Пуск» и пройдите мастер: Сканирование → Диагноз → План → Применить.
+
+Без установки: [Dota2Optimizer.exe](https://github.com/Derposd/v60/releases/latest/download/Dota2Optimizer.exe) (один файл, запускается сразу; без PresentMon для замера FPS). Все версии — на странице [релизов](https://github.com/Derposd/v60/releases).
+
 - **Оффлайн.** Нет аккаунтов, телеметрии и автообновлений. Сеть используется только по кнопке «Запустить тест» на вкладке «Сеть».
 - **Честно.** У каждого твика есть метка эффективности (Высокая / Средняя / Низкая / Зависит от железа), объяснение «что делает и зачем» и пометка «рекомендуется / по желанию». Спорные твики помечены и выключены по умолчанию.
 - **Безопасно.** В процесс игры программа не вмешивается: не читает и не меняет её память, не делает инъекций, хэндлы к dota2.exe не открывает. Меняются только конфиги игры, настройки Windows и пользовательские настройки (VAC-безопасно).
@@ -92,7 +102,7 @@
 
 ## Сборка
 
-Нужен .NET 8 SDK. Для Setup.exe — Inno Setup 6.3+ (ISCC).
+Нужен .NET 8 SDK. Для установщика — Inno Setup 6.3+ (ISCC).
 
 ```powershell
 # тесты
@@ -106,11 +116,11 @@ mkdir installer\tools
 curl -L -o installer\tools\PresentMon-2.6.0-x64.exe https://github.com/GameTechDev/PresentMon/releases/download/v2.6.0/PresentMon-2.6.0-x64.exe
 curl -L -o installer\tools\PresentMon-LICENSE.txt https://raw.githubusercontent.com/GameTechDev/PresentMon/v2.6.0/LICENSE.txt
 
-# установщик -> installer\Output\Setup.exe
+# установщик -> installer\Output\Dota2Optimizer-Setup.exe
 iscc /DAppVersion=1.0.0 installer\Dota2Optimizer.iss
 ```
 
-CI (`.github/workflows/build.yml`) на `windows-latest` выполняет те же шаги: тесты, публикацию, загрузку PresentMon, Inno Setup. Setup.exe и exe выкладываются артефактами сборки, а при теге `v*` — в релиз.
+CI (`.github/workflows/build.yml`) на `windows-latest` выполняет те же шаги: тесты, публикацию, загрузку PresentMon, Inno Setup. Установщик и exe выкладываются артефактами сборки, а при каждом пуше в `main` (и при теге `vX.Y.Z`) — в релиз `v<версия>`, который становится «последним». Версия сборки из `main` задаётся в `APP_VERSION` в начале workflow; для новой версии её достаточно поднять.
 
 На Linux тоже можно собрать (кросс-сборка WPF с `EnableWindowsTargeting`), если в SDK есть `Microsoft.NET.Sdk.WindowsDesktop`. В официальном SDK от Microsoft он есть, в пакете Ubuntu (`dotnet-sdk-8.0` из репозитория Ubuntu) — нет.
 
