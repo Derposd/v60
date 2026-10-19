@@ -1,4 +1,5 @@
 using Dota2Optimizer.Core.Backup;
+using Dota2Optimizer.Core.Game;
 using Dota2Optimizer.Core.Infrastructure;
 using Dota2Optimizer.Core.SystemInfo;
 
@@ -104,25 +105,31 @@ public sealed class GameDvrTweak : Tweak
     }
 }
 
-public sealed class GpuPreferenceTweak : Tweak
+public sealed class GpuPreferenceTweak : GameTweak
 {
     public const string Key = @"Software\Microsoft\DirectX\UserGpuPreferences";
 
-    public override string Id => "win.gpupreference";
-    public override string Title => "Dota 2 на мощной видеокарте";
+    public GpuPreferenceTweak(GameDefinition game)
+        : base(game)
+    {
+    }
+
+    public override string Id => Target.ExeTweakId("win.gpupreference");
+    public override string Title => $"{Target.ShortName} на мощной видеокарте";
     public override TweakCategory Category => TweakCategory.Windows;
     public override Effectiveness Effectiveness => Effectiveness.High;
 
     public override string Explanation =>
         "На ноутбуках с двумя видеокартами Windows может запустить игру на встроенной графике — FPS падает в разы. " +
-        "Это та же настройка, что в «Параметры → Дисплей → Графика»: для dota2.exe выбирается «Высокая производительность».";
+        $"Это та же настройка, что в «Параметры → Дисплей → Графика»: для {Target.ExeFileName} выбирается «Высокая производительность».";
 
     public override TweakPlan Plan(TweakContext ctx)
     {
-        var exe = ctx.Snapshot.Steam.DotaExe;
+        var steam = SteamOf(ctx);
+        var exe = steam.GameExe;
         if (exe is null)
         {
-            return Result(TweakStatus.NotApplicable, "Dota 2 не найдена");
+            return Result(TweakStatus.NotApplicable, $"{Target.Name} не найдена");
         }
 
         if (ctx.Snapshot.RealGpus.Count() < 2)
@@ -133,40 +140,45 @@ public sealed class GpuPreferenceTweak : Tweak
         var current = ctx.Registry.GetValue(RegHive.CurrentUser, Key, exe)?.Data;
         if (RegistryStrings.GetSemicolonPair(current, "GpuPreference") == "2")
         {
-            return Result(TweakStatus.AlreadyOptimal, "Для dota2.exe уже выбрана «Высокая производительность».");
+            return Result(TweakStatus.AlreadyOptimal, $"Для {Target.ExeFileName} уже выбрана «Высокая производительность».");
         }
 
         var value = RegistryStrings.SetSemicolonPair(current, "GpuPreference", "2");
-        var runtime = ctx.Snapshot.DotaRuntimeGpu is null ? string.Empty : $" Сейчас игра запущена на: {ctx.Snapshot.DotaRuntimeGpu}.";
+        var runtime = steam.RuntimeGpu is null ? string.Empty : $" Сейчас игра запущена на: {steam.RuntimeGpu}.";
         return Result(TweakStatus.CanApply, $"Несколько видеокарт, предпочтение для игры не задано.{runtime}", new[]
         {
-            PlannedAction.SetReg(RegHive.CurrentUser, Key, exe, RegValue.Str(value), "Предпочтение GPU для dota2.exe: высокая производительность"),
+            PlannedAction.SetReg(RegHive.CurrentUser, Key, exe, RegValue.Str(value), $"Предпочтение GPU для {Target.ExeFileName}: высокая производительность"),
         }, recommendedHere: ctx.Snapshot.IsHybridGraphics);
     }
 }
 
-public sealed class FullscreenOptimizationsTweak : Tweak
+public sealed class FullscreenOptimizationsTweak : GameTweak
 {
     private const string Key = @"Software\Microsoft\Windows NT\CurrentVersion\AppCompatFlags\Layers";
     private const string Flag = "DISABLEDXMAXIMIZEDWINDOWEDMODE";
 
-    public override string Id => "win.fso";
-    public override string Title => "Отключить оптимизацию во весь экран для dota2.exe";
+    public FullscreenOptimizationsTweak(GameDefinition game)
+        : base(game)
+    {
+    }
+
+    public override string Id => Target.ExeTweakId("win.fso");
+    public override string Title => $"Отключить оптимизацию во весь экран для {Target.ExeFileName}";
     public override TweakCategory Category => TweakCategory.Windows;
     public override Effectiveness Effectiveness => Effectiveness.HardwareDependent;
     public override bool Recommended => false;
     public override bool Disputed => true;
 
     public override string Explanation =>
-        "То же, что галочка в «Свойства dota2.exe → Совместимость». На части систем убирает микрофризы и задержку в полноэкранном режиме, " +
+        $"То же, что галочка в «Свойства {Target.ExeFileName} → Совместимость». На части систем убирает микрофризы и задержку в полноэкранном режиме, " +
         "на других ничего не меняет или ухудшает работу оверлеев и HDR. Включайте, только если замер показал выигрыш.";
 
     public override TweakPlan Plan(TweakContext ctx)
     {
-        var exe = ctx.Snapshot.Steam.DotaExe;
+        var exe = SteamOf(ctx).GameExe;
         if (exe is null)
         {
-            return Result(TweakStatus.NotApplicable, "Dota 2 не найдена");
+            return Result(TweakStatus.NotApplicable, $"{Target.Name} не найдена");
         }
 
         var current = ctx.Registry.GetValue(RegHive.CurrentUser, Key, exe)?.Data;
@@ -177,7 +189,7 @@ public sealed class FullscreenOptimizationsTweak : Tweak
 
         return Result(TweakStatus.CanApply, "Не отключена (по умолчанию Windows).", new[]
         {
-            PlannedAction.SetReg(RegHive.CurrentUser, Key, exe, RegValue.Str(RegistryStrings.AddLayerFlag(current, Flag)), "Отключить оптимизацию во весь экран для dota2.exe"),
+            PlannedAction.SetReg(RegHive.CurrentUser, Key, exe, RegValue.Str(RegistryStrings.AddLayerFlag(current, Flag)), $"Отключить оптимизацию во весь экран для {Target.ExeFileName}"),
         });
     }
 }
@@ -197,7 +209,7 @@ public sealed class HagsTweak : Tweak
 
     public override string Explanation =>
         "Видеокарта сама управляет своей памятью и очередью задач. Независимые тесты в играх показывают разницу около нуля; " +
-        "HAGS обязателен для генерации кадров DLSS 3/4, которой в Dota 2 нет. Если после обновления драйвера появились фризы — попробуйте переключить. " +
+        "HAGS обязателен для генерации кадров DLSS 3/4, которой нет ни в Dota 2, ни в CS2. Если после обновления драйвера появились фризы — попробуйте переключить. " +
         "Приложение не меняет HAGS автоматически: только по вашему выбору.";
 
     public override TweakPlan Plan(TweakContext ctx)
@@ -229,13 +241,19 @@ public sealed class HagsTweak : Tweak
     }
 }
 
-public sealed class CpuPriorityTweak : Tweak
+public sealed class CpuPriorityTweak : GameTweak
 {
-    private const string Key = @"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\dota2.exe\PerfOptions";
     private const string Name = "CpuPriorityClass";
 
-    public override string Id => "win.priority";
-    public override string Title => "Высокий приоритет процесса dota2.exe (через Windows)";
+    public CpuPriorityTweak(GameDefinition game)
+        : base(game)
+    {
+    }
+
+    private string Key => $@"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\{Target.ExeFileName}\PerfOptions";
+
+    public override string Id => Target.ExeTweakId("win.priority");
+    public override string Title => $"Высокий приоритет процесса {Target.ExeFileName} (через Windows)";
     public override TweakCategory Category => TweakCategory.Windows;
     public override Effectiveness Effectiveness => Effectiveness.Low;
     public override bool Recommended => false;
@@ -243,14 +261,14 @@ public sealed class CpuPriorityTweak : Tweak
     public override string Risk => "Низкий, но при нехватке ядер может «душить» звук, Discord и стрим; нужны права администратора";
 
     public override string Explanation =>
-        "Штатная настройка Windows (Image File Execution Options → PerfOptions): система сама запускает dota2.exe с высоким приоритетом, без вмешательства в процесс. " +
+        $"Штатная настройка Windows (Image File Execution Options → PerfOptions): система сама запускает {Target.ExeFileName} с высоким приоритетом, без вмешательства в процесс. " +
         "Аналог параметра -high. Надёжных тестов с приростом нет — оставлено как опция для проверки замером.";
 
     public override TweakPlan Plan(TweakContext ctx)
     {
-        if (!ctx.Snapshot.Steam.DotaFound)
+        if (!SteamOf(ctx).GameFound)
         {
-            return Result(TweakStatus.NotApplicable, "Dota 2 не найдена");
+            return Result(TweakStatus.NotApplicable, $"{Target.Name} не найдена");
         }
 
         var v = ctx.Registry.GetValue(RegHive.LocalMachine, Key, Name)?.AsInt();
@@ -261,16 +279,22 @@ public sealed class CpuPriorityTweak : Tweak
 
         return Result(TweakStatus.CanApply, "Приоритет по умолчанию (обычный).", new[]
         {
-            PlannedAction.SetReg(RegHive.LocalMachine, Key, Name, RegValue.Dword(3), "Высокий приоритет для dota2.exe"),
+            PlannedAction.SetReg(RegHive.LocalMachine, Key, Name, RegValue.Dword(3), $"Высокий приоритет для {Target.ExeFileName}"),
         });
     }
 }
 
-public sealed class WindowedGameOptimizationsTweak : Tweak
+public sealed class WindowedGameOptimizationsTweak : GameTweak
 {
     private const string Name = "DirectXUserGlobalSettings";
     private const string Pair = "SwapEffectUpgradeEnable";
 
+    public WindowedGameOptimizationsTweak(GameDefinition game)
+        : base(game)
+    {
+    }
+
+    // One Windows-wide setting, so the id is shared by all games.
     public override string Id => "win.windowedopt";
     public override string Title => "«Оптимизация для оконных игр» Windows 11";
     public override TweakCategory Category => TweakCategory.Windows;
@@ -281,7 +305,7 @@ public sealed class WindowedGameOptimizationsTweak : Tweak
     public override string Explanation =>
         "Настройка Windows 11 (Параметры → Система → Дисплей → Графика) для DirectX 11 игр в окне и «окне без рамки»: переводит их на современный режим вывода — меньше задержка, работает VRR. " +
         "При этом пользователи Windows 11 24H2 сообщали, что именно её выключение убирало случайные фризы. Данные противоречивы, поэтому переключение — только по вашему решению и с замером. " +
-        "Влияет, только если Dota 2 запущена не в эксклюзивном полноэкранном режиме.";
+        $"Влияет, только если {Target.Name} запущена не в эксклюзивном полноэкранном режиме.";
 
     public override string? ManualSteps => "То же вручную: Параметры → Система → Дисплей → Графика → «Изменить параметры графики по умолчанию» → «Оптимизация для оконных игр».";
 
@@ -294,8 +318,8 @@ public sealed class WindowedGameOptimizationsTweak : Tweak
 
         var current = ctx.Registry.GetValue(RegHive.CurrentUser, GpuPreferenceTweak.Key, Name)?.Data;
         var on = RegistryStrings.GetSemicolonPair(current, Pair) == "1";
-        var windowed = ExclusiveFullscreenTweak.IsWindowed(ctx);
-        var note = windowed == false ? " Dota 2 сейчас в эксклюзивном полноэкранном режиме — на неё эта настройка не влияет." : string.Empty;
+        var windowed = ExclusiveFullscreenTweak.IsWindowed(ctx, Target);
+        var note = windowed == false ? $" {Target.Name} сейчас в эксклюзивном полноэкранном режиме — на неё эта настройка не влияет." : string.Empty;
         var target = on ? "0" : "1";
         var action = PlannedAction.SetReg(RegHive.CurrentUser, GpuPreferenceTweak.Key, Name,
             RegValue.Str(RegistryStrings.SetSemicolonPair(current, Pair, target)),

@@ -14,7 +14,9 @@ public sealed record PresetApplication(string NewText, IReadOnlyList<PresetChang
 /// </summary>
 public static class VideoPresets
 {
-    public static IReadOnlyDictionary<string, string> Build(VideoPreset preset, PcProfile profile, double vramGb)
+    public static IReadOnlyDictionary<string, string> Build(VideoPreset preset, PcProfile profile, double vramGb) => BuildDota(preset, profile, vramGb);
+
+    public static IReadOnlyDictionary<string, string> BuildDota(VideoPreset preset, PcProfile profile, double vramGb)
     {
         var lowVram = vramGb > 0 && vramGb < 2.5;
         var s = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);

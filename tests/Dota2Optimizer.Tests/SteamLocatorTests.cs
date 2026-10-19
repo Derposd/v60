@@ -23,16 +23,16 @@ public class SteamLocatorTests
 
         var info = new SteamLocator(fs, reg).Locate(name => name == "steam");
 
-        Assert.True(info.DotaFound);
-        Assert.Equal("123", info.DotaBuildId);
+        Assert.True(info.GameFound);
+        Assert.Equal("123", info.GameBuildId);
         Assert.Equal("39734272", info.ActiveAccountId); // 76561198000000000 - 76561197960265728
         Assert.Equal(2, info.Libraries.Count);
         Assert.Equal(2, info.VideoConfigPaths.Count);
         Assert.Single(info.CloudCfgDirs);
         Assert.NotNull(info.LocalConfigPath);
         Assert.True(info.SteamRunning);
-        Assert.False(info.DotaRunning);
-        Assert.EndsWith("dota2.exe", info.DotaExe);
+        Assert.False(info.GameRunning);
+        Assert.EndsWith("dota2.exe", info.GameExe);
     }
 
     [Fact]
@@ -40,6 +40,6 @@ public class SteamLocatorTests
     {
         var info = new SteamLocator(new InMemoryFileSystem(), new InMemoryRegistry()).Locate();
         Assert.Null(info.SteamPath);
-        Assert.False(info.DotaFound);
+        Assert.False(info.GameFound);
     }
 }

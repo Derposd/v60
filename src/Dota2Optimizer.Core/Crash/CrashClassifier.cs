@@ -37,12 +37,14 @@ public static class CrashClassifier
         ("rendersystem", "Рендер", "Сбой в системе рендера игры. Смените API (-dx11 / -vulkan), обновите драйвер, сбросьте кеш шейдеров."),
     };
 
-    public static IReadOnlyList<CrashFinding> Classify(IEnumerable<RawEvent> events)
+    public static IReadOnlyList<CrashFinding> Classify(IEnumerable<RawEvent> events) => Classify(events, Game.Games.Dota2);
+
+    public static IReadOnlyList<CrashFinding> Classify(IEnumerable<RawEvent> events, Game.GameDefinition game)
     {
         var findings = new List<(Severity Sev, string Cat, string Title, string Advice, DateTime Time)>();
         foreach (var e in events)
         {
-            var f = ClassifyOne(e);
+            var f = ClassifyOne(e, game);
             if (f is not null)
             {
                 findings.Add((f.Value.Sev, f.Value.Cat, f.Value.Title, f.Value.Advice, e.Time));
@@ -57,15 +59,17 @@ public static class CrashClassifier
             .ToList();
     }
 
-    private static (Severity Sev, string Cat, string Title, string Advice)? ClassifyOne(RawEvent e)
+    private static (Severity Sev, string Cat, string Title, string Advice)? ClassifyOne(RawEvent e, Game.GameDefinition game)
     {
+        var proc = game.ProcessName;
+        var name = game.Name;
         var msg = e.Message ?? string.Empty;
         var provider = e.Provider ?? string.Empty;
 
         if (e.Log == "Application" && e.Id == 1000)
         {
             var app = Prop(e, 0) ?? msg;
-            if (!app.Contains("dota2", StringComparison.OrdinalIgnoreCase) && !msg.Contains("dota2.exe", StringComparison.OrdinalIgnoreCase))
+            if (!app.Contains(proc, StringComparison.OrdinalIgnoreCase) && !msg.Contains(game.ExeFileName, StringComparison.OrdinalIgnoreCase))
             {
                 return null;
             }
@@ -75,17 +79,17 @@ public static class CrashClassifier
             var hint = ModuleHints.FirstOrDefault(h => module.StartsWith(h.Module, StringComparison.OrdinalIgnoreCase));
             if (hint.Module is not null)
             {
-                return (Severity.Critical, hint.Category, $"Вылет Dota 2 в модуле {module}", hint.Advice);
+                return (Severity.Critical, hint.Category, $"Вылет {name} в модуле {module}", hint.Advice.Replace("Dota 2", name, StringComparison.Ordinal));
             }
 
             if (code.Contains("c000001d", StringComparison.OrdinalIgnoreCase))
             {
-                return (Severity.Critical, "Процессор/разгон", "Вылет Dota 2: недопустимая инструкция (0xc000001d)",
+                return (Severity.Critical, "Процессор/разгон", $"Вылет {name}: недопустимая инструкция (0xc000001d)",
                     "Часто признак нестабильного разгона/андервольта процессора. Верните настройки BIOS по умолчанию и проверьте снова.");
             }
 
-            return (Severity.Critical, "Dota 2", $"Вылет Dota 2 (модуль {(module.Length > 0 ? module : "неизвестен")}, код {code})",
-                "Проверьте целостность файлов игры, обновите драйвер видеокарты, отключите оверлеи и разгон. Если вылеты после патча — проверьте форумы Dota 2.");
+            return (Severity.Critical, game.ShortName, $"Вылет {name} (модуль {(module.Length > 0 ? module : "неизвестен")}, код {code})",
+                $"Проверьте целостность файлов игры, обновите драйвер видеокарты, отключите оверлеи и разгон. Если вылеты после патча — проверьте форумы {name}.");
         }
 
         if (e.Log == "Application" && e.Id == 1001)
@@ -96,14 +100,14 @@ public static class CrashClassifier
                     "Драйвер не дождался ответа от видеокарты. Причины: нестабильный разгон/андервольт, перегрев, недостаток питания, старый драйвер. Сбросьте разгон, проверьте температуру, обновите драйвер.");
             }
 
-            return msg.Contains("dota2", StringComparison.OrdinalIgnoreCase)
-                ? (Severity.Warning, "Dota 2", "Отчёт об ошибке Windows для Dota 2", "Windows зафиксировала сбой или зависание игры. Смотрите соседние записи о модуле сбоя.")
+            return msg.Contains(proc, StringComparison.OrdinalIgnoreCase)
+                ? (Severity.Warning, game.ShortName, $"Отчёт об ошибке Windows для {name}", "Windows зафиксировала сбой или зависание игры. Смотрите соседние записи о модуле сбоя.")
                 : null;
         }
 
-        if (e.Log == "Application" && e.Id == 1002 && msg.Contains("dota2", StringComparison.OrdinalIgnoreCase))
+        if (e.Log == "Application" && e.Id == 1002 && msg.Contains(proc, StringComparison.OrdinalIgnoreCase))
         {
-            return (Severity.Warning, "Dota 2", "Dota 2 перестала отвечать (зависание)",
+            return (Severity.Warning, game.ShortName, $"{name} перестала отвечать (зависание)",
                 "Игра зависла и была закрыта. Частые причины: HDD, нехватка памяти, драйвер. Проверьте диск и файл подкачки.");
         }
 
@@ -128,7 +132,7 @@ public static class CrashClassifier
         if (provider.Contains("Kernel-Power", StringComparison.OrdinalIgnoreCase) && e.Id == 41)
         {
             return (Severity.Critical, "Питание", "Неожиданная перезагрузка/выключение (Kernel-Power 41)",
-                "Компьютер выключился без завершения работы. Если это происходит в игре — проверьте блок питания, температуры, разгон. Сама Dota 2 не может вызвать такую перезагрузку.");
+                "Компьютер выключился без завершения работы. Если это происходит в игре — проверьте блок питания, температуры, разгон. Сама игра не может вызвать такую перезагрузку.");
         }
 
         if (provider.Contains("WHEA-Logger", StringComparison.OrdinalIgnoreCase))

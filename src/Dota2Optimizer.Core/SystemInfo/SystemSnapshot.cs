@@ -84,22 +84,30 @@ public sealed record WindowsInfo(string ProductName, string DisplayVersion, int 
 
 public sealed record PowerPlanInfo(Guid ActiveGuid, string ActiveName, IReadOnlyList<(Guid Guid, string Name)> Available);
 
+/// <summary>Steam and one game's install. Each supported game gets its own instance in <see cref="SystemSnapshot.Games"/>.</summary>
 public sealed record SteamInfo
 {
+    public Game.GameId Game { get; init; }
     public string? SteamPath { get; init; }
     public IReadOnlyList<string> Libraries { get; init; } = Array.Empty<string>();
-    public string? DotaInstallDir { get; init; }
-    public string? DotaExe { get; init; }
-    public string? DotaCfgDir { get; init; }
+    public string? GameInstallDir { get; init; }
+    public string? GameExe { get; init; }
+    public string? GameCfgDir { get; init; }
     public IReadOnlyList<string> VideoConfigPaths { get; init; } = Array.Empty<string>();
     public IReadOnlyList<string> CloudCfgDirs { get; init; } = Array.Empty<string>();
     public string? ActiveAccountId { get; init; }
     public string? LocalConfigPath { get; init; }
     public bool SteamRunning { get; init; }
-    public bool DotaRunning { get; init; }
-    public string? DotaBuildId { get; init; }
+    public bool GameRunning { get; init; }
+    public string? GameBuildId { get; init; }
 
-    public bool DotaFound => DotaInstallDir is not null;
+    /// <summary>Kind of disk the game is installed on.</summary>
+    public DiskKind DiskKind { get; init; }
+
+    /// <summary>Name of the GPU the game is rendering on right now (only known while it runs).</summary>
+    public string? RuntimeGpu { get; init; }
+
+    public bool GameFound => GameInstallDir is not null;
 }
 
 public sealed record SystemSnapshot
@@ -109,22 +117,21 @@ public sealed record SystemSnapshot
     public CpuInfo? Cpu { get; init; }
     public MemoryInfo? Memory { get; init; }
     public IReadOnlyList<DiskInfo> Disks { get; init; } = Array.Empty<DiskInfo>();
-    public DiskKind DotaDiskKind { get; init; }
     public DisplayInfo? Display { get; init; }
     public WindowsInfo? Windows { get; init; }
     public PowerPlanInfo? PowerPlan { get; init; }
-    public SteamInfo Steam { get; init; } = new();
+    /// <summary>Steam data per supported game.</summary>
+    public IReadOnlyDictionary<Game.GameId, SteamInfo> Games { get; init; } = new Dictionary<Game.GameId, SteamInfo>();
     public bool IsLaptop { get; init; }
-
-    /// <summary>Name of the GPU that dota2.exe is rendering on right now (only known while the game runs).</summary>
-    public string? DotaRuntimeGpu { get; init; }
 
     public PcProfile Profile { get; init; }
     public IReadOnlyList<string> ScanWarnings { get; init; } = Array.Empty<string>();
 
     public IEnumerable<GpuInfo> RealGpus => Gpus.Where(g => g.Vendor is not GpuVendor.Microsoft and not GpuVendor.Unknown);
 
-    /// <summary>The GPU Dota 2 should use: the discrete card if present, otherwise the best integrated one.</summary>
+    public SteamInfo For(Game.GameId game) => Games.TryGetValue(game, out var info) ? info : new SteamInfo { Game = game };
+
+    /// <summary>The GPU games should use: the discrete card if present, otherwise the best integrated one.</summary>
     public GpuInfo? PrimaryGpu =>
         RealGpus.OrderBy(g => g.IsIntegrated).ThenByDescending(g => g.DedicatedVideoMemory).FirstOrDefault();
 

@@ -95,7 +95,7 @@ public static class ElevatedHost
 
         if (request.CreateRestorePoint || request.Mode == "restorePoint")
         {
-            var rp = RestorePoint.Create("Dota 2 Optimizer: перед изменениями");
+            var rp = RestorePoint.Create("FrameLab: перед изменениями");
             result.RestorePointCreated = rp.Success;
             result.RestorePointMessage = rp.Message;
         }

@@ -85,7 +85,7 @@ public static class DriverAdvisor
         if (gpu.Vendor == GpuVendor.Microsoft || gpu.DriverVersion.Length == 0)
         {
             list.Add(new Advice(Severity.Critical, "Не установлен драйвер видеокарты",
-                "Используется «Базовый видеоадаптер Майкрософт». Dota 2 будет работать очень медленно или не запустится.", link));
+                "Используется «Базовый видеоадаптер Майкрософт». Игры будут работать очень медленно или не запустятся.", link));
         }
 
         if (windows is { IsWindows11: false })

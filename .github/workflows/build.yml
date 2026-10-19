@@ -11,7 +11,7 @@ permissions:
 
 env:
   # Version of the build from main. A vX.Y.Z tag overrides it.
-  APP_VERSION: "1.1.0"
+  APP_VERSION: "1.2.0"
   PRESENTMON_VERSION: "2.6.0"
   INNOSETUP_VERSION: "6.4.3"
 
@@ -58,7 +58,7 @@ jobs:
           Invoke-WebRequest "https://api.nuget.org/v3-flatcontainer/tools.innosetup/$v/tools.innosetup.$v.nupkg" -OutFile inno.zip
           Expand-Archive inno.zip -DestinationPath inno -Force
 
-      - name: Build Dota2Optimizer-Setup.exe
+      - name: Build FrameLab-Setup.exe
         run: inno\tools\ISCC.exe /DAppVersion=${{ steps.ver.outputs.version }} installer\Dota2Optimizer.iss
 
       # Build artifacts are a convenience for branches and PRs; main publishes a release instead.
@@ -68,22 +68,22 @@ jobs:
         continue-on-error: true
         with:
           retention-days: 7
-          name: Dota2Optimizer-${{ steps.ver.outputs.version }}
+          name: FrameLab-${{ steps.ver.outputs.version }}
           path: |
-            installer/Output/Dota2Optimizer-Setup.exe
-            artifacts/publish/Dota2Optimizer.exe
+            installer/Output/FrameLab-Setup.exe
+            artifacts/publish/FrameLab.exe
 
       # Every push to main (and every vX.Y.Z tag) publishes the installer as the latest release,
-      # so README can link straight to releases/latest/download/Dota2Optimizer-Setup.exe.
+      # so README can link straight to releases/latest/download/FrameLab-Setup.exe.
       - name: Release
         if: github.ref_type == 'tag' || github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ steps.ver.outputs.version }}
           target_commitish: ${{ github.sha }}
-          name: Dota 2 Optimizer ${{ steps.ver.outputs.version }}
+          name: FrameLab ${{ steps.ver.outputs.version }}
           body_path: .github/release-notes.md
           make_latest: true
           files: |
-            installer/Output/Dota2Optimizer-Setup.exe
-            artifacts/publish/Dota2Optimizer.exe
+            installer/Output/FrameLab-Setup.exe
+            artifacts/publish/FrameLab.exe

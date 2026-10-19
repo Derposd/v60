@@ -5,7 +5,7 @@ namespace Dota2Optimizer.Core.Crash;
 
 public sealed record LogFinding(Severity Severity, string Title, string Advice, string Sample, int Count);
 
-/// <summary>Looks for typical error signatures in Dota 2 console.log and Steam logs. Pure logic.</summary>
+/// <summary>Looks for typical error signatures in a game's console.log and Steam logs. Pure logic.</summary>
 public static class LogAnalyzer
 {
     private sealed record Rule(Regex Pattern, Severity Severity, string Title, string Advice);

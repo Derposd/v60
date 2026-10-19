@@ -14,7 +14,9 @@ public sealed record VendorGuide(string Title, string HowToOpen, IReadOnlyList<G
 /// </summary>
 public static class VendorAdvice
 {
-    public static VendorGuide For(GpuInfo? gpu, SystemSnapshot s)
+    public static VendorGuide For(GpuInfo? gpu, SystemSnapshot s) => For(gpu, s, Games.Dota2);
+
+    public static VendorGuide For(GpuInfo? gpu, SystemSnapshot s, GameDefinition game)
     {
         if (gpu is null)
         {
@@ -23,14 +25,14 @@ public static class VendorAdvice
 
         return gpu.Vendor switch
         {
-            GpuVendor.Nvidia => Nvidia(gpu, s),
-            GpuVendor.Amd when gpu.IsIntegrated => AmdIntegrated(gpu, s),
-            GpuVendor.Amd => Amd(gpu),
-            _ => Intel(gpu, s),
+            GpuVendor.Nvidia => Nvidia(gpu, s, game),
+            GpuVendor.Amd when gpu.IsIntegrated => AmdIntegrated(gpu, s, game),
+            GpuVendor.Amd => Amd(gpu, game),
+            _ => Intel(gpu, s, game),
         };
     }
 
-    private static VendorGuide Nvidia(GpuInfo gpu, SystemSnapshot s)
+    private static VendorGuide Nvidia(GpuInfo gpu, SystemSnapshot s, GameDefinition game)
     {
         var rtx = Regex.IsMatch(gpu.Name, @"RTX", RegexOptions.IgnoreCase);
         var maxwellPascal = Regex.IsMatch(gpu.Name, @"GTX\s?(9\d\d|10\d0)|\bGT\s?10\d0|Titan X", RegexOptions.IgnoreCase);
@@ -40,7 +42,7 @@ public static class VendorAdvice
                 "Не даёт карте сбрасывать частоты в лёгких сценах — меньше скачков FPS. На ноутбуке повышает нагрев, поэтому там не обязательно.",
                 Effectiveness.Low, Recommended: !s.IsLaptop),
             new("Режим низкой задержки", "Вкл (если в игре включён Reflex — оставьте «Выкл», Reflex важнее)",
-                "Уменьшает очередь заранее подготовленных кадров, когда упираетесь в видеокарту. В Dota 2 есть встроенный NVIDIA Reflex (Настройки → Видео) — он работает лучше.",
+                $"Уменьшает очередь заранее подготовленных кадров, когда упираетесь в видеокарту. В {game.Name} есть встроенный NVIDIA Reflex — он работает лучше.",
                 Effectiveness.Low, Recommended: true),
             new("Размер кэша шейдеров", "По умолчанию драйвера (или 10 ГБ, если места мало и бывают фризы)",
                 "Кеш хранит скомпилированные шейдеры; если он слишком мал, после каждого запуска будут фризы перекомпиляции.",
@@ -54,11 +56,11 @@ public static class VendorAdvice
         };
         var notes = new List<string>
         {
-            "Панель управления NVIDIA → Управление параметрами 3D → Программные настройки → добавить dota2.exe (папка игры\\game\\bin\\win64). Меняйте настройки для программы, а не глобально.",
+            $"Панель управления NVIDIA → Управление параметрами 3D → Программные настройки → добавить {game.ExeFileName} (папка игры\\game\\bin\\win64). Меняйте настройки для программы, а не глобально.",
         };
-        if (rtx)
+        if (rtx || game.Id == GameId.Cs2)
         {
-            notes.Add("В Dota 2 включите NVIDIA Reflex: Настройки → Видео. Это официальная поддержка NVIDIA (работает на GTX 900 и новее).");
+            notes.Add(game.ReflexHint);
         }
 
         if (maxwellPascal)
@@ -68,7 +70,7 @@ public static class VendorAdvice
 
         if (s.IsHybridGraphics)
         {
-            notes.Add("Ноутбук с гибридной графикой: в той же панели в «Программных настройках» выберите для dota2.exe «Высокопроизводительный процессор NVIDIA», либо используйте твик предпочтения GPU в Windows.");
+            notes.Add("Ноутбук с гибридной графикой: в той же панели в «Программных настройках» выберите для {game.ExeFileName} «Высокопроизводительный процессор NVIDIA», либо используйте твик предпочтения GPU в Windows.");
         }
 
         return new VendorGuide(gpu.Name, "ПКМ по рабочему столу → Панель управления NVIDIA (или кнопка ниже)", steps, notes, new[]
@@ -78,14 +80,14 @@ public static class VendorAdvice
         });
     }
 
-    private static VendorGuide Amd(GpuInfo gpu)
+    private static VendorGuide Amd(GpuInfo gpu, GameDefinition game)
     {
         var rdna = Regex.IsMatch(gpu.Name, @"RX\s?[5-9]\d{3}", RegexOptions.IgnoreCase);
         var rdna12 = Regex.IsMatch(gpu.Name, @"RX\s?[56]\d{3}", RegexOptions.IgnoreCase);
         var steps = new List<GuideStep>
         {
-            new("Radeon Anti-Lag", rdna ? "Вкл (в Dota 2 работает Anti-Lag 2 в режиме DX11)" : "Вкл",
-                "Снижает задержку ввода, когда упираетесь в видеокарту. AMD добавила Anti-Lag 2 для Dota 2 в драйвере 24.7.1 (карты RDNA, режим DX11).",
+            new("Radeon Anti-Lag", game.Id == GameId.Cs2 ? (rdna ? "В драйвере — по умолчанию; в CS2 включите Anti-Lag 2 в самой игре" : "Вкл") : rdna ? "Вкл (в Dota 2 работает Anti-Lag 2 в режиме DX11)" : "Вкл",
+                "Снижает задержку ввода, когда упираетесь в видеокарту. " + game.AmdAntiLagHint,
                 Effectiveness.Low, Recommended: true),
             new("Radeon Chill", "Выкл (или вкл с мин/макс = частоте монитора на ноутбуке)",
                 "Снижает FPS при отсутствии движения для экономии энергии. Для соревновательной игры лучше выкл; на ноутбуке может снизить нагрев.",
@@ -105,7 +107,7 @@ public static class VendorAdvice
         };
         var notes = new List<string>
         {
-            "AMD Software: Adrenalin → Игры → Dota 2 (настройки для игры, а не глобальный профиль). Профиль «HYPR-RX» включает сразу несколько функций — проверяйте замером.",
+            $"AMD Software: Adrenalin → Игры → {game.Name} (настройки для игры, а не глобальный профиль). Профиль «HYPR-RX» включает сразу несколько функций — проверяйте замером.",
             "Если бывает «чёрный экран» или сообщение о тайм-ауте драйвера — смотрите вкладку «Диагностика вылетов»: там ищутся события amdkmdag/Display 4101 (TDR).",
         };
         if (rdna12)
@@ -119,9 +121,9 @@ public static class VendorAdvice
         });
     }
 
-    private static VendorGuide AmdIntegrated(GpuInfo gpu, SystemSnapshot s)
+    private static VendorGuide AmdIntegrated(GpuInfo gpu, SystemSnapshot s, GameDefinition game)
     {
-        var guide = Amd(gpu);
+        var guide = Amd(gpu, game);
         var notes = guide.Notes.ToList();
         notes.Insert(0, "Встроенная графика Radeon: главное — двухканальная память с высокой частотой (включите XMP/EXPO в BIOS) и выделенный объём видеопамяти в BIOS (UMA Frame Buffer) 2–4 ГБ, если есть такая настройка.");
         if (s.Memory?.LikelyDualChannel == false)
@@ -132,13 +134,13 @@ public static class VendorAdvice
         return guide with { Notes = notes };
     }
 
-    private static VendorGuide Intel(GpuInfo gpu, SystemSnapshot s)
+    private static VendorGuide Intel(GpuInfo gpu, SystemSnapshot s, GameDefinition game)
     {
         var arc = gpu.Name.Contains("Arc", StringComparison.OrdinalIgnoreCase);
         var steps = new List<GuideStep>
         {
-            new("Пресет Dota 2", "«Максимум FPS», рендер-масштаб 70–85%",
-                "Встроенная графика ограничена пропускной способностью памяти — снижение масштаба рендера даёт больше всего.",
+            new($"Пресет {game.ShortName}", game.LowEndPresetHint,
+                "Встроенная графика ограничена пропускной способностью памяти — снижение разрешения рендера даёт больше всего.",
                 Effectiveness.High, Recommended: !arc),
             new("Ограничение FPS", "Под частоту монитора (обычно 60)",
                 "Встроенная графика делит лимит мощности с процессором: меньше лишних кадров — выше частоты CPU и ровнее кадры.",
@@ -153,7 +155,7 @@ public static class VendorAdvice
         var notes = new List<string>
         {
             arc ? "Intel Graphics Software / Arc Control: проверьте наличие свежего драйвера; для Arc сравните DX11 и Vulkan."
-                : "Intel Graphics Command Center / Intel Graphics Software: включите режим «Максимальная производительность» для Dota 2, если доступен.",
+                : $"Intel Graphics Command Center / Intel Graphics Software: включите режим «Максимальная производительность» для {game.Name}, если доступен.",
         };
         if (s.Memory?.LikelyDualChannel == false)
         {

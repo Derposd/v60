@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.Windows.Input;
 using System.Windows.Threading;
 using Dota2Optimizer.Core.Benchmark;
+using Dota2Optimizer.Core.Game;
 using Dota2Optimizer.Core.Infrastructure;
 using Dota2Optimizer.Core.SystemInfo;
 
@@ -16,12 +17,13 @@ public sealed class MatchMonitorViewModel : ObservableObject
     private static readonly TimeSpan Interval = TimeSpan.FromSeconds(15);
 
     private readonly AppServices _s;
+    private readonly GameDefinition _game;
     private readonly DispatcherTimer _timer = new() { Interval = Interval };
     private MatchMonitor? _monitor;
     private FpsCapture? _capture;
     private string? _noPresentMon;
     private bool _running;
-    private string _status = "Запустите Dota 2, затем нажмите «Начать запись» и сыграйте матч целиком. В конце нажмите «Стоп и анализ» или просто закройте игру.";
+    private string _status = "Запустите игру, затем нажмите «Начать запись» и сыграйте матч целиком. В конце нажмите «Стоп и анализ» или просто закройте игру.";
     private string _elapsed = "—";
     private string _cpu = "—";
     private string _gpu = "—";
@@ -30,13 +32,16 @@ public sealed class MatchMonitorViewModel : ObservableObject
     private string _free = "—";
     private string? _summary;
 
-    public MatchMonitorViewModel(AppServices services)
+    public MatchMonitorViewModel(AppServices services, GameDefinition game)
     {
         _s = services;
+        _game = game;
         StartCommand = new AsyncCommand(StartAsync, () => !_running);
         StopCommand = new AsyncCommand(StopAsync, () => _running);
         _timer.Tick += async (_, _) => await TickAsync();
     }
+
+    public string GameName => _game.Name;
 
     public ICommand StartCommand { get; }
     public ICommand StopCommand { get; }
@@ -65,9 +70,9 @@ public sealed class MatchMonitorViewModel : ObservableObject
 
     private async Task StartAsync()
     {
-        if (!SystemScanner.IsProcessRunning("dota2"))
+        if (!SystemScanner.IsProcessRunning(_game.ProcessName))
         {
-            Ui.Info("Сначала запустите Dota 2 (можно в меню), затем начните запись.");
+            Ui.Info($"Сначала запустите {_game.Name} (можно в меню), затем начните запись.");
             return;
         }
 
@@ -75,7 +80,7 @@ public sealed class MatchMonitorViewModel : ObservableObject
         Bars.Clear();
         Summary = null;
         _monitor?.Dispose();
-        _monitor = await Task.Run(() => new MatchMonitor());
+        _monitor = await Task.Run(() => new MatchMonitor(_game.ProcessName));
         Running = true;
         _capture = null;
         _noPresentMon = null;
@@ -83,7 +88,7 @@ public sealed class MatchMonitorViewModel : ObservableObject
         var pm = await Task.Run(PresentMonTool.Find);
         if (pm is not null)
         {
-            _capture = await Task.Run(() => FpsCapture.Start(pm));
+            _capture = await Task.Run(() => FpsCapture.Start(pm, _game.ExeFileName));
             Status = _capture.Problem(0) is { } early && (_capture.Declined || _capture.StartError is not null)
                 ? $"Идёт запись без FPS: {early}. Выводы будут по нагреву, памяти и загрузке."
                 : "Идёт запись. Можно свернуть программу и играть — в конце нажмите «Стоп и анализ» или просто закройте игру.";
@@ -108,7 +113,7 @@ public sealed class MatchMonitorViewModel : ObservableObject
         }
 
         await Task.Delay(TimeSpan.FromSeconds(6));
-        if (capture == _capture && Running && capture.HasExited && SystemScanner.IsProcessRunning("dota2"))
+        if (capture == _capture && Running && capture.HasExited && SystemScanner.IsProcessRunning(_game.ProcessName))
         {
             Status = $"Идёт запись без FPS: {capture.Problem(0)}. Выводы будут по нагреву, памяти и загрузке.";
         }
@@ -126,7 +131,7 @@ public sealed class MatchMonitorViewModel : ObservableObject
         {
             if (_monitor.Samples.Count > 0)
             {
-                Status = "Dota 2 закрыта — запись остановлена.";
+                Status = $"{_game.Name} закрыта — запись остановлена.";
                 await StopAsync();
             }
 
@@ -154,10 +159,10 @@ public sealed class MatchMonitorViewModel : ObservableObject
 
         var minutes = new List<MinuteFps>();
         var frames = 0;
-        // PresentMon may still be writing (it stops by itself when Dota closes); the capture reads the file shared.
+        // PresentMon may still be writing (it stops by itself when the game closes); the capture reads the file shared.
         if (_capture is not null && await Task.Run(_capture.ReadCsv) is { } text)
         {
-            var timed = PresentMonCsv.ReadTimedFrames(text);
+            var timed = PresentMonCsv.ReadTimedFrames(text, _game.ExeFileName);
             frames = timed.Count;
             minutes = MatchAnalyzer.FpsPerMinute(timed).ToList();
         }
@@ -170,7 +175,7 @@ public sealed class MatchMonitorViewModel : ObservableObject
 
         var vram = (_s.Snapshot?.PrimaryGpu?.VramGb ?? 0) * 1024;
         var ram = (_s.Snapshot?.Memory?.TotalGb ?? 0) * 1024;
-        var report = MatchAnalyzer.Analyze(monitor.Samples, minutes, vram, ram, problem);
+        var report = MatchAnalyzer.Analyze(monitor.Samples, minutes, vram, ram, problem, _game);
         Summary = report.Summary;
         foreach (var f in report.Findings)
         {
@@ -186,9 +191,9 @@ public sealed class MatchMonitorViewModel : ObservableObject
 
         _s.History.Add(new HistoryEntry(DateTime.Now, "Монитор матча", report.Summary,
             string.Join("; ", report.Findings.Select(f => f.Title)) + (minutes.Count > 0 ? " | " + MatchAnalyzer.FormatMinutes(minutes) : string.Empty)));
-        if (minutes.Count > 0 && SystemScanner.IsProcessRunning("dota2"))
+        if (minutes.Count > 0 && SystemScanner.IsProcessRunning(_game.ProcessName))
         {
-            Status = "Анализ готов. Запись FPS PresentMon завершится сама, когда вы закроете Dota 2.";
+            Status = $"Анализ готов. Запись FPS PresentMon завершится сама, когда вы закроете {_game.Name}.";
         }
         else if (Status.StartsWith("Идёт", StringComparison.Ordinal))
         {

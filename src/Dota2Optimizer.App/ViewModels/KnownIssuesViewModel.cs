@@ -30,6 +30,17 @@ public sealed class IssueVm
             "crash-in-game" => ("IconShield", "Crit"),
             "lag-ping" => ("IconWifi", "Info"),
             "update-stuck" => ("IconDisk", "Info"),
+            "cs2-low-fps" => ("IconPulse", "Accent"),
+            "cs2-stutter-after-update" => ("IconBolt", "Warn"),
+            "cs2-input-lag" => ("IconClock", "Warn"),
+            "cs2-microstutter" => ("IconClock", "Warn"),
+            "cs2-black-screen" => ("IconAlertCircle", "Crit"),
+            "cs2-resolution" => ("IconMonitor", "Info"),
+            "cs2-crash" => ("IconShield", "Crit"),
+            "cs2-vac-verify" => ("IconShieldCheck", "Crit"),
+            "cs2-obs-black" => ("IconMonitor", "Info"),
+            "cs2-lag" => ("IconWifi", "Info"),
+            "cs2-update-stuck" => ("IconDisk", "Info"),
             _ => ("IconAlert", "Accent"),
         };
     }
@@ -74,19 +85,21 @@ public sealed class AppliedFixVm
     public string Text => $"{Set.Title} · {Set.CreatedUtc.ToLocalTime():dd.MM HH:mm}";
 }
 
-/// <summary>"Проблемы Dota 2": symptom → cause → steps → one-click fixes (reversible ones are journaled and undoable in place).</summary>
+/// <summary>"Проблемы": symptom → cause → steps → one-click fixes (reversible ones are journaled and undoable in place).</summary>
 public sealed class KnownIssuesViewModel : ObservableObject
 {
     private readonly AppServices _s;
+    private readonly GameDefinition _game;
     private readonly Action<int> _navigate;
     private string? _status;
     private string _searchText = string.Empty;
 
-    public KnownIssuesViewModel(AppServices services, Action<int> navigate)
+    public KnownIssuesViewModel(AppServices services, GameDefinition game, Action<int> navigate)
     {
         _s = services;
+        _game = game;
         _navigate = navigate;
-        Issues = KnownIssues.All.Select(i => new IssueVm(i)).ToList();
+        Issues = game.Issues.Select(i => new IssueVm(i)).ToList();
         VisibleIssues = new ObservableCollection<IssueVm>(Issues);
         RunFixCommand = new AsyncCommand<FixButton>(RunFixAsync);
         UndoFixCommand = new AsyncCommand<AppliedFixVm>(async vm =>
@@ -160,13 +173,17 @@ public sealed class KnownIssuesViewModel : ObservableObject
     private void ReloadApplied()
     {
         AppliedFixes.Clear();
-        foreach (var set in _s.Store.Active().Where(c => c.TweakId.StartsWith("fix.", StringComparison.Ordinal)).OrderByDescending(c => c.CreatedUtc))
+        foreach (var set in _s.Store.Active().Where(c => c.TweakId.StartsWith(_game.FixPrefix, StringComparison.Ordinal)).OrderByDescending(c => c.CreatedUtc))
         {
             AppliedFixes.Add(new AppliedFixVm(set));
         }
     }
 
-    private SteamInfo FreshSteam() => new SteamLocator(_s.Fs, _s.Registry).Locate(SystemScanner.IsProcessRunning);
+    public string Title => $"Проблемы {_game.ShortName}";
+
+    public string GameName => _game.Name;
+
+    private SteamInfo FreshSteam() => new SteamLocator(_s.Fs, _s.Registry).Locate(_game, SystemScanner.IsProcessRunning);
 
     private async Task RunFixAsync(FixButton? b)
     {
@@ -184,10 +201,10 @@ public sealed class KnownIssuesViewModel : ObservableObject
                 _navigate(MainViewModel.MonitorTab);
                 return;
             case QuickFix.VerifyFiles:
-                if (Ui.Confirm("Запустить проверку целостности файлов Dota 2 в Steam? Steam докачает повреждённые файлы."))
+                if (Ui.Confirm($"Запустить проверку целостности файлов {_game.Name} в Steam? Steam докачает повреждённые файлы."))
                 {
-                    CrashTools.StartValidate();
-                    _s.History.Add(new HistoryEntry(DateTime.Now, "Обслуживание", "Проверка целостности файлов", "steam://validate/570"));
+                    CrashTools.StartValidate(_game);
+                    _s.History.Add(new HistoryEntry(DateTime.Now, "Обслуживание", $"Проверка целостности файлов {_game.ShortName}", $"steam://validate/{_game.AppId}"));
                 }
 
                 return;
@@ -205,15 +222,15 @@ public sealed class KnownIssuesViewModel : ObservableObject
         }
 
         var steam = await Task.Run(FreshSteam);
-        if (!steam.DotaFound)
+        if (!steam.GameFound)
         {
-            Ui.Info("Dota 2 не найдена.");
+            Ui.Info($"{_game.Name} не найдена.");
             return;
         }
 
-        if (steam.DotaRunning)
+        if (steam.GameRunning)
         {
-            Ui.Info("Закройте Dota 2 — иначе при выходе она перезапишет файлы настроек.");
+            Ui.Info($"Закройте {_game.Name} — иначе при выходе она перезапишет файлы настроек.");
             return;
         }
 
@@ -222,21 +239,21 @@ public sealed class KnownIssuesViewModel : ObservableObject
         switch (b.Fix)
         {
             case QuickFix.ResetVideoSettings:
-                actions = DotaQuickFixes.PlanResetVideo(steam);
-                id = DotaQuickFixes.ResetVideoId;
-                title = "Сброс настроек графики Dota 2";
-                question = "Удалить video.txt (включая копию Steam Cloud), чтобы игра создала настройки графики заново?\n\nКопии сохраняются — сброс можно отменить кнопкой «Отменить».";
+                actions = QuickFixes.PlanResetVideo(_game, steam);
+                id = QuickFixes.ResetVideoId(_game);
+                title = $"Сброс настроек графики {_game.ShortName}";
+                question = $"Удалить {_game.VideoFileName} (включая копию Steam Cloud), чтобы игра создала настройки графики заново?\n\nКопии сохраняются — сброс можно отменить кнопкой «Отменить».";
                 if (actions.Count == 0)
                 {
-                    Ui.Info("video.txt не найден — игра и так создаст его при запуске.");
+                    Ui.Info($"{_game.VideoFileName} не найден — игра и так создаст его при запуске.");
                     return;
                 }
 
                 break;
             case QuickFix.DisableAutoexec:
-                actions = DotaQuickFixes.PlanDisableAutoexec(_s.Fs, steam);
-                id = DotaQuickFixes.DisableAutoexecId;
-                title = "autoexec.cfg временно отключён";
+                actions = QuickFixes.PlanDisableAutoexec(_s.Fs, steam);
+                id = QuickFixes.DisableAutoexecId(_game);
+                title = $"autoexec.cfg {_game.ShortName} временно отключён";
                 question = "Переименовать autoexec.cfg в autoexec.cfg.disabled? Если проблема исчезнет — виновата одна из команд в нём.\n\nМожно отменить кнопкой «Отменить».";
                 if (actions.Count == 0)
                 {
@@ -246,7 +263,7 @@ public sealed class KnownIssuesViewModel : ObservableObject
 
                 break;
             default:
-                var (apiActions, line, blocker) = DotaQuickFixes.PlanSwitchApi(_s.Fs, steam);
+                var (apiActions, line, blocker) = QuickFixes.PlanSwitchApi(_game, _s.Fs, steam);
                 if (blocker is not null)
                 {
                     System.Windows.Clipboard.SetText(line);
@@ -255,8 +272,8 @@ public sealed class KnownIssuesViewModel : ObservableObject
                 }
 
                 actions = apiActions;
-                id = DotaQuickFixes.SwitchApiId;
-                title = $"API переключён ({(line.Contains("-vulkan", StringComparison.Ordinal) ? "Vulkan" : "DX11")})";
+                id = QuickFixes.SwitchApiId(_game);
+                title = $"API {_game.ShortName} переключён ({(line.Contains("-vulkan", StringComparison.Ordinal) ? "Vulkan" : "DX11")})";
                 question = $"Новая строка параметров запуска:\n{line}\n\nПрименить? Можно отменить кнопкой «Отменить».";
                 break;
         }
@@ -274,15 +291,15 @@ public sealed class KnownIssuesViewModel : ObservableObject
 
     private async Task ClearShaderCacheAsync()
     {
-        if (SystemScanner.IsProcessRunning("dota2"))
+        if (SystemScanner.IsProcessRunning(_game.ProcessName))
         {
-            Ui.Info("Закройте Dota 2 перед очисткой кеша шейдеров.");
+            Ui.Info($"Закройте {_game.Name} перед очисткой кеша шейдеров.");
             return;
         }
 
         var steam = await Task.Run(FreshSteam);
         var vendors = _s.Snapshot?.RealGpus.Select(g => g.Vendor).ToList() ?? new List<GpuVendor> { GpuVendor.Nvidia, GpuVendor.Amd, GpuVendor.Intel };
-        var caches = (await Task.Run(() => CrashTools.ShaderCaches(steam, vendors))).Where(c => c.Exists).ToList();
+        var caches = (await Task.Run(() => CrashTools.ShaderCaches(_game, steam, vendors))).Where(c => c.Exists).ToList();
         if (caches.Count == 0)
         {
             Ui.Info("Кеши шейдеров не найдены.");
@@ -303,7 +320,7 @@ public sealed class KnownIssuesViewModel : ObservableObject
     private async Task LoadDiskUsageAsync()
     {
         var steam = await Task.Run(FreshSteam);
-        var items = await Task.Run(() => DotaQuickFixes.DiskUsage(steam, CrashTools.DirSize));
+        var items = await Task.Run(() => QuickFixes.DiskUsage(_game, steam, CrashTools.DirSize));
         DiskUsage.Clear();
         foreach (var i in items)
         {
@@ -312,7 +329,7 @@ public sealed class KnownIssuesViewModel : ObservableObject
 
         if (items.Count == 0)
         {
-            Status = "Dota 2 не найдена или папок повторов/кастомок нет.";
+            Status = $"{_game.Name} не найдена или папок повторов и Мастерской нет.";
         }
     }
 }

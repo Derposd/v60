@@ -22,8 +22,8 @@ public class DotaFixesTests
     private static SteamInfo Steam(bool steamRunning = false) => new()
     {
         SteamPath = @"C:\Steam",
-        DotaInstallDir = @"D:\Dota",
-        DotaCfgDir = Cfg,
+        GameInstallDir = @"D:\Dota",
+        GameCfgDir = Cfg,
         VideoConfigPaths = new[] { Video, Cloud },
         LocalConfigPath = LocalCfg,
         SteamRunning = steamRunning,
@@ -36,7 +36,7 @@ public class DotaFixesTests
         _fs.WriteAllText(Cloud, "b");
         var exec = Exec();
 
-        var r = exec.Apply(DotaQuickFixes.ResetVideoId, "Сброс", DotaQuickFixes.PlanResetVideo(Steam()), false);
+        var r = exec.Apply(QuickFixes.ResetVideoId(Games.Dota2), "Сброс", QuickFixes.PlanResetVideo(Games.Dota2, Steam()), false);
         Assert.False(_fs.FileExists(Video));
         Assert.False(_fs.FileExists(Cloud));
 
@@ -51,7 +51,7 @@ public class DotaFixesTests
         _fs.WriteAllText(Cfg + @"\autoexec.cfg", "fps_max 144");
         var exec = Exec();
 
-        var r = exec.Apply(DotaQuickFixes.DisableAutoexecId, "autoexec", DotaQuickFixes.PlanDisableAutoexec(_fs, Steam()), false);
+        var r = exec.Apply(QuickFixes.DisableAutoexecId(Games.Dota2), "autoexec", QuickFixes.PlanDisableAutoexec(_fs, Steam()), false);
         Assert.False(_fs.FileExists(Cfg + @"\autoexec.cfg"));
         Assert.Equal("fps_max 144", _fs.ReadAllText(Cfg + @"\autoexec.cfg.disabled"));
 
@@ -63,7 +63,7 @@ public class DotaFixesTests
     [Fact]
     public void Disable_autoexec_without_file_plans_nothing()
     {
-        Assert.Empty(DotaQuickFixes.PlanDisableAutoexec(_fs, Steam()));
+        Assert.Empty(QuickFixes.PlanDisableAutoexec(_fs, Steam()));
     }
 
     [Theory]
@@ -73,19 +73,19 @@ public class DotaFixesTests
     [InlineData("-dx11 +fps_max 144", "+fps_max 144 -vulkan")]
     public void Switch_api_swaps_and_keeps_the_rest(string? current, string expected)
     {
-        Assert.Equal(expected, DotaQuickFixes.SwitchApi(current));
+        Assert.Equal(expected, QuickFixes.SwitchApi(current));
     }
 
     [Fact]
     public void Switch_api_blocked_while_steam_runs_but_offers_line()
     {
         _fs.WriteAllText(LocalCfg, "\"UserLocalConfigStore\" { \"Software\" { \"Valve\" { \"Steam\" { \"apps\" { \"570\" { \"LaunchOptions\" \"-dx11\" } } } } } }");
-        var (actions, line, blocker) = DotaQuickFixes.PlanSwitchApi(_fs, Steam(steamRunning: true));
+        var (actions, line, blocker) = QuickFixes.PlanSwitchApi(Games.Dota2, _fs, Steam(steamRunning: true));
         Assert.Empty(actions);
         Assert.Equal("-vulkan", line);
         Assert.NotNull(blocker);
 
-        var (actions2, _, blocker2) = DotaQuickFixes.PlanSwitchApi(_fs, Steam());
+        var (actions2, _, blocker2) = QuickFixes.PlanSwitchApi(Games.Dota2, _fs, Steam());
         Assert.Null(blocker2);
         Assert.Equal("-vulkan", LocalConfigEditor.GetLaunchOptions(Assert.Single(actions2).Content!));
     }
@@ -108,14 +108,14 @@ public class DotaFixesTests
         _fs.WriteAllText(Video, text);
         var ctx = new TweakContext
         {
-            Snapshot = new SystemSnapshot { Steam = Steam() with { VideoConfigPaths = new[] { Video } } },
+            Snapshot = new SystemSnapshot { Games = TestGames.One(Steam() with { VideoConfigPaths = new[] { Video } }) },
             Registry = _reg,
             FileSystem = _fs,
             Commands = new ProcessCommandRunner(),
         };
 
-        Assert.True(ExclusiveFullscreenTweak.IsWindowed(ctx));
-        var plan = new ExclusiveFullscreenTweak().Plan(ctx);
+        Assert.True(ExclusiveFullscreenTweak.IsWindowed(ctx, Games.Dota2));
+        var plan = new ExclusiveFullscreenTweak(Games.Dota2).Plan(ctx);
         Assert.Equal(TweakStatus.CanApply, plan.Status);
         Assert.False(plan.DefaultSelected);
         Assert.Equal(text.Replace("\"0\"", "\"1\"").Replace("nowindowborder\"\t\t\"1\"", "nowindowborder\"\t\t\"0\""), plan.Actions.Single().Content);
@@ -133,14 +133,14 @@ public class DotaFixesTests
             Commands = new ProcessCommandRunner(),
         };
 
-        var plan = new WindowedGameOptimizationsTweak().Plan(ctx);
+        var plan = new WindowedGameOptimizationsTweak(Games.Dota2).Plan(ctx);
 
         Assert.True(plan.Tweak.Disputed);
         Assert.False(plan.DefaultSelected);
         Assert.Equal("VRROptimizeEnable=0;SwapEffectUpgradeEnable=0;", plan.Actions.Single().Value!.Data);
 
         var win10 = new TweakContext { Snapshot = new SystemSnapshot { Windows = new WindowsInfo("Windows 10", "22H2", 19045, false) }, Registry = _reg, FileSystem = _fs, Commands = new ProcessCommandRunner() };
-        Assert.Equal(TweakStatus.NotApplicable, new WindowedGameOptimizationsTweak().Plan(win10).Status);
+        Assert.Equal(TweakStatus.NotApplicable, new WindowedGameOptimizationsTweak(Games.Dota2).Plan(win10).Status);
     }
 
     [Fact]

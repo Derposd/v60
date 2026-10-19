@@ -89,7 +89,7 @@ public sealed class AsyncCommand : ICommand
         catch (Exception ex)
         {
             Log.Error("Ошибка команды", ex);
-            MessageBox.Show(ex.Message, "Dota 2 Optimizer", MessageBoxButton.OK, MessageBoxImage.Error);
+            MessageBox.Show(ex.Message, "FrameLab", MessageBoxButton.OK, MessageBoxImage.Error);
         }
         finally
         {
@@ -191,7 +191,7 @@ public static class Ui
     public static bool Confirm(string text, string title = "Подтверждение") =>
         MessageBox.Show(text, title, MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No) == MessageBoxResult.Yes;
 
-    public static void Info(string text, string title = "Dota 2 Optimizer") =>
+    public static void Info(string text, string title = "FrameLab") =>
         MessageBox.Show(text, title, MessageBoxButton.OK, MessageBoxImage.Information);
 
     public static void OpenUrl(string url)
@@ -292,14 +292,27 @@ public sealed class StatusSoftConverter : IValueConverter
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => Binding.DoNothing;
 }
 
-/// <summary>Wizard stepper: label colour of step N (current and done steps are bright).</summary>
-public sealed class StepTextConverter : IValueConverter
+/// <summary>Wizard stepper: label colour of step N next to the circle (current and done steps are bright).</summary>
+public sealed class StepLabelConverter : IValueConverter
 {
     public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
     {
         var step = value is int i ? i : 0;
         var idx = int.Parse((string)parameter, CultureInfo.InvariantCulture);
         return Application.Current.Resources[idx == step ? "Text" : idx < step ? "Ok" : "Subtle"];
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => Binding.DoNothing;
+}
+
+/// <summary>Wizard stepper: colour of the number inside circle N (on the accent fill for the current step).</summary>
+public sealed class StepTextConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        var step = value is int i ? i : 0;
+        var idx = int.Parse((string)parameter, CultureInfo.InvariantCulture);
+        return Application.Current.Resources[idx == step ? "OnAccent" : idx < step ? "Ok" : "Subtle"];
     }
 
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => Binding.DoNothing;

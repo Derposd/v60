@@ -5,7 +5,7 @@ using Dota2Optimizer.Core.Vdf;
 
 namespace Dota2Optimizer.Core.Game;
 
-/// <summary>Finds Steam, its libraries, the Dota 2 install and per-account config folders. Read-only.</summary>
+/// <summary>Finds Steam, its libraries, a game's install and per-account config folders. Read-only.</summary>
 public sealed class SteamLocator
 {
     public const string DotaAppId = "570";
@@ -20,13 +20,15 @@ public sealed class SteamLocator
         _reg = reg;
     }
 
-    public SteamInfo Locate(Func<string, bool>? isProcessRunning = null)
+    public SteamInfo Locate(Func<string, bool>? isProcessRunning = null) => Locate(Games.Dota2, isProcessRunning);
+
+    public SteamInfo Locate(GameDefinition game, Func<string, bool>? isProcessRunning = null)
     {
         isProcessRunning ??= _ => false;
         var steamPath = FindSteamPath();
         if (steamPath is null)
         {
-            return new SteamInfo { SteamRunning = isProcessRunning("steam") };
+            return new SteamInfo { Game = game.Id, SteamRunning = isProcessRunning("steam") };
         }
 
         var libraries = ReadLibraries(steamPath);
@@ -34,7 +36,7 @@ public sealed class SteamLocator
         string? buildId = null;
         foreach (var lib in libraries)
         {
-            var manifest = Path.Combine(lib, "steamapps", $"appmanifest_{DotaAppId}.acf");
+            var manifest = Path.Combine(lib, "steamapps", $"appmanifest_{game.AppId}.acf");
             if (!_fs.FileExists(manifest))
             {
                 continue;
@@ -43,7 +45,7 @@ public sealed class SteamLocator
             try
             {
                 var app = VdfParser.Parse(_fs.ReadAllText(manifest));
-                var dir = app.ValueOf("installdir") ?? "dota 2 beta";
+                var dir = app.ValueOf("installdir") ?? game.DefaultInstallDir;
                 installDir = Path.Combine(lib, "steamapps", "common", dir);
                 buildId = app.ValueOf("buildid");
                 break;
@@ -57,22 +59,22 @@ public sealed class SteamLocator
         var accountId = FindActiveAccount(steamPath);
         var userdata = Path.Combine(steamPath, "userdata");
         var cloudDirs = _fs.EnumerateDirectories(userdata)
-            .Select(acc => Path.Combine(acc, DotaAppId, "remote", "cfg"))
+            .Select(acc => Path.Combine(acc, game.AppId, "remote", "cfg"))
             .Where(_fs.DirectoryExists)
             .ToList();
 
-        string? cfgDir = installDir is null ? null : Path.Combine(installDir, "game", "dota", "cfg");
+        string? cfgDir = installDir is null ? null : Path.Combine(installDir, "game", game.ModDir, "cfg");
         var videoPaths = new List<string>();
-        if (cfgDir is not null && _fs.FileExists(Path.Combine(cfgDir, "video.txt")))
+        if (cfgDir is not null && _fs.FileExists(Path.Combine(cfgDir, game.VideoFileName)))
         {
-            videoPaths.Add(Path.Combine(cfgDir, "video.txt"));
+            videoPaths.Add(Path.Combine(cfgDir, game.VideoFileName));
         }
 
         if (accountId is not null)
         {
             foreach (var sub in new[] { "remote", "local" })
             {
-                var p = Path.Combine(userdata, accountId, DotaAppId, sub, "cfg", "video.txt");
+                var p = Path.Combine(userdata, accountId, game.AppId, sub, "cfg", game.VideoFileName);
                 if (_fs.FileExists(p))
                 {
                     videoPaths.Add(p);
@@ -81,22 +83,23 @@ public sealed class SteamLocator
         }
 
         var localConfig = accountId is null ? null : Path.Combine(userdata, accountId, "config", "localconfig.vdf");
-        var exe = installDir is null ? null : Path.Combine(installDir, "game", "bin", "win64", "dota2.exe");
+        var exe = installDir is null ? null : Path.Combine(installDir, game.ExeRelativePath);
 
         return new SteamInfo
         {
+            Game = game.Id,
             SteamPath = steamPath,
             Libraries = libraries,
-            DotaInstallDir = installDir,
-            DotaExe = exe,
-            DotaCfgDir = cfgDir,
+            GameInstallDir = installDir,
+            GameExe = exe,
+            GameCfgDir = cfgDir,
             VideoConfigPaths = videoPaths,
             CloudCfgDirs = cloudDirs,
             ActiveAccountId = accountId,
             LocalConfigPath = localConfig is not null && _fs.FileExists(localConfig) ? localConfig : null,
             SteamRunning = isProcessRunning("steam"),
-            DotaRunning = isProcessRunning("dota2"),
-            DotaBuildId = buildId,
+            GameRunning = isProcessRunning(game.ProcessName),
+            GameBuildId = buildId,
         };
     }
 

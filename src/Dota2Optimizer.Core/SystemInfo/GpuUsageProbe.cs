@@ -4,7 +4,7 @@ using System.Text.RegularExpressions;
 namespace Dota2Optimizer.Core.SystemInfo;
 
 /// <summary>
-/// Finds which adapter dota2.exe renders on using the system-wide "GPU Engine" performance counters
+/// Finds which adapter a game renders on using the system-wide "GPU Engine" performance counters
 /// (the same data Task Manager shows). No handle to the game process is opened, nothing is read from it.
 /// </summary>
 public static partial class GpuUsageProbe
@@ -12,9 +12,9 @@ public static partial class GpuUsageProbe
     [GeneratedRegex(@"pid_(\d+)_luid_(0x[0-9A-F]{8}_0x[0-9A-F]{8})_.*engtype_3D", RegexOptions.IgnoreCase)]
     private static partial Regex InstanceName();
 
-    public static string? FindDotaGpu(IReadOnlyList<GpuInfo> gpus)
+    public static string? FindGameGpu(IReadOnlyList<GpuInfo> gpus, string processName)
     {
-        var pids = Process.GetProcessesByName("dota2").Select(p =>
+        var pids = Process.GetProcessesByName(processName).Select(p =>
         {
             using (p)
             {

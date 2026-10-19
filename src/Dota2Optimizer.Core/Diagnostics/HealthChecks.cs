@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Management;
 using System.Text.RegularExpressions;
+using Dota2Optimizer.Core.Game;
 using Dota2Optimizer.Core.Infrastructure;
 using Dota2Optimizer.Core.SystemInfo;
 
@@ -22,16 +23,18 @@ public sealed partial class HealthChecks
     [GeneratedRegex(@"0x([0-9a-f]{8})", RegexOptions.IgnoreCase)]
     private static partial Regex HexIndex();
 
-    public IReadOnlyList<Advice> Run(SystemSnapshot s)
+    public IReadOnlyList<Advice> Run(SystemSnapshot s) => Run(s, Games.Dota2);
+
+    public IReadOnlyList<Advice> Run(SystemSnapshot s, GameDefinition game)
     {
         var list = new List<Advice>();
-        Try(list, () => CheckFreeSpace(s, list));
+        Try(list, () => CheckFreeSpace(s, game, list));
         Try(list, () => CheckPageFile(s, list));
         Try(list, () => CheckThermal(list));
         Try(list, () => CheckUsbSuspend(list));
         Try(list, () => CheckNicPowerSaving(list));
-        Try(list, () => CheckDisk(s, list));
-        Try(list, () => CheckMemory(s, list));
+        Try(list, () => CheckDisk(s, game, list));
+        Try(list, () => CheckMemory(s, game, list));
         return list;
     }
 
@@ -47,9 +50,9 @@ public sealed partial class HealthChecks
         }
     }
 
-    private static void CheckFreeSpace(SystemSnapshot s, List<Advice> list)
+    private static void CheckFreeSpace(SystemSnapshot s, GameDefinition game, List<Advice> list)
     {
-        var path = s.Steam.DotaInstallDir ?? Environment.GetFolderPath(Environment.SpecialFolder.Windows);
+        var path = s.For(game.Id).GameInstallDir ?? Environment.GetFolderPath(Environment.SpecialFolder.Windows);
         var root = Path.GetPathRoot(path);
         if (string.IsNullOrEmpty(root))
         {
@@ -61,7 +64,7 @@ public sealed partial class HealthChecks
         if (freeGb < 10)
         {
             list.Add(new Advice(Severity.Critical, $"Мало места на диске {drive.Name}: {freeGb:0.#} ГБ",
-                "Обновления Dota 2 требуют свободного места (обычно 10–20 ГБ во время установки патча), а кеш шейдеров растёт. Освободите место."));
+                $"Обновления {game.Name} требуют свободного места (обычно до {game.UpdateSpaceGb} ГБ во время установки патча), а кеш шейдеров растёт. Освободите место."));
         }
         else if (freeGb < 25)
         {
@@ -156,16 +159,16 @@ public sealed partial class HealthChecks
         }
     }
 
-    private static void CheckDisk(SystemSnapshot s, List<Advice> list)
+    private static void CheckDisk(SystemSnapshot s, GameDefinition game, List<Advice> list)
     {
-        if (s.DotaDiskKind == DiskKind.Hdd)
+        if (s.For(game.Id).DiskKind == DiskKind.Hdd)
         {
-            list.Add(new Advice(Severity.Warning, "Dota 2 установлена на HDD",
-                "Загрузка матча и подгрузка моделей будут медленнее, возможны фризы при первом появлении героев. Перенос игры на SSD — одно из самых заметных улучшений (Steam → Хранилище → Переместить)."));
+            list.Add(new Advice(Severity.Warning, $"{game.Name} установлена на HDD",
+                "Загрузка матча и подгрузка моделей будут медленнее, возможны фризы при первом появлении эффектов. Перенос игры на SSD — одно из самых заметных улучшений (Steam → Хранилище → Переместить)."));
         }
     }
 
-    private static void CheckMemory(SystemSnapshot s, List<Advice> list)
+    private static void CheckMemory(SystemSnapshot s, GameDefinition game, List<Advice> list)
     {
         if (s.Memory is null)
         {
@@ -174,7 +177,7 @@ public sealed partial class HealthChecks
 
         if (s.Memory.TotalGb < 7.5)
         {
-            list.Add(new Advice(Severity.Critical, $"Мало оперативной памяти: {s.Memory.TotalGb:0.#} ГБ", "Для Dota 2 минимум 8 ГБ, комфортно 16 ГБ. Закрывайте браузер во время игры."));
+            list.Add(new Advice(Severity.Critical, $"Мало оперативной памяти: {s.Memory.TotalGb:0.#} ГБ", $"Для {game.Name} минимум {game.MinRamGb} ГБ, комфортно 16 ГБ. Закрывайте браузер во время игры."));
         }
 
         var igpu = s.PrimaryGpu?.IsIntegrated == true;

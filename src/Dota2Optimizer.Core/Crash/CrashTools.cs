@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using Dota2Optimizer.Core.Game;
 using Dota2Optimizer.Core.Infrastructure;
 using Dota2Optimizer.Core.SystemInfo;
 
@@ -26,16 +27,18 @@ public static class CrashTools
     private static string LocalAppData => Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
     private static string LocalLow => Path.Combine(Path.GetDirectoryName(LocalAppData) ?? LocalAppData, "LocalLow");
 
-    public static IReadOnlyList<DumpFile> FindDumps(SteamInfo steam)
+    public static IReadOnlyList<DumpFile> FindDumps(SteamInfo steam) => FindDumps(Games.Dota2, steam);
+
+    public static IReadOnlyList<DumpFile> FindDumps(GameDefinition game, SteamInfo steam)
     {
         var places = new List<(string Dir, string Pattern, string Kind, bool Recursive)>
         {
-            (Path.Combine(LocalAppData, "CrashDumps"), "dota2*.dmp", "Дамп Windows (WER)", false),
+            (Path.Combine(LocalAppData, "CrashDumps"), game.ProcessName + "*.dmp", "Дамп Windows (WER)", false),
             (Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "Minidump"), "*.dmp", "Синий экран (BSOD)", false),
         };
-        if (steam.DotaInstallDir is not null)
+        if (steam.GameInstallDir is not null)
         {
-            places.Add((Path.Combine(steam.DotaInstallDir, "game"), "*.mdmp", "Дамп Dota 2", true));
+            places.Add((Path.Combine(steam.GameInstallDir, "game"), "*.mdmp", $"Дамп {game.ShortName}", true));
         }
 
         if (steam.SteamPath is not null)
@@ -68,12 +71,14 @@ public static class CrashTools
         return result.OrderByDescending(d => d.Time).Take(50).ToList();
     }
 
-    public static IReadOnlyList<string> LogFiles(SteamInfo steam)
+    public static IReadOnlyList<string> LogFiles(SteamInfo steam) => LogFiles(Games.Dota2, steam);
+
+    public static IReadOnlyList<string> LogFiles(GameDefinition game, SteamInfo steam)
     {
         var list = new List<string>();
-        if (steam.DotaInstallDir is not null)
+        if (steam.GameInstallDir is not null)
         {
-            list.Add(Path.Combine(steam.DotaInstallDir, "game", "dota", "console.log"));
+            list.Add(Path.Combine(steam.GameInstallDir, "game", game.ModDir, "console.log"));
         }
 
         if (steam.SteamPath is not null)
@@ -98,13 +103,15 @@ public static class CrashTools
         return reader.ReadToEnd();
     }
 
-    public static IReadOnlyList<CacheLocation> ShaderCaches(SteamInfo steam, IEnumerable<GpuVendor> vendors)
+    public static IReadOnlyList<CacheLocation> ShaderCaches(SteamInfo steam, IEnumerable<GpuVendor> vendors) => ShaderCaches(Games.Dota2, steam, vendors);
+
+    public static IReadOnlyList<CacheLocation> ShaderCaches(GameDefinition game, SteamInfo steam, IEnumerable<GpuVendor> vendors)
     {
         var v = vendors.ToHashSet();
         var list = new List<CacheLocation>();
         foreach (var lib in steam.Libraries)
         {
-            list.Add(new CacheLocation("Кеш шейдеров Steam для Dota 2", Path.Combine(lib, "steamapps", "shadercache", "570"),
+            list.Add(new CacheLocation($"Кеш шейдеров Steam для {game.ShortName}", Path.Combine(lib, "steamapps", "shadercache", game.AppId),
                 "Предкомпилированные шейдеры Steam (в основном Vulkan). Steam скачает/пересоберёт их заново."));
         }
 
@@ -217,19 +224,33 @@ public static class CrashTools
         return list;
     }
 
-    public static IReadOnlyList<Conflict> KnownConflicts { get; } = new[]
+    public static IReadOnlyList<Conflict> KnownConflicts => ConflictsFor(Games.Dota2);
+
+    public static IReadOnlyList<Conflict> ConflictsFor(GameDefinition game)
     {
-        new Conflict("Оверлей Discord", "Discord → Настройки → Игровой оверлей → отключить для Dota 2. Также можно выключить аппаратное ускорение Discord."),
+        var list = new List<Conflict>
+        {
+        new Conflict("Оверлей Discord", $"Discord → Настройки → Игровой оверлей → отключить для {game.Name}. Также можно выключить аппаратное ускорение Discord."),
         new Conflict("MSI Afterburner / RivaTuner", "Оверлей RTSS иногда вызывает вылеты на Vulkan. Разгон из Afterburner — частая причина TDR. Проверьте игру с закрытым Afterburner и сброшенным профилем."),
         new Conflict("NVIDIA App / GeForce Experience", "Оверлей и «Мгновенный повтор» пишут видео в фоне. Отключите повтор, если не пользуетесь; при вылетах — выключите оверлей."),
         new Conflict("Оверлей AMD (Radeon Software)", "Alt+R оверлей и запись: отключите Instant Replay, если не нужен; при вылетах — выключите оверлей метрик."),
-        new Conflict("Оверлей Steam", "Обычно безопасен. При вылетах в модуле gameoverlayrenderer — отключите для Dota 2 в свойствах игры."),
-        new Conflict("Антивирус", "Добавьте папку игры (steamapps\\common\\dota 2 beta) в исключения сканирования — так он не будет проверять файлы при каждой загрузке. Windows Defender не отключайте: достаточно исключения папки. Приложение само антивирус не настраивает."),
+        new Conflict("Оверлей Steam", $"Обычно безопасен. При вылетах в модуле gameoverlayrenderer — отключите для {game.Name} в свойствах игры."),
+        new Conflict("Антивирус", $"Добавьте папку игры (steamapps\\common\\{game.DefaultInstallDir}) в исключения сканирования — так он не будет проверять файлы при каждой загрузке. Windows Defender не отключайте: достаточно исключения папки. Приложение само антивирус не настраивает."),
         new Conflict("Программы-«ускорители» и чистильщики", "Утилиты, которые «освобождают RAM» или меняют реестр, часто вызывают фризы и вылеты. Удалите их."),
-    };
+        };
+        if (game.Id == GameId.Cs2)
+        {
+            list.Add(new Conflict("OBS «Захват игры», макросы, сторонние оверлеи",
+                "CS2 не пускает в игру сторонние модули: такие программы показывают чёрный экран или вызывают ошибку VAC. Используйте «Захват экрана» в OBS и закройте макро-утилиты."));
+        }
 
-    /// <summary>Asks Steam to verify Dota 2 files. Steam shows its own progress window.</summary>
-    public static void StartValidate() => OpenUri("steam://validate/570");
+        return list;
+    }
+
+    /// <summary>Asks Steam to verify the game's files. Steam shows its own progress window.</summary>
+    public static void StartValidate() => StartValidate(Games.Dota2);
+
+    public static void StartValidate(GameDefinition game) => OpenUri($"steam://validate/{game.AppId}");
 
     /// <summary>Steam's official "Clear download cache" (asks to log in again).</summary>
     public static void FlushSteamDownloadCache() => OpenUri("steam://flushconfig");

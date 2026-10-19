@@ -141,7 +141,7 @@ public sealed class AsyncCommand<T> : ICommand
         catch (Exception ex)
         {
             Log.Error("Ошибка команды", ex);
-            System.Windows.MessageBox.Show(ex.Message, "Dota 2 Optimizer");
+            System.Windows.MessageBox.Show(ex.Message, "FrameLab");
         }
         finally
         {
@@ -165,7 +165,9 @@ public sealed class AboutViewModel : ObservableObject
     public ICommand OpenLogsCommand { get; }
     public ICommand RefreshLogCommand { get; }
 
-    public string Version => "Версия " + (Assembly.GetEntryAssembly()?.GetName().Version?.ToString(3) ?? "1.0.0");
+    public string Version => "Версия " + ShortVersion.TrimStart('v');
+
+    public string ShortVersion => "v" + (Assembly.GetEntryAssembly()?.GetName().Version?.ToString(3) ?? "1.0.0");
     public string DataFolder => AppPaths.Root;
 
     public string LogText
@@ -198,23 +200,60 @@ public sealed class AboutViewModel : ObservableObject
 
 public sealed class MainViewModel : ObservableObject
 {
+    // Tab order in MainWindow.xaml: game pages, a section header, then shared pages.
     public const int OptimizeTab = 0;
     public const int IssuesTab = 1;
     public const int MonitorTab = 2;
-    public const int NetworkTab = 4;
+    public const int CrashTab = 3;
+    public const int NetworkTab = 5;
 
     private int _selectedTab;
+    private GameWorkspace _current;
 
     public MainViewModel()
     {
         var services = new AppServices();
-        Wizard = new WizardViewModel(services);
-        Issues = new KnownIssuesViewModel(services, i => SelectedTab = i);
-        Monitor = new MatchMonitorViewModel(services);
-        Crash = new CrashViewModel(services);
+        Dota = new GameWorkspace(services, Core.Game.Games.Dota2, i => SelectedTab = i);
+        Cs2 = new GameWorkspace(services, Core.Game.Games.Cs2, i => SelectedTab = i);
         Network = new NetworkViewModel(services);
         Rollback = new RollbackViewModel(services);
         About = new AboutViewModel();
+        _current = UiState.LastGame() == Core.Game.GameId.Cs2 ? Cs2 : Dota;
+        Select(_current);
+    }
+
+    public GameWorkspace Dota { get; }
+    public GameWorkspace Cs2 { get; }
+
+    /// <summary>The game whose pages are shown.</summary>
+    public GameWorkspace Current
+    {
+        get => _current;
+        private set => Set(ref _current, value);
+    }
+
+    public bool IsDota
+    {
+        get => Current == Dota;
+        set
+        {
+            if (value)
+            {
+                Select(Dota);
+            }
+        }
+    }
+
+    public bool IsCs2
+    {
+        get => Current == Cs2;
+        set
+        {
+            if (value)
+            {
+                Select(Cs2);
+            }
+        }
     }
 
     public int SelectedTab
@@ -223,11 +262,20 @@ public sealed class MainViewModel : ObservableObject
         set => Set(ref _selectedTab, value);
     }
 
-    public WizardViewModel Wizard { get; }
-    public KnownIssuesViewModel Issues { get; }
-    public MatchMonitorViewModel Monitor { get; }
-    public CrashViewModel Crash { get; }
     public NetworkViewModel Network { get; }
     public RollbackViewModel Rollback { get; }
     public AboutViewModel About { get; }
+
+    private void Select(GameWorkspace ws)
+    {
+        var other = ws == Dota ? Cs2 : Dota;
+        other.Wizard.IsActive = false;
+        // Theme first: converters read the accent brushes while the new page's bindings are evaluated.
+        GameTheme.Apply(ws.Game.Id);
+        Current = ws;
+        UiState.SaveLastGame(ws.Game.Id);
+        OnPropertyChanged(nameof(IsDota));
+        OnPropertyChanged(nameof(IsCs2));
+        _ = ws.Wizard.ActivateAsync();
+    }
 }

@@ -99,13 +99,17 @@ public sealed class AppServices
         return messages;
     }
 
-    /// <summary>Restoring video.txt or localconfig.vdf while the game/Steam runs would be overwritten by them on exit.</summary>
+    /// <summary>Restoring a video config or localconfig.vdf while the game/Steam runs would be overwritten by them on exit.</summary>
     public static string? GameOrSteamFileInvolved(ChangeSet set)
     {
         var files = set.Records.Where(r => r.Kind == BackupKind.File && !set.RolledBack).Select(r => r.Path ?? string.Empty).ToList();
-        if (files.Any(f => f.EndsWith("video.txt", StringComparison.OrdinalIgnoreCase)) && SystemScanner.IsProcessRunning("dota2"))
+        foreach (var game in Core.Game.Games.All)
         {
-            return "Закройте Dota 2: иначе при выходе игра перезапишет восстановленный video.txt.";
+            if (files.Any(f => f.EndsWith(game.VideoFileName, StringComparison.OrdinalIgnoreCase) || f.EndsWith("autoexec.cfg", StringComparison.OrdinalIgnoreCase)) &&
+                SystemScanner.IsProcessRunning(game.ProcessName))
+            {
+                return $"Закройте {game.Name}: иначе при выходе игра перезапишет восстановленный файл настроек.";
+            }
         }
 
         if (files.Any(f => f.EndsWith("localconfig.vdf", StringComparison.OrdinalIgnoreCase)) && SystemScanner.IsProcessRunning("steam"))

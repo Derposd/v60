@@ -1,4 +1,5 @@
 using System.Globalization;
+using Dota2Optimizer.Core.Game;
 using Dota2Optimizer.Core.SystemInfo;
 
 namespace Dota2Optimizer.Core.Benchmark;
@@ -49,8 +50,13 @@ public static class MatchAnalyzer
     }
 
     /// <param name="fpsProblem">Why the FPS capture produced nothing (shown to the user), if it did.</param>
-    public static MatchReport Analyze(IReadOnlyList<MatchSample> samples, IReadOnlyList<MinuteFps> minutes, double vramTotalMb, double ramTotalMb, string? fpsProblem = null)
+    /// <param name="game">The recorded game (texts only); Dota 2 when omitted.</param>
+    public static MatchReport Analyze(IReadOnlyList<MatchSample> samples, IReadOnlyList<MinuteFps> minutes, double vramTotalMb, double ramTotalMb, string? fpsProblem = null,
+        GameDefinition? game = null)
     {
+        game ??= Games.Dota2;
+        var name = game.Name;
+        var cs2 = game.Id == GameId.Cs2;
         var findings = new List<Advice>();
 
         double? early = null, late = null, drop = null;
@@ -100,8 +106,8 @@ public static class MatchAnalyzer
             if (memEarly > 0 && memLate > memEarly * 1.5 && memLate - memEarly > 1500)
             {
                 findings.Add(new Advice(Severity.Warning, "Потребление памяти игрой сильно выросло за матч",
-                    $"Память Dota 2 выросла с ~{memEarly:0} до ~{memLate:0} МБ. Это похоже на утечку на стороне игры — приложение исправить её не может. " +
-                    "Перезапускайте Dota 2 между матчами; если повторяется после патча — сообщите Valve (github.com/ValveSoftware/Dota2-Gameplay)."));
+                    $"Память {name} выросла с ~{memEarly:0} до ~{memLate:0} МБ. Это похоже на утечку на стороне игры — приложение исправить её не может. " +
+                    $"Перезапускайте {name} между матчами; если повторяется после патча — сообщите Valve" + (cs2 ? "." : " (github.com/ValveSoftware/Dota2-Gameplay).")));
             }
 
             var gpuLate = last.Average(s => s.GpuUtilPct);
@@ -110,14 +116,17 @@ public static class MatchAnalyzer
             {
                 if (gpuLate >= 92)
                 {
-                    findings.Add(new Advice(Severity.Warning, "Упор в видеокарту в поздних драках",
-                        $"Видеокарта загружена на ~{gpuLate:0}%. Больше эффектов на экране — меньше FPS. Помогут пресет «Максимум FPS» или «Баланс», снижение рендер-масштаба, теней и сглаживания."));
+                    findings.Add(new Advice(Severity.Warning, cs2 ? "Упор в видеокарту" : "Упор в видеокарту в поздних драках",
+                        $"Видеокарта загружена на ~{gpuLate:0}%. Больше эффектов на экране — меньше FPS. Помогут пресет «Максимум FPS» или «Баланс», " +
+                        (cs2 ? "снижение теней, AO, MSAA и разрешения." : "снижение рендер-масштаба, теней и сглаживания.")));
                 }
                 else if (gpuLate < 75)
                 {
-                    findings.Add(new Advice(Severity.Warning, "Упор в процессор в поздних драках",
-                        $"Видеокарта загружена лишь на ~{gpuLate:0}% (CPU ~{cpuUtilLate:0}%): FPS ограничивает процессор — много юнитов, иллюзий и эффектов. " +
-                        "Графика здесь почти не поможет; помогают ограничение FPS (ровнее кадры), закрытие фоновых программ, сравнение -dx11/-vulkan (Vulkan часто меньше нагружает CPU), а также перезапуск игры между матчами."));
+                    findings.Add(new Advice(Severity.Warning, cs2 ? "Упор в процессор" : "Упор в процессор в поздних драках",
+                        $"Видеокарта загружена лишь на ~{gpuLate:0}% (CPU ~{cpuUtilLate:0}%): FPS ограничивает процессор — " +
+                        (cs2 ? "в CS2 это типично для перестрелок, дымов и гранат. " : "много юнитов, иллюзий и эффектов. ") +
+                        "Графика здесь почти не поможет; помогают ограничение FPS (ровнее кадры), закрытие фоновых программ, " +
+                        (cs2 ? "двухканальная память и сравнение DX11 с -vulkan." : "сравнение -dx11/-vulkan (Vulkan часто меньше нагружает CPU), а также перезапуск игры между матчами.")));
                 }
             }
         }
@@ -142,11 +151,11 @@ public static class MatchAnalyzer
         {
             findings.Add(new Advice(Severity.Info, "Явной системной причины не найдено",
                 "Нагрев, память и видеопамять в норме. Скорее всего, падение — это нагрузка самой игры в поздних драках или постепенная деградация без перезапуска. " +
-                "Перезапускайте Dota 2 каждые 2–3 матча и ограничьте FPS, чтобы кадры были ровнее."));
+                $"Перезапускайте {name} каждые 2–3 матча и ограничьте FPS, чтобы кадры были ровнее."));
         }
 
         findings.Add(new Advice(Severity.Info, "Профилактика",
-            "Перезапуск Dota 2 каждые 2–3 матча, ограничение FPS под частоту монитора и закрытый браузер — самые надёжные способы избежать падения FPS в длинных играх."));
+            $"Перезапуск {name} каждые 2–3 матча, ограничение FPS и закрытый браузер — самые надёжные способы избежать падения FPS в длинных играх."));
 
         return new MatchReport(summary, findings.OrderByDescending(f => f.Severity).ToList(), early, late, drop, minutes, samples);
     }

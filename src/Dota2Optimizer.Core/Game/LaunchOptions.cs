@@ -13,6 +13,26 @@ public sealed record LaunchOptionInfo(
     bool Recommended,
     bool Disputed);
 
+/// <summary>Launch options one game understands, plus the ones we call myths and offer to remove.</summary>
+public sealed class LaunchCatalog
+{
+    public required IReadOnlyList<LaunchOptionInfo> All { get; init; }
+    public required IReadOnlyDictionary<string, string> Myths { get; init; }
+
+    /// <summary>"-option value" pairs (besides "+cvar value", which always take a value).</summary>
+    public IReadOnlySet<string> ValueOptions { get; init; } = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+    public required LaunchOptionInfo FpsMax { get; init; }
+
+    /// <summary>Token that switches the renderer away from the default (DX11): "-vulkan".</summary>
+    public string VulkanToken { get; init; } = "-vulkan";
+
+    /// <summary>Token that forces DX11, if the game has one ("-dx11" in Dota 2; CS2 is DX11 without a flag).</summary>
+    public string? Dx11Token { get; init; }
+
+    public LaunchOptionInfo? Find(string token) => All.FirstOrDefault(o => o.Token.Equals(token, StringComparison.OrdinalIgnoreCase));
+}
+
 /// <summary>Known Steam launch options for Dota 2, checked against public references in October 2026.</summary>
 public static class LaunchOptionCatalog
 {
@@ -54,6 +74,7 @@ public static class LaunchOptionCatalog
 
     public static IReadOnlyList<LaunchOptionInfo> All { get; } = new[] { NoVid, Dx11, Vulkan, FpsMax, High, MapPreload, NoJoy, Console, ConDebug };
 
+
     /// <summary>
     /// Options we deliberately do not offer: removed by Valve, belong to other Source games or never did
     /// anything measurable. If found in the user's line we suggest removing them.
@@ -75,6 +96,15 @@ public static class LaunchOptionCatalog
         ["-gl"] = "OpenGL удалён из Dota 2, используйте -vulkan",
         ["-dx12"] = "нет подтверждений поддержки DirectX 12 в Dota 2",
     };
+
+    public static LaunchCatalog Dota { get; } = new()
+    {
+        All = All,
+        Myths = Myths,
+        ValueOptions = new HashSet<string>(new[] { "-threads", "-map", "-dxlevel", "-heapsize" }, StringComparer.OrdinalIgnoreCase),
+        FpsMax = FpsMax,
+        Dx11Token = Dx11.Token,
+    };
 }
 
 public sealed record LaunchOptionsAnalysis(
@@ -85,7 +115,9 @@ public sealed record LaunchOptionsAnalysis(
 /// <summary>Builds a launch options line, keeping anything the user added that we don't manage.</summary>
 public static class LaunchOptionsComposer
 {
-    public static IReadOnlyList<string> Tokenize(string? line)
+    public static IReadOnlyList<string> Tokenize(string? line) => Tokenize(line, LaunchOptionCatalog.Dota);
+
+    public static IReadOnlyList<string> Tokenize(string? line, LaunchCatalog catalog)
     {
         if (string.IsNullOrWhiteSpace(line))
         {
@@ -99,8 +131,7 @@ public static class LaunchOptionsComposer
         {
             var t = raw[i];
             var isCvar = t.StartsWith('+');
-            var takesValue = isCvar || t.Equals("-threads", StringComparison.OrdinalIgnoreCase) || t.Equals("-map", StringComparison.OrdinalIgnoreCase)
-                             || t.Equals("-dxlevel", StringComparison.OrdinalIgnoreCase) || t.Equals("-heapsize", StringComparison.OrdinalIgnoreCase);
+            var takesValue = isCvar || catalog.ValueOptions.Contains(t);
             if (takesValue && i + 1 < raw.Count && !raw[i + 1].StartsWith('-') && !raw[i + 1].StartsWith('+'))
             {
                 tokens.Add(t + " " + raw[i + 1]);
@@ -117,20 +148,22 @@ public static class LaunchOptionsComposer
 
     private static string Head(string token) => token.Split(' ')[0];
 
-    public static LaunchOptionsAnalysis Analyze(string? line)
+    public static LaunchOptionsAnalysis Analyze(string? line) => Analyze(line, LaunchOptionCatalog.Dota);
+
+    public static LaunchOptionsAnalysis Analyze(string? line, LaunchCatalog catalog)
     {
-        var managedHeads = LaunchOptionCatalog.All.Select(o => Head(o.Token)).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var managedHeads = catalog.All.Select(o => Head(o.Token)).ToHashSet(StringComparer.OrdinalIgnoreCase);
         var managed = new List<string>();
         var user = new List<string>();
         var myths = new List<(string, string)>();
-        foreach (var t in Tokenize(line))
+        foreach (var t in Tokenize(line, catalog))
         {
             var head = Head(t);
             if (managedHeads.Contains(head))
             {
                 managed.Add(t);
             }
-            else if (LaunchOptionCatalog.Myths.TryGetValue(head, out var reason))
+            else if (catalog.Myths.TryGetValue(head, out var reason))
             {
                 myths.Add((t, reason));
             }
@@ -147,13 +180,16 @@ public static class LaunchOptionsComposer
     /// <param name="selected">Managed options the user wants (tokens from the catalog).</param>
     /// <param name="fpsMax">Value for +fps_max when selected; ignored otherwise.</param>
     /// <param name="removeMyths">Drop known-useless options found in the current line.</param>
-    public static string Compose(string? current, IEnumerable<string> selected, int? fpsMax, bool removeMyths)
+    public static string Compose(string? current, IEnumerable<string> selected, int? fpsMax, bool removeMyths) =>
+        Compose(current, selected, fpsMax, removeMyths, LaunchOptionCatalog.Dota);
+
+    public static string Compose(string? current, IEnumerable<string> selected, int? fpsMax, bool removeMyths, LaunchCatalog catalog)
     {
-        var analysis = Analyze(current);
+        var analysis = Analyze(current, catalog);
         var result = new List<string>();
         foreach (var token in selected.Distinct(StringComparer.OrdinalIgnoreCase))
         {
-            if (token.Equals(LaunchOptionCatalog.FpsMax.Token, StringComparison.OrdinalIgnoreCase))
+            if (token.Equals(catalog.FpsMax.Token, StringComparison.OrdinalIgnoreCase))
             {
                 if (fpsMax is { } fps)
                 {
@@ -166,10 +202,10 @@ public static class LaunchOptionsComposer
             }
         }
 
-        // -dx11 and -vulkan are mutually exclusive; the later choice in the catalog order is a user error.
-        if (result.Contains("-dx11", StringComparer.OrdinalIgnoreCase) && result.Contains("-vulkan", StringComparer.OrdinalIgnoreCase))
+        // -dx11 and -vulkan are mutually exclusive.
+        if (catalog.Dx11Token is { } dx11 && result.Contains(dx11, StringComparer.OrdinalIgnoreCase) && result.Contains(catalog.VulkanToken, StringComparer.OrdinalIgnoreCase))
         {
-            throw new ArgumentException("Нельзя одновременно выбрать -dx11 и -vulkan");
+            throw new ArgumentException($"Нельзя одновременно выбрать {dx11} и {catalog.VulkanToken}");
         }
 
         if (!removeMyths)
@@ -195,23 +231,23 @@ public static class LaunchOptionsComposer
     }
 }
 
-/// <summary>Reads and writes Dota 2 launch options in Steam's localconfig.vdf.</summary>
+/// <summary>Reads and writes a game's launch options in Steam's localconfig.vdf.</summary>
 public static class LocalConfigEditor
 {
     private static VdfNode? AppsNode(VdfNode root) =>
         root.Path("Software", "Valve", "Steam", "apps") ?? root.Path("Software", "Valve", "Steam", "Apps");
 
-    public static string? GetLaunchOptions(string localConfigText)
+    public static string? GetLaunchOptions(string localConfigText, string appId = SteamLocator.DotaAppId)
     {
         var root = VdfParser.Parse(localConfigText);
-        return AppsNode(root)?.Child(SteamLocator.DotaAppId)?.ValueOf("LaunchOptions");
+        return AppsNode(root)?.Child(appId)?.ValueOf("LaunchOptions");
     }
 
-    public static string SetLaunchOptions(string localConfigText, string launchOptions)
+    public static string SetLaunchOptions(string localConfigText, string launchOptions, string appId = SteamLocator.DotaAppId)
     {
         var root = VdfParser.Parse(localConfigText);
         var apps = AppsNode(root) ?? root.GetOrAddObject("Software").GetOrAddObject("Valve").GetOrAddObject("Steam").GetOrAddObject("apps");
-        var app = apps.GetOrAddObject(SteamLocator.DotaAppId);
+        var app = apps.GetOrAddObject(appId);
         app.SetValue("LaunchOptions", launchOptions);
         return root.Serialize();
     }

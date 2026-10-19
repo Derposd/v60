@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.Windows.Input;
 using Dota2Optimizer.Core.Crash;
+using Dota2Optimizer.Core.Game;
 using Dota2Optimizer.Core.Infrastructure;
 using Dota2Optimizer.Core.SystemInfo;
 
@@ -31,12 +32,14 @@ public sealed class CacheItemVm : ObservableObject
 public sealed class CrashViewModel : ObservableObject
 {
     private readonly AppServices _s;
+    private readonly GameDefinition _game;
     private string _summary = "Нажмите «Анализировать»: будут прочитаны журналы Windows за 30 дней, дампы и логи игры. Ничего не изменяется.";
     private bool _busy;
 
-    public CrashViewModel(AppServices services)
+    public CrashViewModel(AppServices services, GameDefinition game)
     {
         _s = services;
+        _game = game;
         AnalyzeCommand = new AsyncCommand(AnalyzeAsync, () => !_busy);
         ScanCachesCommand = new AsyncCommand(ScanCachesAsync, () => !_busy);
         CleanCachesCommand = new AsyncCommand(CleanCachesAsync, () => !_busy && Caches.Any(c => c.IsSelected));
@@ -71,7 +74,11 @@ public sealed class CrashViewModel : ObservableObject
     public ObservableCollection<DumpFile> Dumps { get; } = new();
     public ObservableCollection<RuntimeCheck> Runtimes { get; } = new();
     public ObservableCollection<CacheItemVm> Caches { get; } = new();
-    public IReadOnlyList<Conflict> Conflicts => CrashTools.KnownConflicts;
+    public IReadOnlyList<Conflict> Conflicts => CrashTools.ConflictsFor(_game);
+
+    public string Title => $"Вылеты {_game.ShortName}";
+
+    public string GameName => _game.Name;
 
     public string Summary
     {
@@ -79,7 +86,8 @@ public sealed class CrashViewModel : ObservableObject
         private set => Set(ref _summary, value);
     }
 
-    private SteamInfo Steam => _s.Snapshot?.Steam ?? new SteamInfo();
+    /// <summary>Steam data from the last scan, or a fresh lookup if nothing was scanned yet.</summary>
+    private SteamInfo Steam => _s.Snapshot is { } snap ? snap.For(_game.Id) : new SteamLocator(_s.Fs, _s.Registry).Locate(_game, SystemScanner.IsProcessRunning);
 
     private async Task AnalyzeAsync()
     {
@@ -89,10 +97,10 @@ public sealed class CrashViewModel : ObservableObject
         {
             var steam = Steam;
             var events = await Task.Run(() => EventLogSource.Read(30));
-            var findings = CrashClassifier.Classify(events);
-            var dumps = await Task.Run(() => CrashTools.FindDumps(steam));
+            var findings = CrashClassifier.Classify(events, _game);
+            var dumps = await Task.Run(() => CrashTools.FindDumps(_game, steam));
             var runtimes = await Task.Run(() => CrashTools.CheckRuntimes(_s.Registry));
-            var logs = await Task.Run(() => CrashTools.LogFiles(steam)
+            var logs = await Task.Run(() => CrashTools.LogFiles(_game, steam)
                 .SelectMany(f =>
                 {
                     try
@@ -112,12 +120,12 @@ public sealed class CrashViewModel : ObservableObject
             Replace(LogFindings, logs);
 
             var crashes = findings.Where(f => f.Severity == Severity.Critical).Sum(f => f.Count);
-            var consoleLog = steam.DotaInstallDir is not null && File.Exists(System.IO.Path.Combine(steam.DotaInstallDir, "game", "dota", "console.log"));
+            var consoleLog = steam.GameInstallDir is not null && File.Exists(System.IO.Path.Combine(steam.GameInstallDir, "game", _game.ModDir, "console.log"));
             Summary = (crashes == 0 ? "Серьёзных сбоев за 30 дней не найдено." : $"Найдено критичных событий: {crashes}. Самые частые причины — сверху.") +
                       (consoleLog ? string.Empty : " console.log не найден: добавьте параметр запуска -condebug, сыграйте до вылета и повторите анализ.");
             if (steam.SteamPath is null)
             {
-                Summary += " Steam не найден — сначала выполните сканирование на вкладке «Оптимизация».";
+                Summary += " Steam не найден.";
             }
         }
         finally
@@ -133,7 +141,7 @@ public sealed class CrashViewModel : ObservableObject
         {
             var vendors = _s.Snapshot?.RealGpus.Select(g => g.Vendor) ?? new[] { GpuVendor.Nvidia, GpuVendor.Amd, GpuVendor.Intel };
             var steam = Steam;
-            var caches = await Task.Run(() => CrashTools.ShaderCaches(steam, vendors));
+            var caches = await Task.Run(() => CrashTools.ShaderCaches(_game, steam, vendors));
             Replace(Caches, caches.Select(c => new CacheItemVm(c)));
         }
         finally
@@ -144,9 +152,9 @@ public sealed class CrashViewModel : ObservableObject
 
     private async Task CleanCachesAsync()
     {
-        if (SystemScanner.IsProcessRunning("dota2"))
+        if (SystemScanner.IsProcessRunning(_game.ProcessName))
         {
-            Ui.Info("Закройте Dota 2 перед очисткой кеша шейдеров.");
+            Ui.Info($"Закройте {_game.Name} перед очисткой кеша шейдеров.");
             return;
         }
 
@@ -176,10 +184,10 @@ public sealed class CrashViewModel : ObservableObject
 
     private void Validate()
     {
-        if (Ui.Confirm("Запустить проверку целостности файлов Dota 2 в Steam?\n\nSteam сверит файлы и докачает повреждённые. Это может занять несколько минут и потребовать трафика."))
+        if (Ui.Confirm($"Запустить проверку целостности файлов {_game.Name} в Steam?\n\nSteam сверит файлы и докачает повреждённые. Это может занять несколько минут и потребовать трафика."))
         {
-            CrashTools.StartValidate();
-            _s.History.Add(new Core.Benchmark.HistoryEntry(DateTime.Now, "Обслуживание", "Проверка целостности файлов", "steam://validate/570"));
+            CrashTools.StartValidate(_game);
+            _s.History.Add(new Core.Benchmark.HistoryEntry(DateTime.Now, "Обслуживание", $"Проверка целостности файлов {_game.ShortName}", $"steam://validate/{_game.AppId}"));
         }
     }
 
