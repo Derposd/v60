@@ -1,3 +1,4 @@
+using Dota2Optimizer.Core.Game;
 using Dota2Optimizer.Core.SystemInfo;
 using Dota2Optimizer.Core.Tweaks;
 
@@ -11,14 +12,23 @@ public static class DiagnosisEngine
         IReadOnlyList<TweakPlan> plans,
         IReadOnlyList<Advice> health,
         IReadOnlyList<RunningApp> background,
+        DateTime today) => Diagnose(Games.Dota2, s, plans, health, background, today);
+
+    public static IReadOnlyList<Advice> Diagnose(
+        GameDefinition game,
+        SystemSnapshot s,
+        IReadOnlyList<TweakPlan> plans,
+        IReadOnlyList<Advice> health,
+        IReadOnlyList<RunningApp> background,
         DateTime today)
     {
         var list = new List<Advice>();
 
-        if (!s.Steam.DotaFound)
+        var steam = s.For(game.Id);
+        if (!steam.GameFound)
         {
-            list.Add(new Advice(Severity.Critical, "Dota 2 не найдена",
-                s.Steam.SteamPath is null ? "Steam не найден в реестре." : "Нет appmanifest_570.acf ни в одной библиотеке Steam. Установите игру или укажите библиотеку в Steam."));
+            list.Add(new Advice(Severity.Critical, $"{game.Name} не найдена",
+                steam.SteamPath is null ? "Steam не найден в реестре." : $"Нет appmanifest_{game.AppId}.acf ни в одной библиотеке Steam. Установите игру или укажите библиотеку в Steam."));
         }
 
         foreach (var gpu in s.RealGpus.Where(g => !g.IsIntegrated || !s.IsHybridGraphics))
@@ -34,15 +44,15 @@ public static class DiagnosisEngine
         if (s.IsHybridGraphics)
         {
             var dgpu = s.RealGpus.First(g => !g.IsIntegrated);
-            if (s.DotaRuntimeGpu is not null && !string.Equals(s.DotaRuntimeGpu, dgpu.Name, StringComparison.OrdinalIgnoreCase))
+            if (steam.RuntimeGpu is not null && !string.Equals(steam.RuntimeGpu, dgpu.Name, StringComparison.OrdinalIgnoreCase))
             {
-                list.Add(new Advice(Severity.Critical, "Dota 2 запущена на встроенной графике",
-                    $"Сейчас игра рендерится на «{s.DotaRuntimeGpu}», а не на «{dgpu.Name}». Примените твик «Dota 2 на мощной видеокарте» и перезапустите игру. На ноутбуке также проверьте режим MUX/«только дискретная графика» в утилите производителя."));
+                list.Add(new Advice(Severity.Critical, $"{game.Name} запущена на встроенной графике",
+                    $"Сейчас игра рендерится на «{steam.RuntimeGpu}», а не на «{dgpu.Name}». Примените твик «{game.ShortName} на мощной видеокарте» и перезапустите игру. На ноутбуке также проверьте режим MUX/«только дискретная графика» в утилите производителя."));
             }
-            else if (s.DotaRuntimeGpu is null)
+            else if (steam.RuntimeGpu is null)
             {
                 list.Add(new Advice(Severity.Info, "Гибридная графика",
-                    $"Встроенная + {dgpu.Name}. Чтобы увидеть, на какой карте реально идёт игра, запустите Dota 2 и нажмите «Пересканировать»."));
+                    $"Встроенная + {dgpu.Name}. Чтобы увидеть, на какой карте реально идёт игра, запустите {game.Name} и нажмите «Пересканировать»."));
             }
         }
 

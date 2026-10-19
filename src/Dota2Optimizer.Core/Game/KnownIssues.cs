@@ -32,7 +32,10 @@ public sealed record KnownIssue(
 /// </summary>
 public static class KnownIssues
 {
-    public static IReadOnlyList<KnownIssue> All { get; } = new[]
+    /// <summary>Dota 2 issues (kept as <see cref="All"/> for existing callers). CS2 issues live in <see cref="Cs2Content"/>.</summary>
+    public static IReadOnlyList<KnownIssue> All => Dota;
+
+    public static IReadOnlyList<KnownIssue> Dota { get; } = new[]
     {
         new KnownIssue("late-game-fps",
             "FPS падает к концу матча или от матча к матчу",
@@ -136,19 +139,21 @@ public static class KnownIssues
 
 public sealed record DiskUsageItem(string Name, string Path, long SizeBytes, string Note);
 
-/// <summary>Reversible Dota-side fixes, planned as normal actions so they get backups and an inline undo.</summary>
-public static class DotaQuickFixes
+/// <summary>Reversible game-side fixes, planned as normal actions so they get backups and an inline undo.</summary>
+public static class QuickFixes
 {
-    public const string ResetVideoId = "fix.reset-video";
-    public const string DisableAutoexecId = "fix.disable-autoexec";
-    public const string SwitchApiId = "fix.switch-api";
+    public static string ResetVideoId(GameDefinition game) => game.FixPrefix + "reset-video";
 
-    /// <summary>Deletes every video.txt copy (game folder and Steam Cloud) so the game recreates defaults. Backups make it undoable.</summary>
-    public static IReadOnlyList<PlannedAction> PlanResetVideo(SteamInfo steam) =>
-        steam.VideoConfigPaths.Select(p => PlannedAction.DeleteFile(p, "Сброс настроек графики: video.txt будет создан игрой заново")).ToList();
+    public static string DisableAutoexecId(GameDefinition game) => game.FixPrefix + "disable-autoexec";
+
+    public static string SwitchApiId(GameDefinition game) => game.FixPrefix + "switch-api";
+
+    /// <summary>Deletes every copy of the video config (game folder and Steam Cloud) so the game recreates defaults. Backups make it undoable.</summary>
+    public static IReadOnlyList<PlannedAction> PlanResetVideo(GameDefinition game, SteamInfo steam) =>
+        steam.VideoConfigPaths.Select(p => PlannedAction.DeleteFile(p, $"Сброс настроек графики: {game.VideoFileName} будет создан игрой заново")).ToList();
 
     public static string? AutoexecPath(SteamInfo steam) =>
-        steam.DotaCfgDir is null ? null : Path.Combine(steam.DotaCfgDir, "autoexec.cfg");
+        steam.GameCfgDir is null ? null : Path.Combine(steam.GameCfgDir, "autoexec.cfg");
 
     /// <summary>Renames autoexec.cfg to autoexec.cfg.disabled (as copy + delete, both journaled).</summary>
     public static IReadOnlyList<PlannedAction> PlanDisableAutoexec(IFileSystem fs, SteamInfo steam)
@@ -166,33 +171,45 @@ public static class DotaQuickFixes
         };
     }
 
-    /// <summary>Current API forced in launch options: "-dx11", "-vulkan" or null (game default, DX11 on Windows).</summary>
-    public static string? CurrentApi(string? launchOptions)
+    /// <summary>Current API forced in launch options: the Vulkan token, the DX11 token or null (game default, DX11 on Windows).</summary>
+    public static string? CurrentApi(string? launchOptions, LaunchCatalog catalog)
     {
-        var managed = LaunchOptionsComposer.Analyze(launchOptions).ManagedTokens;
-        return managed.FirstOrDefault(t => t.Equals("-vulkan", StringComparison.OrdinalIgnoreCase)) ??
-               managed.FirstOrDefault(t => t.Equals("-dx11", StringComparison.OrdinalIgnoreCase));
+        var managed = LaunchOptionsComposer.Analyze(launchOptions, catalog).ManagedTokens;
+        return managed.FirstOrDefault(t => t.Equals(catalog.VulkanToken, StringComparison.OrdinalIgnoreCase)) ??
+               (catalog.Dx11Token is null ? null : managed.FirstOrDefault(t => t.Equals(catalog.Dx11Token, StringComparison.OrdinalIgnoreCase)));
     }
+
+    public static string? CurrentApi(string? launchOptions) => CurrentApi(launchOptions, LaunchOptionCatalog.Dota);
 
     /// <summary>Launch line with the other API, keeping everything else.</summary>
-    public static string SwitchApi(string? launchOptions)
+    public static string SwitchApi(string? launchOptions, LaunchCatalog catalog)
     {
-        var target = CurrentApi(launchOptions) == "-vulkan" ? "-dx11" : "-vulkan";
-        var analysis = LaunchOptionsComposer.Analyze(launchOptions);
+        var onVulkan = CurrentApi(launchOptions, catalog) == catalog.VulkanToken;
+        var analysis = LaunchOptionsComposer.Analyze(launchOptions, catalog);
         var tokens = analysis.ManagedTokens
-            .Where(t => !t.Equals("-dx11", StringComparison.OrdinalIgnoreCase) && !t.Equals("-vulkan", StringComparison.OrdinalIgnoreCase))
-            .Append(target)
-            .Concat(analysis.MythTokens.Select(m => m.Token))
-            .Concat(analysis.UserTokens);
-        return string.Join(' ', tokens);
+            .Where(t => !t.Equals(catalog.VulkanToken, StringComparison.OrdinalIgnoreCase) &&
+                        (catalog.Dx11Token is null || !t.Equals(catalog.Dx11Token, StringComparison.OrdinalIgnoreCase)))
+            .ToList();
+        if (!onVulkan)
+        {
+            tokens.Add(catalog.VulkanToken);
+        }
+        else if (catalog.Dx11Token is not null)
+        {
+            tokens.Add(catalog.Dx11Token);
+        }
+
+        return string.Join(' ', tokens.Concat(analysis.MythTokens.Select(m => m.Token)).Concat(analysis.UserTokens));
     }
 
+    public static string SwitchApi(string? launchOptions) => SwitchApi(launchOptions, LaunchOptionCatalog.Dota);
+
     /// <returns>Actions, the new line, and a reason if the change can't be written right now.</returns>
-    public static (IReadOnlyList<PlannedAction> Actions, string NewLine, string? Blocker) PlanSwitchApi(IFileSystem fs, SteamInfo steam)
+    public static (IReadOnlyList<PlannedAction> Actions, string NewLine, string? Blocker) PlanSwitchApi(GameDefinition game, IFileSystem fs, SteamInfo steam)
     {
         if (steam.LocalConfigPath is null)
         {
-            return (Array.Empty<PlannedAction>(), "-vulkan", "Не найден localconfig.vdf — задайте параметр запуска вручную в Steam.");
+            return (Array.Empty<PlannedAction>(), game.Launch.VulkanToken, "Не найден localconfig.vdf — задайте параметр запуска вручную в Steam.");
         }
 
         string text;
@@ -200,40 +217,41 @@ public static class DotaQuickFixes
         try
         {
             text = fs.ReadAllText(steam.LocalConfigPath);
-            current = LocalConfigEditor.GetLaunchOptions(text);
+            current = LocalConfigEditor.GetLaunchOptions(text, game.AppId);
         }
         catch (VdfParseException ex)
         {
-            return (Array.Empty<PlannedAction>(), "-vulkan", $"Не удалось разобрать localconfig.vdf: {ex.Message}");
+            return (Array.Empty<PlannedAction>(), game.Launch.VulkanToken, $"Не удалось разобрать localconfig.vdf: {ex.Message}");
         }
 
-        var line = SwitchApi(current);
+        var line = SwitchApi(current, game.Launch);
         if (steam.SteamRunning)
         {
             return (Array.Empty<PlannedAction>(), line, "Steam запущен — закройте его полностью или вставьте строку в параметры запуска вручную.");
         }
 
-        var action = PlannedAction.WriteFile(steam.LocalConfigPath, LocalConfigEditor.SetLaunchOptions(text, line), $"Смена API: «{current}» → «{line}»");
+        var action = PlannedAction.WriteFile(steam.LocalConfigPath, LocalConfigEditor.SetLaunchOptions(text, line, game.AppId), $"Смена API: «{current}» → «{line}»");
         return (new[] { action }, line, null);
     }
 
-    /// <summary>Space taken by things Dota accumulates. Shown only; deleting custom games or replays is up to the user.</summary>
-    public static IReadOnlyList<DiskUsageItem> DiskUsage(SteamInfo steam, Func<string, long> dirSize)
+    /// <summary>Space taken by things the game accumulates. Shown only; deleting replays or workshop items is up to the user.</summary>
+    public static IReadOnlyList<DiskUsageItem> DiskUsage(GameDefinition game, SteamInfo steam, Func<string, long> dirSize)
     {
         var list = new List<DiskUsageItem>();
-        if (steam.DotaInstallDir is not null)
+        if (steam.GameInstallDir is not null)
         {
-            var replays = Path.Combine(steam.DotaInstallDir, "game", "dota", "replays");
-            list.Add(new DiskUsageItem("Повторы матчей (.dem)", replays, dirSize(replays), "Скачанные повторы. Можно удалить старые вручную — их можно скачать снова, пока они доступны на серверах."));
+            var replays = Path.Combine(steam.GameInstallDir, "game", game.ModDir, "replays");
+            list.Add(new DiskUsageItem("Повторы и демки (.dem)", replays, dirSize(replays), "Скачанные повторы матчей. Старые можно удалить вручную — их можно скачать снова, пока они доступны на серверах."));
         }
 
         foreach (var lib in steam.Libraries)
         {
-            var workshop = Path.Combine(lib, "steamapps", "workshop", "content", SteamLocator.DotaAppId);
+            var workshop = Path.Combine(lib, "steamapps", "workshop", "content", game.AppId);
             var size = dirSize(workshop);
             if (size > 0)
             {
-                list.Add(new DiskUsageItem("Пользовательские игры (Workshop)", workshop, size, "Файлы кастомок. Неиспользуемые можно отписать в Steam Workshop — Steam удалит их сам."));
+                list.Add(new DiskUsageItem(game.Id == GameId.Cs2 ? "Карты и предметы из Мастерской" : "Пользовательские игры (Workshop)", workshop, size,
+                    "Файлы из Steam Workshop. От неиспользуемых можно отписаться в Мастерской — Steam удалит их сам."));
             }
         }
 

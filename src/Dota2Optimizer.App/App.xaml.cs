@@ -36,7 +36,7 @@ public partial class App : Application
         }
 
         DispatcherUnhandledException += OnUnhandled;
-        Log.Info($"Запуск Dota 2 Optimizer {typeof(App).Assembly.GetName().Version}, Windows {Environment.OSVersion.Version}");
+        Log.Info($"Запуск FrameLab {typeof(App).Assembly.GetName().Version}, Windows {Environment.OSVersion.Version}");
         base.OnStartup(e);
         new MainWindow().Show();
     }
@@ -44,7 +44,7 @@ public partial class App : Application
     private static void OnUnhandled(object sender, DispatcherUnhandledExceptionEventArgs e)
     {
         Log.Error("Необработанная ошибка", e.Exception);
-        MessageBox.Show($"Произошла ошибка: {e.Exception.Message}\n\nПодробности записаны в лог: {Log.CurrentFile}", "Dota 2 Optimizer", MessageBoxButton.OK, MessageBoxImage.Error);
+        MessageBox.Show($"Произошла ошибка: {e.Exception.Message}\n\nПодробности записаны в лог: {Log.CurrentFile}", "FrameLab", MessageBoxButton.OK, MessageBoxImage.Error);
         e.Handled = true;
     }
 }

@@ -131,7 +131,9 @@ public sealed class ReportLine : ObservableObject
 public sealed class WizardViewModel : ObservableObject
 {
     private readonly AppServices _s;
+    private readonly GameDefinition _target;
     private readonly Dictionary<string, bool> _userChoices = new();
+    private SystemSnapshot? _preparedFor;
     private GameOptions _game = new();
     private int _step;
     private bool _busy;
@@ -144,9 +146,10 @@ public sealed class WizardViewModel : ObservableObject
     private VendorGuide? _vendor;
     private bool _suppressReplan;
 
-    public WizardViewModel(AppServices services)
+    public WizardViewModel(AppServices services, GameDefinition game)
     {
         _s = services;
+        _target = game;
         ScanCommand = new AsyncCommand(ScanAsync, () => !Busy);
         NextCommand = new RelayCommand(() => Step++, () => Step < 3 && _s.Snapshot is not null && !Busy);
         BackCommand = new RelayCommand(() => Step--, () => Step > 0 && !Busy);
@@ -170,7 +173,13 @@ public sealed class WizardViewModel : ObservableObject
         OpenPanelCommand = new RelayCommand(OpenVendorPanel, () => Vendor?.PanelCandidates.Count > 0);
         UndoTweakCommand = new AsyncCommand<TweakItemVm>(UndoTweakAsync);
         UndoReportLineCommand = new AsyncCommand<ReportLine>(UndoReportLineAsync);
-        _s.ChangesApplied += () => _ = RefreshAfterChangeAsync();
+        _s.ChangesApplied += () =>
+        {
+            if (IsActive)
+            {
+                _ = RefreshAfterChangeAsync();
+            }
+        };
         SelectRecommendedCommand = new RelayCommand(() =>
         {
             _userChoices.Clear();
@@ -192,6 +201,13 @@ public sealed class WizardViewModel : ObservableObject
     public ICommand SelectRecommendedCommand { get; }
     public ICommand UndoTweakCommand { get; }
     public ICommand UndoReportLineCommand { get; }
+
+    public GameDefinition Target => _target;
+
+    public string GameName => _target.Name;
+
+    /// <summary>The wizard of the game currently shown. Only it rescans after changes; the other one catches up when shown.</summary>
+    public bool IsActive { get; set; }
 
     public ObservableCollection<PassportRow> Passport { get; } = new();
     public ObservableCollection<Advice> Diagnosis { get; } = new();
@@ -258,9 +274,11 @@ public sealed class WizardViewModel : ObservableObject
         }
     }
 
-    public string PresetHint =>
-        $"Пресет по умолчанию подобран под профиль: {ProfileText}. Меняются только существующие ключи video.txt. " +
-        "Разрешение экрана не трогается: на слабых ПК снижается рендер-масштаб, чтобы интерфейс оставался чётким.";
+    public string PresetHint => _target.Id == GameId.Cs2
+        ? $"Пресет по умолчанию подобран под профиль: {ProfileText}. Меняются только существующие ключи {_target.VideoFileName}; разрешение экрана не трогается. " +
+          "Для соревновательной игры важнее ровный FPS: даже на мощном ПК по умолчанию выбран «Баланс»."
+        : $"Пресет по умолчанию подобран под профиль: {ProfileText}. Меняются только существующие ключи {_target.VideoFileName}. " +
+          "Разрешение экрана не трогается: на слабых ПК снижается рендер-масштаб, чтобы интерфейс оставался чётким.";
 
     public bool DryRun
     {
@@ -343,7 +361,11 @@ public sealed class WizardViewModel : ObservableObject
         private set => Set(ref _apiText, value);
     }
 
-    public string HowToCompare => ApiAdvisor.HowToCompare;
+    public string HowToCompare => _target.HowToCompareApi;
+
+    public string MythsLabel => _target.Id == GameId.Cs2
+        ? "Убрать бесполезные параметры из CS:GO (-novid, -tickrate, +cl_updaterate и т. п.)"
+        : "Убрать устаревшие и бесполезные параметры (-threads, -prewarm и т. п.)";
 
     public VendorGuide? Vendor
     {
@@ -373,14 +395,63 @@ public sealed class WizardViewModel : ObservableObject
         {
             var snapshot = await Task.Run(_s.Scan);
             _s.Snapshot = snapshot;
+            await PrepareAsync(snapshot);
+            if (Step == 0)
+            {
+                Step = 1;
+            }
+        }
+        finally
+        {
+            Busy = false;
+        }
+    }
+
+    /// <summary>
+    /// Called when this game's page is shown: uses a scan made on the other game's page, or replans after changes made there.
+    /// </summary>
+    public async Task ActivateAsync()
+    {
+        IsActive = true;
+        var snapshot = _s.Snapshot;
+        if (snapshot is null || ReferenceEquals(snapshot, _preparedFor) || Busy)
+        {
+            return;
+        }
+
+        Busy = true;
+        try
+        {
+            if (_preparedFor is null)
+            {
+                await PrepareAsync(snapshot);
+            }
+            else
+            {
+                _preparedFor = snapshot;
+                Replan();
+            }
+        }
+        finally
+        {
+            Busy = false;
+        }
+    }
+
+    /// <summary>Builds options, plan and diagnosis for this game from a snapshot.</summary>
+    private async Task PrepareAsync(SystemSnapshot snapshot)
+    {
+        {
+            _preparedFor = snapshot;
+            var steam = snapshot.For(_target.Id);
             FillPassport(snapshot);
 
             string? currentLaunch = null;
-            if (snapshot.Steam.LocalConfigPath is not null)
+            if (steam.LocalConfigPath is not null)
             {
                 try
                 {
-                    currentLaunch = LocalConfigEditor.GetLaunchOptions(_s.Fs.ReadAllText(snapshot.Steam.LocalConfigPath));
+                    currentLaunch = LocalConfigEditor.GetLaunchOptions(_s.Fs.ReadAllText(steam.LocalConfigPath), _target.AppId);
                 }
                 catch (Core.Vdf.VdfParseException ex)
                 {
@@ -388,10 +459,10 @@ public sealed class WizardViewModel : ObservableObject
                 }
             }
 
-            _game = TweakCatalog.DefaultGameOptions(snapshot, currentLaunch);
+            _game = TweakCatalog.DefaultGameOptions(_target, snapshot, currentLaunch);
             _suppressReplan = true;
             LaunchOptions.Clear();
-            foreach (var o in LaunchOptionCatalog.All)
+            foreach (var o in _target.Launch.All)
             {
                 LaunchOptions.Add(new LaunchOptionVm(o, _game.LaunchTokens.Contains(o.Token), OnLaunchOptionChanged));
             }
@@ -407,23 +478,25 @@ public sealed class WizardViewModel : ObservableObject
             OnPropertyChanged(nameof(PresetHint));
             _suppressReplan = false;
 
-            var myths = LaunchOptionsComposer.Analyze(currentLaunch).MythTokens;
+            var myths = LaunchOptionsComposer.Analyze(currentLaunch, _target.Launch).MythTokens;
             MythsText = myths.Count == 0
                 ? null
                 : "В текущих параметрах запуска найдены бесполезные/устаревшие: " + string.Join("; ", myths.Select(m => $"{m.Token} — {m.Reason}"));
 
-            var api = ApiAdvisor.Recommend(snapshot.PrimaryGpu, snapshot.Cpu);
-            ApiText = $"Рекомендация для вашей системы: {api.Title} ({api.Token}). {api.Reason}";
-            Vendor = VendorAdvice.For(snapshot.PrimaryGpu, snapshot);
+            var api = ApiAdvisor.Recommend(_target, snapshot.PrimaryGpu, snapshot.Cpu);
+            ApiText = api.Token.Length == 0
+                ? $"Рекомендация для вашей системы: {api.Title}. {api.Reason}"
+                : $"Рекомендация для вашей системы: {api.Title} ({api.Token}). {api.Reason}";
+            Vendor = VendorAdvice.For(snapshot.PrimaryGpu, snapshot, _target);
 
             _userChoices.Clear();
             Tweaks.Clear();
             Replan();
 
-            var health = await Task.Run(() => new HealthChecks(_s.Commands).Run(snapshot));
+            var health = await Task.Run(() => new HealthChecks(_s.Commands).Run(snapshot, _target));
             var background = await Task.Run(BackgroundApps.FindRunning);
             Diagnosis.Clear();
-            foreach (var a in DiagnosisEngine.Diagnose(snapshot, Tweaks.Select(t => t.Plan).ToList(), health, background, DateTime.Now))
+            foreach (var a in DiagnosisEngine.Diagnose(_target, snapshot, Tweaks.Select(t => t.Plan).ToList(), health, background, DateTime.Now))
             {
                 Diagnosis.Add(a);
             }
@@ -433,14 +506,6 @@ public sealed class WizardViewModel : ObservableObject
             Status = snapshot.ScanWarnings.Count == 0
                 ? $"Готово. Профиль: {ProfileClassifier.Describe(snapshot.Profile)}. Нажмите «Далее»."
                 : $"Готово с предупреждениями ({snapshot.ScanWarnings.Count}). Профиль: {ProfileClassifier.Describe(snapshot.Profile)}.";
-            if (Step == 0)
-            {
-                Step = 1;
-            }
-        }
-        finally
-        {
-            Busy = false;
         }
     }
 
@@ -452,12 +517,12 @@ public sealed class WizardViewModel : ObservableObject
         }
 
         // DX11 and Vulkan are mutually exclusive: picking one clears the other.
-        var dx = LaunchOptions.FirstOrDefault(o => o.Token == "-dx11");
-        var vk = LaunchOptions.FirstOrDefault(o => o.Token == "-vulkan");
+        var dx = LaunchOptions.FirstOrDefault(o => o.Token == _target.Launch.Dx11Token);
+        var vk = LaunchOptions.FirstOrDefault(o => o.Token == _target.Launch.VulkanToken);
         if (dx is not null && vk is not null && dx.IsSelected && vk.IsSelected)
         {
             _suppressReplan = true;
-            if (_game.LaunchTokens.Contains("-dx11"))
+            if (_game.LaunchTokens.Contains(dx.Token))
             {
                 dx.IsSelected = false;
             }
@@ -486,7 +551,8 @@ public sealed class WizardViewModel : ObservableObject
 
         if (s.IsHybridGraphics)
         {
-            Passport.Add(new PassportRow("Гибридная графика", s.DotaRuntimeGpu is null ? "да (запустите игру и пересканируйте, чтобы увидеть активную карту)" : $"Dota 2 сейчас рендерится на: {s.DotaRuntimeGpu}"));
+            var runtime = s.For(_target.Id).RuntimeGpu;
+            Passport.Add(new PassportRow("Гибридная графика", runtime is null ? "да (запустите игру и пересканируйте, чтобы увидеть активную карту)" : $"{_target.Name} сейчас рендерится на: {runtime}"));
         }
 
         if (s.Cpu is { } c)
@@ -523,16 +589,17 @@ public sealed class WizardViewModel : ObservableObject
 
         Passport.Add(new PassportRow("Питание", s.PowerPlan?.ActiveName ?? "?"));
         Passport.Add(new PassportRow("Тип ПК", s.IsLaptop ? "Ноутбук" : "Настольный"));
-        Passport.Add(new PassportRow("Steam", s.Steam.SteamPath ?? "не найден"));
-        Passport.Add(new PassportRow("Dota 2", s.Steam.DotaInstallDir is null ? "не найдена" : $"{s.Steam.DotaInstallDir} ({DiskName(s.DotaDiskKind)}){(s.Steam.DotaRunning ? " — запущена" : string.Empty)}"));
-        if (s.Steam.VideoConfigPaths.Count > 0)
+        var steam = s.For(_target.Id);
+        Passport.Add(new PassportRow("Steam", steam.SteamPath ?? "не найден"));
+        Passport.Add(new PassportRow(_target.Name, steam.GameInstallDir is null ? "не найдена" : $"{steam.GameInstallDir} ({DiskName(steam.DiskKind)}){(steam.GameRunning ? " — запущена" : string.Empty)}"));
+        if (steam.VideoConfigPaths.Count > 0)
         {
-            Passport.Add(new PassportRow("video.txt", string.Join("; ", s.Steam.VideoConfigPaths)));
+            Passport.Add(new PassportRow(_target.VideoFileName, string.Join("; ", steam.VideoConfigPaths)));
         }
 
-        if (s.Steam.CloudCfgDirs.Count > 0)
+        if (steam.CloudCfgDirs.Count > 0)
         {
-            Passport.Add(new PassportRow("Steam Cloud", "настройки Dota 2 синхронизируются с облаком — облако может вернуть старые значения после запуска игры"));
+            Passport.Add(new PassportRow("Steam Cloud", $"настройки {_target.Name} синхронизируются с облаком — облако может вернуть старые значения после запуска игры"));
         }
 
         Passport.Add(new PassportRow("Профиль", ProfileClassifier.Describe(s.Profile)));
@@ -566,7 +633,7 @@ public sealed class WizardViewModel : ObservableObject
         }
 
         var ctx = new TweakContext { Snapshot = _s.Snapshot, Registry = _s.Registry, FileSystem = _s.Fs, Commands = _s.Commands, Game = _game };
-        var plans = TweakCatalog.PlanAll(ctx);
+        var plans = TweakCatalog.PlanAll(ctx, _target);
         Tweaks.Clear();
         foreach (var p in plans)
         {
@@ -617,8 +684,12 @@ public sealed class WizardViewModel : ObservableObject
         try
         {
             // Game/Steam may have been started or closed since the scan.
-            var steam = await Task.Run(() => new SteamLocator(_s.Fs, _s.Registry).Locate(SystemScanner.IsProcessRunning));
-            _s.Snapshot = snapshot = snapshot with { Steam = steam };
+            var fresh = await Task.Run(() => new SteamLocator(_s.Fs, _s.Registry).Locate(_target, SystemScanner.IsProcessRunning));
+            var old = snapshot.For(_target.Id);
+            var games = snapshot.Games.ToDictionary(g => g.Key, g => g.Value);
+            games[_target.Id] = fresh with { DiskKind = old.DiskKind, RuntimeGpu = old.RuntimeGpu };
+            _s.Snapshot = snapshot = snapshot with { Games = games };
+            _preparedFor = snapshot;
             Replan();
 
             var selected = Tweaks.Where(t => t.IsSelected).Select(t => t.Plan).ToList();
@@ -758,7 +829,7 @@ public sealed class WizardViewModel : ObservableObject
         Busy = true;
         try
         {
-            _s.Snapshot = await Task.Run(_s.Scan);
+            _s.Snapshot = _preparedFor = await Task.Run(_s.Scan);
             Replan();
         }
         finally

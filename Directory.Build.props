@@ -3,9 +3,9 @@
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <Version>1.1.0</Version>
-    <Company>Dota2Optimizer</Company>
-    <Product>Dota 2 Optimizer</Product>
+    <Version>1.2.0</Version>
+    <Company>FrameLab</Company>
+    <Product>FrameLab</Product>
     <!-- Windows-only API is guarded at runtime; Core also compiles for tests on any OS. -->
     <NoWarn>$(NoWarn);CA1416</NoWarn>
   </PropertyGroup>

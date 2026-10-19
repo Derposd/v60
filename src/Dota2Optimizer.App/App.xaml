@@ -28,6 +28,7 @@
             <vm:EffectSoftConverter x:Key="EffectSoft" />
             <vm:StatusSoftConverter x:Key="StatusSoft" />
             <vm:StepTextConverter x:Key="StepText" />
+            <vm:StepLabelConverter x:Key="StepLabel" />
         </ResourceDictionary>
     </Application.Resources>
 </Application>

@@ -65,7 +65,7 @@ public static class PresentMonTool
 }
 
 /// <summary>
-/// One PresentMon recording of dota2.exe. Runs PresentMon directly when the app is already elevated,
+/// One PresentMon recording of a game process. Runs PresentMon directly when the app is already elevated,
 /// otherwise through a single UAC prompt; its console output goes to a log next to the CSV so a failure
 /// can be explained instead of silently producing no FPS.
 /// </summary>
@@ -74,11 +74,15 @@ public sealed class FpsCapture
     private readonly object _logGate = new();
     private Process? _process;
 
-    private FpsCapture(string csvPath, string logPath)
+    private FpsCapture(string csvPath, string logPath, string exeName)
     {
+        ExeName = exeName;
         CsvPath = csvPath;
         LogPath = logPath;
     }
+
+    /// <summary>Recorded process, e.g. "cs2.exe" (also the process name inside the CSV).</summary>
+    public string ExeName { get; }
 
     public string CsvPath { get; }
     public string LogPath { get; }
@@ -119,12 +123,12 @@ public sealed class FpsCapture
         }
     }
 
-    /// <summary>Starts a whole-match capture that ends by itself when Dota 2 closes (or after 90 minutes).</summary>
-    public static FpsCapture Start(string presentMon)
+    /// <summary>Starts a whole-match capture that ends by itself when the game closes (or after 90 minutes).</summary>
+    public static FpsCapture Start(string presentMon, string exeName = "dota2.exe")
     {
         var dir = PresentMonTool.CaptureFolder;
         var stamp = DateTime.Now.ToString("yyyyMMdd-HHmmss", System.Globalization.CultureInfo.InvariantCulture);
-        var capture = new FpsCapture(Path.Combine(dir, $"match-{stamp}.csv"), Path.Combine(dir, $"match-{stamp}.log"));
+        var capture = new FpsCapture(Path.Combine(dir, $"match-{stamp}.csv"), Path.Combine(dir, $"match-{stamp}.log"), exeName);
         try
         {
             Directory.CreateDirectory(dir);
@@ -135,7 +139,7 @@ public sealed class FpsCapture
             return capture;
         }
 
-        var args = $"--process_name dota2.exe --output_file \"{capture.CsvPath}\" --timed 5400 --terminate_after_timed " +
+        var args = $"--process_name {exeName} --output_file \"{capture.CsvPath}\" --timed 5400 --terminate_after_timed " +
                    "--terminate_on_proc_exit --stop_existing_session --session_name D2OMatch --no_console_stats";
         Log.Info($"Запуск PresentMon: {presentMon} {args}");
         try
@@ -279,7 +283,7 @@ public sealed class FpsCapture
             return "PresentMon не создал файл записи" + (last is null ? string.Empty : ": " + last);
         }
 
-        return "PresentMon работал, но не увидел кадров dota2.exe. Начинайте запись, когда игра уже открыта, " +
+        return $"PresentMon работал, но не увидел кадров {ExeName}. Начинайте запись, когда игра уже открыта, " +
                "и не закрывайте её до конца матча; если используете оверлей записи экрана, попробуйте без него";
     }
 }

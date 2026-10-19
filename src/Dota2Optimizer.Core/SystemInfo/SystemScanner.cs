@@ -49,9 +49,18 @@ public sealed partial class SystemScanner
         var windows = Safe("версия Windows", ScanWindows);
         var power = Safe("план питания", ScanPowerPlan);
         var isLaptop = Safe("тип корпуса", ScanIsLaptop);
-        var steam = Safe("Steam", () => new SteamLocator(_fs, _reg).Locate(IsProcessRunning)) ?? new SteamInfo();
-        var dotaDisk = steam.DotaInstallDir is null ? DiskKind.Unknown : Safe("диск с игрой", () => DiskKindForPath(steam.DotaInstallDir));
-        var runtimeGpu = steam.DotaRunning ? Safe("GPU игры", () => GpuUsageProbe.FindDotaGpu(gpus)) : null;
+        var games = new Dictionary<GameId, SteamInfo>();
+        foreach (var game in Games.All)
+        {
+            var info = Safe($"Steam ({game.ShortName})", () => new SteamLocator(_fs, _reg).Locate(game, IsProcessRunning)) ?? new SteamInfo { Game = game.Id };
+            var installDir = info.GameInstallDir;
+            info = info with
+            {
+                DiskKind = installDir is null ? DiskKind.Unknown : Safe($"диск с {game.ShortName}", () => DiskKindForPath(installDir)),
+                RuntimeGpu = info.GameRunning ? Safe($"GPU {game.ShortName}", () => GpuUsageProbe.FindGameGpu(gpus, game.ProcessName)) : null,
+            };
+            games[game.Id] = info;
+        }
 
         var snapshot = new SystemSnapshot
         {
@@ -59,17 +68,15 @@ public sealed partial class SystemScanner
             Cpu = cpu,
             Memory = memory,
             Disks = disks,
-            DotaDiskKind = dotaDisk,
             Display = display,
             Windows = windows,
             PowerPlan = power,
-            Steam = steam,
+            Games = games,
             IsLaptop = isLaptop,
-            DotaRuntimeGpu = runtimeGpu,
             ScanWarnings = _warnings.ToList(),
         };
         snapshot = snapshot with { Profile = ProfileClassifier.Classify(snapshot.PrimaryGpu, cpu, memory) };
-        Log.Info($"Сканирование завершено: GPU={snapshot.PrimaryGpu?.Name}, профиль={snapshot.Profile}, Dota={steam.DotaInstallDir ?? "не найдена"}");
+        Log.Info($"Сканирование завершено: GPU={snapshot.PrimaryGpu?.Name}, профиль={snapshot.Profile}, {string.Join(", ", games.Values.Select(g => $"{Games.Get(g.Game).ShortName}={g.GameInstallDir ?? "не найдена"}"))}");
         return snapshot;
     }
 

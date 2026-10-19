@@ -7,38 +7,58 @@ namespace Dota2Optimizer.App;
 
 public partial class MainWindow : Window
 {
-    private const int DwmUseImmersiveDarkMode = 20;
-    private const int DwmUseImmersiveDarkModeBefore20H1 = 19;
-    private const int DwmCaptionColor = 35;
+    private const int DwmWindowCornerPreference = 33;
+    private const int DwmCornerRound = 2;
 
     public MainWindow()
     {
         InitializeComponent();
         DataContext = new MainViewModel();
-        SourceInitialized += (_, _) => UseDarkTitleBar();
+        SourceInitialized += (_, _) => UseRoundCorners();
+        StateChanged += (_, _) => OnStateChanged();
     }
 
     [DllImport("dwmapi.dll")]
     private static extern int DwmSetWindowAttribute(IntPtr hwnd, int attribute, ref int value, int size);
 
-    /// <summary>Dark native title bar (Windows 10 20H1+ and 11) and, on Windows 11, a caption colour matching the sidebar.</summary>
-    private void UseDarkTitleBar()
+    /// <summary>Windows 11 rounds the corners of the custom-chrome window like any other window.</summary>
+    private void UseRoundCorners()
     {
         try
         {
             var hwnd = new WindowInteropHelper(this).Handle;
-            var on = 1;
-            if (DwmSetWindowAttribute(hwnd, DwmUseImmersiveDarkMode, ref on, sizeof(int)) != 0)
-            {
-                DwmSetWindowAttribute(hwnd, DwmUseImmersiveDarkModeBefore20H1, ref on, sizeof(int));
-            }
-
-            var caption = 0x0029211E; // COLORREF 0x00BBGGRR for #1E2129
-            DwmSetWindowAttribute(hwnd, DwmCaptionColor, ref caption, sizeof(int));
+            var round = DwmCornerRound;
+            DwmSetWindowAttribute(hwnd, DwmWindowCornerPreference, ref round, sizeof(int));
         }
         catch (Exception ex) when (ex is DllNotFoundException or EntryPointNotFoundException)
         {
-            // Older systems simply keep the default title bar.
+            // Older systems keep square corners.
         }
     }
+
+    /// <summary>A maximized custom-chrome window overhangs the screen by the resize border; pad it back in.</summary>
+    private void OnStateChanged()
+    {
+        var maximized = WindowState == WindowState.Maximized;
+        Root.Margin = maximized ? new Thickness(SystemParameters.WindowResizeBorderThickness.Left + SystemParameters.FixedFrameVerticalBorderWidth) : new Thickness(0);
+        Root.BorderThickness = maximized ? new Thickness(0) : new Thickness(1);
+        MaxButton.Tag = maximized ? "M 2.5,0.5 L 9.5,0.5 L 9.5,7.5 M 0.5,2.5 L 7.5,2.5 L 7.5,9.5 L 0.5,9.5 Z" : "M 0.5,0.5 L 9.5,0.5 L 9.5,9.5 L 0.5,9.5 Z";
+        MaxButton.ToolTip = maximized ? "Восстановить" : "Развернуть";
+    }
+
+    private void OnMinimize(object sender, RoutedEventArgs e) => SystemCommands.MinimizeWindow(this);
+
+    private void OnMaximize(object sender, RoutedEventArgs e)
+    {
+        if (WindowState == WindowState.Maximized)
+        {
+            SystemCommands.RestoreWindow(this);
+        }
+        else
+        {
+            SystemCommands.MaximizeWindow(this);
+        }
+    }
+
+    private void OnClose(object sender, RoutedEventArgs e) => SystemCommands.CloseWindow(this);
 }

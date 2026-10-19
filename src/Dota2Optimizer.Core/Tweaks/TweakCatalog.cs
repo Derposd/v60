@@ -6,25 +6,35 @@ namespace Dota2Optimizer.Core.Tweaks;
 
 public static class TweakCatalog
 {
-    public static IReadOnlyList<Tweak> All { get; } = new Tweak[]
+    private static readonly Dictionary<GameId, IReadOnlyList<Tweak>> Cache = Games.All.ToDictionary(g => g.Id, Create);
+
+    /// <summary>Dota 2 tweaks (kept for existing callers).</summary>
+    public static IReadOnlyList<Tweak> All => For(Games.Dota2);
+
+    /// <summary>Tweaks for one game. Windows-wide tweaks (power plan, Game DVR…) share their id across games.</summary>
+    public static IReadOnlyList<Tweak> For(GameDefinition game) => Cache[game.Id];
+
+    private static IReadOnlyList<Tweak> Create(GameDefinition game) => new Tweak[]
     {
-        new VideoPresetTweak(),
-        new LaunchOptionsTweak(),
-        new GpuPreferenceTweak(),
+        new VideoPresetTweak(game),
+        new LaunchOptionsTweak(game),
+        new GpuPreferenceTweak(game),
         new PowerPlanTweak(),
         new GameDvrTweak(),
         new GameModeTweak(),
-        new ExclusiveFullscreenTweak(),
-        new WindowedGameOptimizationsTweak(),
-        new FullscreenOptimizationsTweak(),
+        new ExclusiveFullscreenTweak(game),
+        new WindowedGameOptimizationsTweak(game),
+        new FullscreenOptimizationsTweak(game),
         new HagsTweak(),
-        new CpuPriorityTweak(),
+        new CpuPriorityTweak(game),
     };
 
-    public static IReadOnlyList<TweakPlan> PlanAll(TweakContext ctx)
+    public static IReadOnlyList<TweakPlan> PlanAll(TweakContext ctx) => PlanAll(ctx, Games.Dota2);
+
+    public static IReadOnlyList<TweakPlan> PlanAll(TweakContext ctx, GameDefinition game)
     {
         var plans = new List<TweakPlan>();
-        foreach (var t in All)
+        foreach (var t in For(game))
         {
             try
             {
@@ -41,7 +51,10 @@ public static class TweakCatalog
     }
 
     /// <summary>Default game options for this PC: preset by profile, sensible launch options, fps cap by refresh rate.</summary>
-    public static GameOptions DefaultGameOptions(SystemSnapshot s, string? currentLaunchOptions = null)
+    public static GameOptions DefaultGameOptions(SystemSnapshot s, string? currentLaunchOptions = null) =>
+        DefaultGameOptions(Games.Dota2, s, currentLaunchOptions);
+
+    public static GameOptions DefaultGameOptions(GameDefinition game, SystemSnapshot s, string? currentLaunchOptions = null)
     {
         var options = new GameOptions
         {
@@ -52,21 +65,32 @@ public static class TweakCatalog
                 _ => VideoPreset.Quality,
             },
         };
-        options.LaunchTokens.Add(LaunchOptionCatalog.NoVid.Token);
+        var catalog = game.Launch;
+        if (game.Id == GameId.Dota2)
+        {
+            options.LaunchTokens.Add(LaunchOptionCatalog.NoVid.Token);
+        }
+
+        if (game.Id == GameId.Cs2)
+        {
+            // A competitive shooter: favour frame rate on every PC, quality is a choice.
+            options.Preset = s.Profile == PcProfile.Strong ? VideoPreset.Balance : VideoPreset.MaxFps;
+        }
+
         var weakOrLaptop = s.Profile == PcProfile.Weak || s.IsLaptop;
         if (weakOrLaptop)
         {
-            options.LaunchTokens.Add(LaunchOptionCatalog.FpsMax.Token);
+            options.LaunchTokens.Add(catalog.FpsMax.Token);
         }
 
         options.FpsMax = LaunchOptionsComposer.SuggestFpsMax(s.Display?.RefreshHz ?? 60, weakOrLaptop, variableRefresh: false);
 
         // Keep whatever managed options the user already has (API choice, -console…); we never drop or force them silently.
-        foreach (var token in LaunchOptionsComposer.Analyze(currentLaunchOptions).ManagedTokens)
+        foreach (var token in LaunchOptionsComposer.Analyze(currentLaunchOptions, catalog).ManagedTokens)
         {
             var parts = token.Split(' ');
-            options.LaunchTokens.Add(LaunchOptionCatalog.All.FirstOrDefault(o => o.Token.Equals(token, StringComparison.OrdinalIgnoreCase))?.Token ?? parts[0]);
-            if (parts[0].Equals(LaunchOptionCatalog.FpsMax.Token, StringComparison.OrdinalIgnoreCase) && parts.Length > 1 &&
+            options.LaunchTokens.Add(catalog.Find(token)?.Token ?? parts[0]);
+            if (parts[0].Equals(catalog.FpsMax.Token, StringComparison.OrdinalIgnoreCase) && parts.Length > 1 &&
                 int.TryParse(parts[1], out var fps))
             {
                 options.FpsMax = fps;

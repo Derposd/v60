@@ -3,7 +3,7 @@ using System.Text.RegularExpressions;
 namespace Dota2Optimizer.Core.Game;
 
 /// <summary>
-/// Text-preserving editor for Dota 2 video.txt. Only keys that already exist in the file are changed;
+/// Text-preserving editor for Source 2 video configs (Dota 2 video.txt, CS2 cs2_video.txt). Only keys that already exist in the file are changed;
 /// the layout, comments and unknown keys stay byte-for-byte the same.
 /// </summary>
 public sealed partial class VideoConfig

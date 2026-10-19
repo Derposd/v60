@@ -34,23 +34,23 @@ public class TweakTests
         IsLaptop = true,
         Display = new DisplayInfo(1920, 1080, 144, "\\\\.\\DISPLAY1"),
         PowerPlan = new PowerPlanInfo(PowerPlanTweak.Balanced, "Сбалансированная", new[] { (PowerPlanTweak.Balanced, "Сбалансированная"), (PowerPlanTweak.HighPerformance, "Высокая производительность") }),
-        Steam = new SteamInfo
+        Games = TestGames.One(new SteamInfo
         {
             SteamPath = @"C:\Steam",
-            DotaInstallDir = @"D:\SteamLibrary\steamapps\common\dota 2 beta",
-            DotaExe = Exe,
+            GameInstallDir = @"D:\SteamLibrary\steamapps\common\dota 2 beta",
+            GameExe = Exe,
             VideoConfigPaths = new[] { Video },
             LocalConfigPath = LocalCfg,
             SteamRunning = steamRunning,
-            DotaRunning = dotaRunning,
-        },
+            GameRunning = dotaRunning,
+        }),
     };
 
     [Fact]
     public void Gpu_preference_merges_with_existing_flags_and_rolls_back()
     {
         _reg.SetValue(RegHive.CurrentUser, GpuPreferenceTweak.Key, Exe, RegValue.Str("AutoHDREnable=0;"));
-        var plan = new GpuPreferenceTweak().Plan(Context());
+        var plan = new GpuPreferenceTweak(Games.Dota2).Plan(Context());
 
         Assert.Equal(TweakStatus.CanApply, plan.Status);
         Assert.True(plan.DefaultSelected);
@@ -66,7 +66,7 @@ public class TweakTests
     [Fact]
     public void Gpu_preference_not_applicable_with_single_gpu()
     {
-        var plan = new GpuPreferenceTweak().Plan(Context(Snapshot(hybrid: false)));
+        var plan = new GpuPreferenceTweak(Games.Dota2).Plan(Context(Snapshot(hybrid: false)));
         Assert.Equal(TweakStatus.NotApplicable, plan.Status);
         Assert.False(plan.DefaultSelected);
     }
@@ -75,7 +75,7 @@ public class TweakTests
     public void Video_preset_blocked_while_game_runs()
     {
         _fs.WriteAllText(Video, VideoConfigTests.Sample);
-        var plan = new VideoPresetTweak().Plan(Context(Snapshot(dotaRunning: true)));
+        var plan = new VideoPresetTweak(Games.Dota2).Plan(Context(Snapshot(dotaRunning: true)));
         Assert.Equal(TweakStatus.Blocked, plan.Status);
         Assert.Empty(plan.Actions);
     }
@@ -84,7 +84,7 @@ public class TweakTests
     public void Video_preset_plans_file_write()
     {
         _fs.WriteAllText(Video, VideoConfigTests.Sample);
-        var plan = new VideoPresetTweak().Plan(Context(game: new GameOptions { Preset = VideoPreset.MaxFps }));
+        var plan = new VideoPresetTweak(Games.Dota2).Plan(Context(game: new GameOptions { Preset = VideoPreset.MaxFps }));
         Assert.Equal(TweakStatus.CanApply, plan.Status);
         var action = Assert.Single(plan.Actions);
         Assert.Equal(ActionKind.WriteFile, action.Kind);
@@ -99,7 +99,7 @@ public class TweakTests
         game.LaunchTokens.Add("-novid");
         game.LaunchTokens.Add("+fps_max");
 
-        var plan = new LaunchOptionsTweak().Plan(Context(Snapshot(steamRunning: true), game));
+        var plan = new LaunchOptionsTweak(Games.Dota2).Plan(Context(Snapshot(steamRunning: true), game));
 
         Assert.Equal(TweakStatus.Blocked, plan.Status);
         Assert.Equal("-novid +fps_max 144", plan.CopyText);
@@ -113,7 +113,7 @@ public class TweakTests
         var game = new GameOptions();
         game.LaunchTokens.Add("-novid");
 
-        var plan = new LaunchOptionsTweak().Plan(Context(game: game));
+        var plan = new LaunchOptionsTweak(Games.Dota2).Plan(Context(game: game));
 
         Assert.Equal(TweakStatus.CanApply, plan.Status);
         Assert.Equal("-novid", LocalConfigEditor.GetLaunchOptions(plan.Actions.Single().Content!));

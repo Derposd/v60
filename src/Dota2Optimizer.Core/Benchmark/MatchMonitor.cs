@@ -6,9 +6,9 @@ using Dota2Optimizer.Core.Infrastructure;
 namespace Dota2Optimizer.Core.Benchmark;
 
 /// <summary>
-/// Samples system-wide performance counters while Dota 2 runs: CPU clock (as % of base), CPU utility,
+/// Samples system-wide performance counters while the game runs: CPU clock (as % of base), CPU utility,
 /// free RAM, the game's memory and VRAM (from the "GPU Process Memory" counters) and 3D load.
-/// Process memory figures come from the system process list; no handle to dota2.exe is opened.
+/// Process memory figures come from the system process list; no handle to the game process is opened.
 /// </summary>
 public sealed partial class MatchMonitor : IDisposable
 {
@@ -19,8 +19,11 @@ public sealed partial class MatchMonitor : IDisposable
     private readonly Dictionary<string, PerformanceCounter> _gpuMem = new();
     private readonly DateTime _start = DateTime.UtcNow;
 
-    public MatchMonitor()
+    private readonly string _processName;
+
+    public MatchMonitor(string processName = "dota2")
     {
+        _processName = processName;
         _cpuPerf = TryCounter("Processor Information", "% Processor Performance", "_Total");
         _cpuUtil = TryCounter("Processor Information", "% Processor Utility", "_Total") ?? TryCounter("Processor", "% Processor Time", "_Total");
         _ramAvail = TryCounter("Memory", "Available MBytes", null);
@@ -51,10 +54,10 @@ public sealed partial class MatchMonitor : IDisposable
         }
     }
 
-    /// <summary>Takes one sample. Returns null when Dota 2 isn't running.</summary>
+    /// <summary>Takes one sample. Returns null when the game isn't running.</summary>
     public MatchSample? Sample()
     {
-        var procs = Process.GetProcessesByName("dota2");
+        var procs = Process.GetProcessesByName(_processName);
         try
         {
             if (procs.Length == 0)
