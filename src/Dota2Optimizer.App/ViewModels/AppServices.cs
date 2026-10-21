@@ -2,8 +2,12 @@ using Dota2Optimizer.Core.Backup;
 using Dota2Optimizer.Core.Benchmark;
 using Dota2Optimizer.Core.Infrastructure;
 using Dota2Optimizer.Core.SystemInfo;
+using Dota2Optimizer.Core.Tweaks;
 
 namespace Dota2Optimizer.App.ViewModels;
+
+/// <summary>One line of an apply report; lines for applied changes carry the change set id for undo.</summary>
+public sealed record ApplyLine(string Text, string? ChangeSetId = null);
 
 /// <summary>Shared services and the latest system snapshot for all tabs.</summary>
 public sealed class AppServices
@@ -16,6 +20,7 @@ public sealed class AppServices
         Executor = new ChangeExecutor(Fs, Registry, Commands, Store);
         History = new HistoryStore(Fs, AppPaths.History);
         ScanCache = new SnapshotCache(Fs, AppPaths.ScanCache);
+        Boost = new GameSessionBoost(Commands, Fs, AppPaths.SessionBoost);
     }
 
     public IFileSystem Fs { get; } = new RealFileSystem();
@@ -25,6 +30,7 @@ public sealed class AppServices
     public ChangeExecutor Executor { get; }
     public HistoryStore History { get; }
     public SnapshotCache ScanCache { get; }
+    public GameSessionBoost Boost { get; }
 
     /// <summary>The saved scan is offered once per start; after that only the «Сканировать» button scans.</summary>
     public bool QuickScanTried { get; set; }
@@ -47,7 +53,111 @@ public sealed class AppServices
         }
     }
 
-    public void NotifyChangesApplied() => ChangesApplied?.Invoke();
+    public void NotifyChangesApplied()
+    {
+        // Mouse and accessibility values are read by Windows at sign-in; push the new ones right away.
+        UserInputSettings.Reload(Registry);
+        ChangesApplied?.Invoke();
+    }
+
+    /// <summary>
+    /// Applies plans with backups: system-level ones in one elevated copy (one UAC prompt, plus the restore point),
+    /// per-user ones in this process. Returns the report lines.
+    /// </summary>
+    public async Task<IReadOnlyList<ApplyLine>> ApplyPlansAsync(IReadOnlyList<TweakPlan> selected, bool createRestorePoint)
+    {
+        var lines = new List<ApplyLine>();
+        var admin = selected.Where(p => p.RequiresAdmin).ToList();
+        var user = selected.Where(p => !p.RequiresAdmin).ToList();
+
+        if (admin.Count > 0 || createRestorePoint)
+        {
+            var request = new ElevatedRequest
+            {
+                Mode = "apply",
+                CreateRestorePoint = createRestorePoint,
+                Items = admin.Select(p => new ElevatedItem { TweakId = p.Tweak.Id, Title = p.Tweak.Title, Actions = p.Actions.ToList() }).ToList(),
+            };
+            lines.Add(new ApplyLine(admin.Count > 0 ? "Запрашиваю права администратора (точка восстановления и системные настройки)…" : "Запрашиваю права администратора для точки восстановления…"));
+            var result = await Task.Run(() => RunElevated(request));
+            if (result is null)
+            {
+                lines.Add(new ApplyLine("Запрос прав администратора отклонён."));
+                if (admin.Count > 0)
+                {
+                    lines.Add(new ApplyLine("Пропущено (нужны права администратора): " + string.Join(", ", admin.Select(a => a.Tweak.Title))));
+                }
+
+                if (user.Count > 0 && createRestorePoint &&
+                    !Ui.Confirm("Точку восстановления создать не удалось (нужны права администратора).\n\nПродолжить без неё? Собственные копии файлов и реестра всё равно будут сохранены."))
+                {
+                    lines.Add(new ApplyLine("Отменено пользователем."));
+                    return lines;
+                }
+            }
+            else
+            {
+                if (result.RestorePointMessage is not null)
+                {
+                    lines.Add(new ApplyLine((result.RestorePointCreated == true ? "✓ " : "⚠ ") + "Точка восстановления: " + result.RestorePointMessage));
+                }
+
+                foreach (var r in result.Items)
+                {
+                    var title = admin.FirstOrDefault(a => a.Tweak.Id == r.TweakId)?.Tweak.Title ?? r.TweakId;
+                    lines.Add(new ApplyLine(r.Success ? $"✓ {title}" : $"✗ {title}: {r.Error} (изменения этого пункта откачены)", r.Success ? r.ChangeSetId : null));
+                    History.Add(new HistoryEntry(DateTime.Now, r.Success ? "Применено" : "Ошибка", title, r.Error ?? string.Empty));
+                }
+            }
+        }
+
+        foreach (var p in user)
+        {
+            var r = await Task.Run(() => Executor.Apply(p.Tweak.Id, p.Tweak.Title, p.Actions, dryRun: false));
+            lines.Add(new ApplyLine(r.Success ? $"✓ {p.Tweak.Title}" : $"✗ {p.Tweak.Title}: {r.Error} (изменения этого пункта откачены)", r.Success ? r.ChangeSetId : null));
+            History.Add(new HistoryEntry(DateTime.Now, r.Success ? "Применено" : "Ошибка", p.Tweak.Title, string.Join("; ", p.Actions.Select(a => a.Description))));
+        }
+
+        return lines;
+    }
+
+    /// <summary>Undoes several change sets, newest first, after one confirmation. Returns null when cancelled or blocked.</summary>
+    public async Task<IReadOnlyList<string>?> UndoManyAsync(IReadOnlyList<string> changeSetIds, string title)
+    {
+        var sets = changeSetIds.Select(Store.Find).Where(s => s is { RolledBack: false }).Cast<ChangeSet>().OrderByDescending(s => s.CreatedUtc).ToList();
+        if (sets.Count == 0)
+        {
+            return Array.Empty<string>();
+        }
+
+        if (!Ui.Confirm($"Отменить «{title}»?\n\n{string.Join("\n", sets.Select(s => "• " + s.Title))}"))
+        {
+            return null;
+        }
+
+        if (sets.Select(GameOrSteamFileInvolved).FirstOrDefault(b => b is not null) is { } blocker)
+        {
+            Ui.Info(blocker);
+            return null;
+        }
+
+        var messages = new List<string>();
+        var adminIds = sets.Where(s => s.RequiresAdminToRollback && !Elevation.IsElevated).Select(s => s.Id).ToList();
+        if (adminIds.Count > 0)
+        {
+            var result = await Task.Run(() => RunElevated(new ElevatedRequest { Mode = "rollback", ChangeSetIds = adminIds }));
+            messages.AddRange(result?.Messages ?? new List<string> { "Права администратора не выданы — системные изменения не отменены." });
+        }
+
+        foreach (var set in sets.Where(s => !adminIds.Contains(s.Id)))
+        {
+            messages.AddRange((await Task.Run(() => Executor.Rollback(set.Id))).Messages);
+        }
+
+        History.Add(new HistoryEntry(DateTime.Now, "Откат", title, string.Join("; ", messages)));
+        NotifyChangesApplied();
+        return messages;
+    }
 
     /// <summary>Latest still-active change set made by a given tweak, if any (used for the inline "Отменить" buttons).</summary>
     public ChangeSet? ActiveChangeFor(string tweakId) =>
@@ -135,6 +245,9 @@ public sealed class AppServices
     /// <summary>The saved scan with games and Windows settings re-read, or null when a full scan is needed.</summary>
     public SystemSnapshot? QuickScan() =>
         ScanCache.Load() is { } cached ? new SystemScanner(Registry, Fs, Commands).Refresh(cached, DateTime.Now) : null;
+
+    /// <summary>Re-reads the PC after changes: the quick path when the saved scan still matches, a full scan otherwise.</summary>
+    public SystemSnapshot Rescan() => QuickScan() ?? Scan();
 
     /// <summary>
     /// Runs a request in an elevated copy of this exe (one UAC prompt). Returns null if the user declined.

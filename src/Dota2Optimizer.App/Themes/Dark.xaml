@@ -714,8 +714,8 @@
                                 <!-- Game header -->
                                 <Grid DockPanel.Dock="Top" Margin="22,26,18,22">
                                     <StackPanel>
-                                        <TextBlock Text="{Binding Current.Genre}" Style="{StaticResource Kicker}" />
-                                        <TextBlock Text="{Binding Current.Name}" FontFamily="{StaticResource DisplayFont}" FontSize="21" FontWeight="Bold" LineHeight="26" TextWrapping="Wrap" />
+                                        <TextBlock Text="Оптимизатор для игр" Style="{StaticResource Kicker}" />
+                                        <TextBlock Text="FrameLab" FontFamily="{StaticResource DisplayFont}" FontSize="21" FontWeight="Bold" LineHeight="26" TextWrapping="Wrap" />
                                     </StackPanel>
                                 </Grid>
                                 <!-- PC card -->

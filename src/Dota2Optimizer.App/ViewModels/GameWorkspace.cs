@@ -21,6 +21,9 @@ public sealed class GameWorkspace
     public string Name => Game.Name;
     public string ShortName => Game.ShortName;
 
+    /// <summary>Header of this game's group in the side navigation.</summary>
+    public string SectionTitle => Game.Name.ToUpperInvariant();
+
     /// <summary>Two- or three-letter mark on the game tile.</summary>
     public string Monogram => Game.Id == GameId.Cs2 ? "CS2" : "D2";
 

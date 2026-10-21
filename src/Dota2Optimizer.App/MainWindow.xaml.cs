@@ -13,8 +13,11 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
-        DataContext = new MainViewModel();
+        var vm = new MainViewModel();
+        DataContext = vm;
         SourceInitialized += (_, _) => UseRoundCorners();
+        Loaded += async (_, _) => await vm.Home.LoadAsync();
+        Closed += (_, _) => vm.Home.Shutdown();
         StateChanged += (_, _) => OnStateChanged();
     }
 

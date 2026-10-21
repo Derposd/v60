@@ -14,6 +14,8 @@ public static class AppPaths
     public static string Backups => Path.Combine(Root, "backups");
     public static string History => Path.Combine(Root, "history.json");
     public static string ScanCache => Path.Combine(Root, "last-scan.json");
+    public static string SessionBoost => Path.Combine(Root, "session-power.txt");
+    public static string SessionBoostOff => Path.Combine(Root, "session-boost-off");
 
     public static void OverrideRoot(string root) => _rootOverride = root;
 }
