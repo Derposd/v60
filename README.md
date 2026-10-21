@@ -6,6 +6,8 @@
 
 ## Скачать
 
+Сайт программы: **https://derposd.github.io/v60/**
+
 **[⬇ Скачать установщик (FrameLab-Setup.exe)](https://github.com/Derposd/v60/releases/latest/download/FrameLab-Setup.exe)**
 
 1. Скачайте файл по ссылке выше и запустите его. Права администратора для установки не нужны.
@@ -143,5 +145,6 @@ src/Dota2Optimizer.Core   логика без UI: описание игр (Game/
 src/Dota2Optimizer.App    WPF (FrameLab.exe; тёмная тема с цветом под игру, русский интерфейс), помощник с правами администратора (--elevated)
 tests/Dota2Optimizer.Tests  xUnit: парсеры, бэкап/откат, твики, классификаторы, сеть, статистика кадров
 installer/                Inno Setup
+site/                     сайт (статическая страница, GitHub Pages через .github/workflows/pages.yml)
 docs/TESTING.md           ручная проверка каждого твика и его отката в чистой VM
 ```
