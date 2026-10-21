@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ru">
+<html lang="ru" data-game="cs2">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -7,136 +7,270 @@
 <meta name="description" content="FrameLab — бесплатная программа для Windows: больше FPS и меньше фризов в Dota 2 и Counter-Strike 2. Оффлайн, не трогает игру, любое изменение отменяется в один клик.">
 <meta property="og:title" content="FrameLab — оптимизация Dota 2 и CS2">
 <meta property="og:description" content="Бесплатно, оффлайн, VAC-безопасно. Пресеты графики, параметры запуска, решения типичных проблем и монитор матча.">
-<meta property="og:image" content="img/cs2-home.jpg">
+<meta property="og:image" content="img/cs2-plan.jpg">
 <meta property="og:type" content="website">
+<meta name="theme-color" content="#09090c">
 <link rel="icon" href="img/favicon.png">
 <!-- No analytics, no cookies, no third-party fonts: the page only loads files from this site. -->
 <style>
   :root {
-    --bg: #0b0c10; --panel: #14151b; --panel2: #1b1c23; --line: #24262e; --text: #eef0f5; --muted: #a2a7b4; --subtle: #6e7482;
-    --amber: #f5a524; --amber2: #d27c0c; --red: #f0453a; --red2: #b5231b; --ok: #34d399;
-    --font: "Segoe UI Variable Text", "Segoe UI", Inter, system-ui, -apple-system, Roboto, sans-serif;
+    --bg: #09090c; --bg2: #0e0f13; --panel: #121318; --panel2: #181920; --line: #22242c; --line2: #2c2f39;
+    --text: #f1f2f6; --muted: #a3a8b5; --subtle: #6c7280;
+    --ok: #3ddc97; --warn: #f5b83d; --crit: #ff5d52; --info: #6aa8ff;
+    --font: "Segoe UI Variable Display", "Segoe UI", Inter, system-ui, -apple-system, Roboto, sans-serif;
+    --mono: "Cascadia Mono", "JetBrains Mono", "SF Mono", Consolas, ui-monospace, monospace;
+    /* game accent, switched by data-game */
+    --a: #f5a524; --a2: #ffcf6b; --a3: #d27c0c; --on-a: #1f1404; --a-rgb: 245,165,36;
   }
+  html[data-game="dota"] { --a: #f0453a; --a2: #ff8a7a; --a3: #b5231b; --on-a: #fff; --a-rgb: 240,69,58; }
+
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html { scroll-behavior: smooth; }
   body { background: var(--bg); color: var(--text); font-family: var(--font); font-size: 17px; line-height: 1.55; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
   a { color: inherit; }
   img { max-width: 100%; height: auto; display: block; }
-  .wrap { max-width: 1160px; margin: 0 auto; padding: 0 24px; }
+  button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+  .wrap { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+  .mono { font-family: var(--mono); }
+  .acc { color: var(--a); transition: color .4s; }
+  *, *::before, *::after { transition-property: background-color, border-color, color, box-shadow; transition-duration: .4s; transition-timing-function: ease; }
 
-  /* nav */
-  nav { position: sticky; top: 0; z-index: 10; background: rgba(11,12,16,.78); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-bottom: 1px solid rgba(255,255,255,.06); }
+  /* ---------- nav ---------- */
+  nav { position: sticky; top: 0; z-index: 20; background: rgba(9,9,12,.72); backdrop-filter: blur(16px) saturate(1.4); -webkit-backdrop-filter: blur(16px) saturate(1.4); border-bottom: 1px solid rgba(255,255,255,.06); }
   nav .wrap { display: flex; align-items: center; gap: 28px; height: 64px; }
-  .brand { display: flex; align-items: center; gap: 12px; font-weight: 800; font-size: 19px; text-decoration: none; letter-spacing: -0.01em; }
-  .brand img { width: 34px; height: 34px; border-radius: 10px; }
-  nav .links { display: flex; gap: 24px; margin-left: auto; font-size: 15px; color: var(--muted); }
+  .brand { display: flex; align-items: center; gap: 11px; font-weight: 800; font-size: 19px; text-decoration: none; letter-spacing: -0.02em; }
+  .brand img { width: 32px; height: 32px; border-radius: 9px; }
+  .brand small { font-family: var(--mono); font-size: 11px; font-weight: 600; color: var(--subtle); border: 1px solid var(--line2); border-radius: 6px; padding: 1px 6px; letter-spacing: 0; }
+  nav .links { display: flex; gap: 26px; margin-left: auto; font-size: 15px; color: var(--muted); }
   nav .links a { text-decoration: none; }
   nav .links a:hover { color: var(--text); }
-  nav .btn { padding: 9px 18px; font-size: 15px; }
 
-  /* buttons */
-  .btn { display: inline-flex; align-items: center; gap: 10px; padding: 15px 26px; border-radius: 14px; font-weight: 800; font-size: 17px; text-decoration: none; transition: transform .15s, box-shadow .15s, background .15s; }
-  .btn svg { width: 20px; height: 20px; flex: none; }
-  .btn-primary { color: #241603; background: linear-gradient(100deg, #ffcf6b, #e08a12); box-shadow: 0 14px 40px rgba(245,165,36,.32), inset 0 1px 0 rgba(255,255,255,.4); }
-  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 18px 50px rgba(245,165,36,.45), inset 0 1px 0 rgba(255,255,255,.4); }
-  .btn-ghost { color: var(--text); background: var(--panel2); border: 1px solid #30333d; }
-  .btn-ghost:hover { background: #24262e; }
+  /* ---------- buttons ---------- */
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 10px; padding: 15px 24px; border-radius: 12px; font-weight: 750; font-size: 16px; text-decoration: none; white-space: nowrap;
+         transition: transform .15s, box-shadow .3s, background .3s, color .3s; }
+  .btn svg { width: 19px; height: 19px; flex: none; }
+  .btn-primary { color: var(--on-a); background: linear-gradient(180deg, var(--a2), var(--a) 55%, var(--a3)); box-shadow: 0 10px 34px rgba(var(--a-rgb), .32), inset 0 1px 0 rgba(255,255,255,.35); }
+  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 16px 44px rgba(var(--a-rgb), .45), inset 0 1px 0 rgba(255,255,255,.35); }
+  .btn-ghost { background: rgba(255,255,255,.04); border: 1px solid var(--line2); }
+  .btn-ghost:hover { background: rgba(255,255,255,.08); }
+  nav .btn { padding: 9px 16px; font-size: 14px; border-radius: 10px; }
 
-  /* hero */
-  .hero { position: relative; padding: 84px 0 40px; overflow: hidden; }
-  .glow { position: absolute; border-radius: 50%; pointer-events: none; }
-  .glow.a { width: 900px; height: 900px; left: -300px; top: -380px; background: radial-gradient(circle, rgba(201,119,12,.42), rgba(201,119,12,0) 65%); }
-  .glow.b { width: 800px; height: 800px; right: -320px; top: 80px; background: radial-gradient(circle, rgba(163,32,27,.38), rgba(163,32,27,0) 65%); }
-  .hero .wrap { position: relative; text-align: center; }
-  .kicker { display: inline-flex; align-items: center; gap: 10px; padding: 7px 14px; border-radius: 999px; font-size: 14px; font-weight: 700; color: #ffd793;
-            background: rgba(245,165,36,.1); border: 1px solid rgba(245,165,36,.3); }
-  .kicker b { color: var(--amber); }
-  h1 { font-size: clamp(40px, 6.4vw, 76px); line-height: 1.02; letter-spacing: -0.04em; font-weight: 900; margin: 22px auto 0; max-width: 900px; }
-  .grad { background: linear-gradient(100deg, #ffe0a3 0%, #f5a524 45%, #ff8a4c 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
-  .lead { font-size: clamp(17px, 2vw, 21px); color: var(--muted); max-width: 720px; margin: 22px auto 0; }
-  .cta-row { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; margin-top: 34px; }
-  .meta { margin-top: 16px; font-size: 14px; color: var(--subtle); }
-  .meta span + span::before { content: "·"; margin: 0 10px; }
-  .games { display: flex; flex-wrap: wrap; gap: 14px; justify-content: center; margin-top: 30px; }
-  .gtile { display: flex; align-items: center; gap: 12px; padding: 10px 18px 10px 10px; border-radius: 16px; background: var(--panel); border: 1px solid var(--line); font-weight: 700; }
-  .gtile i { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; font-style: normal; font-weight: 900; font-size: 15px; }
-  .gtile .d2 { background: linear-gradient(135deg, #f4675d, #a3201b); color: #fff; }
-  .gtile .cs { background: linear-gradient(135deg, #fac25e, #c9770c); color: #2a1a04; }
-  .shot-hero { position: relative; margin: 56px auto 0; width: 100%; max-width: 1080px; border-radius: 18px; overflow: hidden; border: 1px solid rgba(255,255,255,.09);
-               box-shadow: 0 60px 140px rgba(0,0,0,.7), 0 0 120px rgba(245,165,36,.12); }
+  /* ---------- hero ---------- */
+  .hero { position: relative; padding: 72px 0 84px; overflow: hidden; isolation: isolate; }
+  .hero::before { content: ""; position: absolute; inset: 0; z-index: -2;
+    background-image: radial-gradient(rgba(255,255,255,.07) 1px, transparent 1px); background-size: 26px 26px;
+    -webkit-mask-image: radial-gradient(ellipse 80% 70% at 60% 30%, #000 30%, transparent 75%); mask-image: radial-gradient(ellipse 80% 70% at 60% 30%, #000 30%, transparent 75%); }
+  .hero::after { content: ""; position: absolute; z-index: -1; width: 1100px; height: 900px; right: -320px; top: -360px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(var(--a-rgb), .26), rgba(var(--a-rgb), 0) 62%); transition: background .6s; }
+  .hero .wrap { display: grid; grid-template-columns: 1.02fr 1fr; gap: 56px; align-items: center; }
+  .pill { display: inline-flex; align-items: center; gap: 10px; padding: 6px 14px 6px 6px; border-radius: 999px; font-size: 14px; font-weight: 600; color: var(--muted);
+          background: rgba(255,255,255,.04); border: 1px solid var(--line2); text-decoration: none; }
+  .pill b { font-family: var(--mono); font-size: 12px; font-weight: 700; color: var(--on-a); background: var(--a); border-radius: 999px; padding: 3px 9px; }
+  .pill:hover { border-color: rgba(var(--a-rgb), .5); }
+  h1 { font-size: clamp(42px, 5.6vw, 72px); line-height: 1.0; letter-spacing: -0.045em; font-weight: 850; margin-top: 24px; }
+  h1 .acc { display: inline-block; }
+  .lead { font-size: clamp(17px, 1.6vw, 20px); color: var(--muted); max-width: 560px; margin-top: 22px; }
+  .switch { display: inline-flex; margin-top: 30px; padding: 5px; gap: 4px; border-radius: 14px; background: var(--panel); border: 1px solid var(--line2); }
+  .switch button { display: flex; align-items: center; gap: 10px; padding: 8px 16px 8px 8px; border-radius: 10px; font-weight: 700; font-size: 15px; color: var(--muted); }
+  .switch button i { width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center; font-style: normal; font-weight: 900; font-size: 11px; background: var(--panel2); color: var(--subtle); }
+  .switch button[aria-pressed="true"] { background: rgba(var(--a-rgb), .14); color: var(--text); box-shadow: inset 0 0 0 1px rgba(var(--a-rgb), .4); }
+  .switch button[aria-pressed="true"] i { background: var(--a); color: var(--on-a); }
+  .switch button { white-space: nowrap; }
+  .switch .short { display: none; }
+  .cta-row { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 30px; }
+  .meta { display: flex; flex-wrap: wrap; gap: 6px 18px; margin-top: 18px; font-size: 14px; color: var(--subtle); }
+  .meta span { display: inline-flex; align-items: center; gap: 7px; }
+  .meta span::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--ok); }
 
-  /* sections */
-  section { padding: 88px 0; }
-  .sec-head { max-width: 760px; margin-bottom: 40px; }
-  .sec-head .k { font-size: 14px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--amber); }
-  h2 { font-size: clamp(30px, 4vw, 46px); line-height: 1.08; letter-spacing: -0.03em; font-weight: 900; margin-top: 10px; }
-  .sec-head p { color: var(--muted); margin-top: 14px; font-size: 18px; }
+  /* hero visual: example diagnosis */
+  .hud { position: relative; border-radius: 20px; background: linear-gradient(180deg, rgba(24,25,32,.92), rgba(14,15,19,.95)); border: 1px solid var(--line2);
+         box-shadow: 0 50px 120px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.02) inset, 0 0 90px rgba(var(--a-rgb), .10); overflow: hidden; }
+  .hud-top { display: flex; align-items: center; gap: 10px; padding: 14px 18px; border-bottom: 1px solid var(--line); font-size: 13px; color: var(--subtle); }
+  .hud-top .dots { display: flex; gap: 6px; }
+  .hud-top .dots i { width: 10px; height: 10px; border-radius: 50%; background: #2a2c35; }
+  .hud-top .t { margin-left: 6px; font-weight: 600; color: var(--muted); }
+  .hud-top .ex { margin-left: auto; font-family: var(--mono); font-size: 11px; border: 1px solid var(--line2); border-radius: 6px; padding: 2px 7px; }
+  .graph { position: relative; padding: 18px 18px 6px; }
+  .graph-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; }
+  .graph-head .lbl { font-family: var(--mono); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--subtle); }
+  .fps { font-family: var(--mono); font-weight: 700; font-size: 40px; line-height: 1; letter-spacing: -0.03em; }
+  .fps small { font-size: 14px; color: var(--subtle); font-weight: 600; margin-left: 4px; }
+  .fps-stats { display: flex; gap: 16px; font-family: var(--mono); font-size: 12px; color: var(--muted); }
+  .fps-stats b { color: var(--text); font-weight: 600; }
+  #ft { display: block; width: 100%; height: 120px; margin-top: 12px; }
+  .diag { padding: 8px 18px 18px; display: grid; gap: 8px; }
+  .row { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 12px; background: rgba(255,255,255,.025); border: 1px solid var(--line); }
+  .sev { width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center; }
+  .sev svg { width: 17px; height: 17px; }
+  .sev.crit { background: rgba(255,93,82,.13); color: var(--crit); }
+  .sev.warn { background: rgba(245,184,61,.13); color: var(--warn); }
+  .sev.ok { background: rgba(61,220,151,.12); color: var(--ok); }
+  .row b { display: block; font-size: 15px; font-weight: 650; line-height: 1.3; }
+  .row span { display: block; font-size: 13px; color: var(--subtle); line-height: 1.35; margin-top: 2px; }
+  .chip { font-size: 12px; font-weight: 700; padding: 4px 9px; border-radius: 7px; white-space: nowrap; }
+  .chip.hi { color: var(--ok); background: rgba(61,220,151,.12); }
+  .chip.md { color: var(--info); background: rgba(106,168,255,.12); }
+  .chip.lo { color: var(--muted); background: rgba(255,255,255,.06); }
+  .chip.hw { color: #c8a6ff; background: rgba(168,120,255,.13); }
+  .chip.done { color: var(--ok); background: transparent; border: 1px solid rgba(61,220,151,.35); }
+  .hud-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 18px; border-top: 1px solid var(--line); font-size: 13px; color: var(--subtle); }
+  .hud-foot .mini { padding: 8px 14px; border-radius: 9px; font-weight: 700; font-size: 13px; color: var(--on-a); background: var(--a); white-space: nowrap; }
 
-  .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
-  .card { background: linear-gradient(180deg, #16171d, #121318); border: 1px solid var(--line); border-radius: 20px; padding: 26px; }
-  .card .ic { width: 46px; height: 46px; border-radius: 14px; display: grid; place-items: center; background: rgba(245,165,36,.12); color: var(--amber); margin-bottom: 16px; }
-  .card .ic svg { width: 24px; height: 24px; }
-  .card h3 { font-size: 20px; letter-spacing: -0.01em; font-weight: 800; }
-  .card p { color: var(--muted); margin-top: 8px; font-size: 16px; }
+  /* ---------- trust strip ---------- */
+  .strip { border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); background: var(--bg2); }
+  .strip .wrap { display: grid; grid-template-columns: repeat(4, 1fr); }
+  .strip div.it { display: flex; gap: 14px; align-items: flex-start; padding: 26px 22px; border-left: 1px solid var(--line); }
+  .strip div.it:first-child { border-left: 0; padding-left: 0; }
+  .strip svg { width: 22px; height: 22px; flex: none; color: var(--a); margin-top: 2px; }
+  .strip b { display: block; font-size: 16px; }
+  .strip span { display: block; font-size: 14px; color: var(--subtle); line-height: 1.4; margin-top: 3px; }
 
-  /* feature rows with screenshots */
-  .feat { display: grid; grid-template-columns: 1fr 1.25fr; gap: 48px; align-items: center; margin-bottom: 84px; }
-  .feat:last-child { margin-bottom: 0; }
-  .feat.rev { grid-template-columns: 1.25fr 1fr; }
-  .feat.rev .txt { order: 2; }
-  .feat h3 { font-size: clamp(26px, 3vw, 34px); line-height: 1.12; letter-spacing: -0.025em; font-weight: 900; }
-  .feat p { color: var(--muted); margin-top: 14px; }
-  .feat ul { list-style: none; margin-top: 18px; display: grid; gap: 10px; }
-  .feat li { display: flex; gap: 12px; }
-  .feat li::before { content: ""; flex: none; width: 20px; height: 20px; margin-top: 3px; border-radius: 6px; background: rgba(52,211,153,.14) url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M5 12.5l5 5L19 7' fill='none' stroke='%2334d399' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/></svg>") center/14px no-repeat; }
-  .shot { border-radius: 16px; overflow: hidden; border: 1px solid rgba(255,255,255,.09); box-shadow: 0 40px 100px rgba(0,0,0,.6); }
-  .tag { display: inline-block; font-size: 13px; font-weight: 800; padding: 4px 10px; border-radius: 8px; margin-bottom: 14px; }
-  .tag.cs { color: var(--amber); background: rgba(245,165,36,.12); }
-  .tag.d2 { color: #ff8a80; background: rgba(240,69,58,.12); }
-  .tag.all { color: #9bc4ff; background: rgba(96,165,250,.12); }
-  code { white-space: nowrap; font-family: "Cascadia Mono", Consolas, monospace; font-size: .92em; padding: 2px 6px; border-radius: 6px; background: #1e2027; color: #ffd793; }
-  s code { color: #ff8a80; }
-
-  /* honest list */
-  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
-  .list { list-style: none; display: grid; gap: 12px; margin-top: 14px; }
-  .list li { display: flex; gap: 12px; color: #d4d7de; }
-  .list li b { color: var(--text); }
-  .list.no li::before, .list.yes li::before { flex: none; width: 22px; height: 22px; margin-top: 2px; border-radius: 7px; display: grid; place-items: center; font-weight: 900; font-size: 13px; }
-  .list.yes li::before { content: "✓"; color: var(--ok); background: rgba(52,211,153,.14); }
-  .list.no li::before { content: "✕"; color: #ff8a80; background: rgba(240,69,58,.14); }
+  /* ---------- sections ---------- */
+  section { padding: 104px 0; }
+  .head { max-width: 720px; margin-bottom: 48px; }
+  .head.c { margin-left: auto; margin-right: auto; text-align: center; }
+  .k { font-family: var(--mono); font-size: 12px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; color: var(--a); }
+  h2 { font-size: clamp(32px, 4.2vw, 52px); line-height: 1.04; letter-spacing: -0.04em; font-weight: 850; margin-top: 12px; }
+  .head p { color: var(--muted); margin-top: 16px; font-size: 18px; }
 
   /* steps */
-  .steps { counter-reset: s; display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
-  .step { position: relative; padding-top: 56px; }
-  .step::before { counter-increment: s; content: counter(s); position: absolute; left: 26px; top: 22px; width: 38px; height: 38px; border-radius: 12px; display: grid; place-items: center;
-                  font-weight: 900; color: #241603; background: linear-gradient(135deg, #ffcf6b, #e08a12); }
+  .flow { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; position: relative; }
+  .flow::before { content: ""; position: absolute; left: 40px; right: 40px; top: 31px; height: 2px; background: linear-gradient(90deg, rgba(var(--a-rgb), .7), rgba(var(--a-rgb), .1)); }
+  .st { position: relative; }
+  .st .n { position: relative; width: 62px; height: 62px; border-radius: 18px; display: grid; place-items: center; font-family: var(--mono); font-weight: 700; font-size: 18px;
+           background: var(--panel); border: 1px solid var(--line2); color: var(--a); }
+  .st:first-child .n { background: var(--a); color: var(--on-a); border-color: transparent; box-shadow: 0 10px 30px rgba(var(--a-rgb), .35); }
+  .st h3 { font-size: 20px; font-weight: 750; letter-spacing: -0.015em; margin-top: 20px; }
+  .st p { color: var(--muted); font-size: 15.5px; margin-top: 8px; max-width: 260px; }
+
+  /* bento */
+  .bento { display: grid; grid-template-columns: repeat(6, 1fr); gap: 16px; }
+  .tile { position: relative; overflow: hidden; border-radius: 22px; background: linear-gradient(180deg, var(--panel2), var(--panel)); border: 1px solid var(--line); padding: 28px; }
+  .tile:hover { border-color: var(--line2); }
+  .tile.w3 { grid-column: span 3; } .tile.w2 { grid-column: span 2; } .tile.w4 { grid-column: span 4; }
+  .tile h3 { font-size: 22px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.2; }
+  .tile > p { color: var(--muted); margin-top: 8px; font-size: 15.5px; }
+  .tile .tg { display: inline-block; font-family: var(--mono); font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--subtle); margin-bottom: 14px; }
+  .issues { list-style: none; margin-top: 20px; display: grid; gap: 8px; }
+  .issues li { display: flex; align-items: center; gap: 12px; padding: 11px 14px; border-radius: 12px; background: rgba(255,255,255,.025); border: 1px solid var(--line); font-size: 15px; }
+  .issues li::before { content: ""; flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--a); box-shadow: 0 0 10px rgba(var(--a-rgb), .7); }
+  .issues li em { margin-left: auto; font-style: normal; font-size: 12px; font-weight: 700; color: var(--a); white-space: nowrap; }
+  .more { margin-top: 12px; font-size: 14px; color: var(--subtle); }
+  .bars { display: flex; align-items: flex-end; gap: 5px; height: 150px; margin-top: 24px; padding-bottom: 22px; position: relative; border-bottom: 1px dashed var(--line2); }
+  .bars i { flex: 1; border-radius: 4px 4px 2px 2px; background: linear-gradient(180deg, rgba(var(--a-rgb), .95), rgba(var(--a-rgb), .25)); }
+  .bars i.low { background: linear-gradient(180deg, rgba(255,93,82,.95), rgba(255,93,82,.25)); }
+  .bars .ax { position: absolute; left: 0; right: 0; bottom: 0; display: flex; justify-content: space-between; font-family: var(--mono); font-size: 11px; color: var(--subtle); }
+  .verdict { display: flex; gap: 12px; align-items: flex-start; margin-top: 18px; padding: 14px 16px; border-radius: 12px; background: rgba(255,93,82,.07); border: 1px solid rgba(255,93,82,.25); font-size: 14.5px; }
+  .verdict b { color: var(--crit); }
+  .codes { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; }
+  .codes code { font-family: var(--mono); font-size: 13.5px; padding: 6px 10px; border-radius: 8px; background: rgba(255,93,82,.08); border: 1px solid rgba(255,93,82,.2); color: #ff9d94; text-decoration: line-through; text-decoration-color: rgba(255,93,82,.8); }
+  .codes code.keep { text-decoration: none; color: var(--ok); background: rgba(61,220,151,.08); border-color: rgba(61,220,151,.22); }
+  .undo { margin-top: 20px; display: grid; gap: 8px; }
+  .undo div { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 11px 14px; border-radius: 12px; background: rgba(255,255,255,.025); border: 1px solid var(--line); font-size: 14.5px; }
+  .undo div > span:first-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .undo div b { flex: none; font-size: 13px; font-weight: 700; padding: 5px 11px; border-radius: 8px; border: 1px solid var(--line2); color: var(--muted); }
+  .log { margin-top: 20px; font-family: var(--mono); font-size: 12.5px; line-height: 1.7; padding: 14px 16px; border-radius: 12px; background: #0b0c0f; border: 1px solid var(--line); color: var(--subtle); overflow: hidden; }
+  .log .e { color: #ff9d94; } .log .r { color: var(--text); }
+  .ping { margin-top: 20px; display: grid; gap: 8px; }
+  .ping div { display: grid; grid-template-columns: 1fr auto auto; gap: 14px; align-items: center; font-size: 14.5px; padding: 10px 14px; border-radius: 12px; background: rgba(255,255,255,.025); border: 1px solid var(--line); }
+  .ping .ms { font-family: var(--mono); font-size: 13px; color: var(--text); }
+  .ping .j { font-family: var(--mono); font-size: 12px; color: var(--subtle); }
+  .ping .bad .ms { color: var(--warn); }
+
+  /* gallery */
+  .gallery { border-radius: 22px; border: 1px solid var(--line); background: var(--panel); overflow: hidden; }
+  .tabs { display: flex; gap: 4px; padding: 10px; border-bottom: 1px solid var(--line); overflow-x: auto; scrollbar-width: none; }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tabs button { flex: none; padding: 9px 16px; border-radius: 10px; font-weight: 650; font-size: 15px; color: var(--muted); }
+  .tabs button:hover { color: var(--text); }
+  .tabs button[aria-selected="true"] { color: var(--text); background: rgba(var(--a-rgb), .14); box-shadow: inset 0 0 0 1px rgba(var(--a-rgb), .35); }
+  .stage { position: relative; aspect-ratio: 1600 / 1067; background: #0b0c10; }
+  .stage img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity .35s; }
+  .stage img.on { opacity: 1; }
+  .cap { padding: 16px 22px; font-size: 15px; color: var(--muted); border-top: 1px solid var(--line); min-height: 58px; }
+
+  /* honest */
+  .honest { display: grid; grid-template-columns: 1.35fr 1fr; gap: 16px; }
+  table { width: 100%; border-collapse: collapse; font-size: 15px; }
+  th { text-align: left; font-family: var(--mono); font-size: 11px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--subtle); padding: 0 0 12px; }
+  td { padding: 12px 0; border-top: 1px solid var(--line); vertical-align: middle; }
+  td:last-child, th:last-child { text-align: right; padding-left: 12px; }
+  td small { display: block; color: var(--subtle); font-size: 13px; }
+  .no { list-style: none; display: grid; gap: 12px; margin-top: 18px; }
+  .no li { display: flex; gap: 12px; color: #d3d6de; font-size: 15.5px; }
+  .no li::before { content: "✕"; flex: none; width: 22px; height: 22px; margin-top: 1px; border-radius: 7px; display: grid; place-items: center; font-weight: 900; font-size: 12px; color: var(--crit); background: rgba(255,93,82,.12); }
+
+  /* install */
+  .inst { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .inst .tile .n { font-family: var(--mono); font-size: 13px; font-weight: 700; color: var(--a); }
+  .inst .tile h3 { margin-top: 10px; }
 
   /* faq */
-  details { border: 1px solid var(--line); border-radius: 16px; background: var(--panel); padding: 0 22px; margin-bottom: 12px; }
-  summary { cursor: pointer; list-style: none; padding: 20px 0; font-weight: 800; font-size: 18px; display: flex; justify-content: space-between; gap: 16px; }
+  .faq { max-width: 860px; margin: 0 auto; }
+  details { border-bottom: 1px solid var(--line); }
+  details:first-of-type { border-top: 1px solid var(--line); }
+  summary { cursor: pointer; list-style: none; padding: 22px 0; font-weight: 700; font-size: 18px; display: flex; justify-content: space-between; align-items: center; gap: 16px; }
   summary::-webkit-details-marker { display: none; }
-  summary::after { content: "+"; color: var(--amber); font-size: 24px; line-height: 1; transition: transform .2s; }
+  summary::after { content: ""; flex: none; width: 28px; height: 28px; border-radius: 8px; border: 1px solid var(--line2);
+    background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M12 6v12M6 12h12' stroke='%23a3a8b5' stroke-width='2' stroke-linecap='round'/></svg>") center/14px no-repeat; transition: transform .25s; }
   details[open] summary::after { transform: rotate(45deg); }
-  details p { color: var(--muted); padding: 0 0 20px; }
+  details p { color: var(--muted); padding: 0 44px 22px 0; }
 
-  /* final cta */
-  .final { position: relative; overflow: hidden; text-align: center; border-radius: 28px; padding: 64px 24px; border: 1px solid rgba(245,165,36,.28);
-           background: radial-gradient(ellipse at 20% 0%, rgba(245,165,36,.22), transparent 60%), radial-gradient(ellipse at 90% 100%, rgba(240,69,58,.2), transparent 55%), var(--panel); }
-  .final img { width: 84px; height: 84px; border-radius: 24px; margin: 0 auto 20px; box-shadow: 0 20px 60px rgba(255,90,44,.4); }
+  /* final */
+  .final { position: relative; overflow: hidden; text-align: center; border-radius: 28px; padding: 80px 24px; border: 1px solid rgba(var(--a-rgb), .3);
+           background: radial-gradient(ellipse 70% 90% at 50% 0%, rgba(var(--a-rgb), .22), transparent 70%), var(--panel); }
+  .final::before { content: ""; position: absolute; inset: 0; background-image: radial-gradient(rgba(255,255,255,.06) 1px, transparent 1px); background-size: 22px 22px;
+    -webkit-mask-image: radial-gradient(ellipse 60% 70% at 50% 0%, #000, transparent 80%); mask-image: radial-gradient(ellipse 60% 70% at 50% 0%, #000, transparent 80%); }
+  .final > * { position: relative; }
+  .final img { width: 80px; height: 80px; border-radius: 22px; margin: 0 auto 24px; box-shadow: 0 20px 60px rgba(var(--a-rgb), .4); }
+  .final p { color: var(--muted); margin: 16px auto 0; max-width: 540px; }
+  .final .cta-row { justify-content: center; }
 
   footer { padding: 40px 0 56px; color: var(--subtle); font-size: 14px; border-top: 1px solid var(--line); }
   footer .wrap { display: flex; flex-wrap: wrap; gap: 14px 28px; justify-content: space-between; }
   footer a { color: var(--muted); }
 
-  @media (max-width: 900px) {
+  /* reveal on scroll */
+  .rv { opacity: 0; transform: translateY(18px); transition: opacity .7s ease, transform .7s ease; }
+  .rv.in { opacity: 1; transform: none; }
+  @media (prefers-reduced-motion: reduce) { .rv { opacity: 1; transform: none; transition: none; } html { scroll-behavior: auto; } }
+
+  @media (max-width: 1020px) {
+    .hero .wrap { grid-template-columns: 1fr; gap: 44px; }
+    .hero { padding-top: 52px; }
+    .bento { grid-template-columns: repeat(2, 1fr); }
+    .tile.w3, .tile.w4 { grid-column: span 2; } .tile.w2 { grid-column: span 1; }
+    .honest { grid-template-columns: 1fr; }
+    .strip .wrap { grid-template-columns: 1fr 1fr; }
+    .strip div.it:nth-child(3) { border-left: 0; padding-left: 0; }
+    .strip div.it:nth-child(n+3) { border-top: 1px solid var(--line); }
+  }
+  @media (max-width: 720px) {
+    body { font-size: 16px; }
+    .wrap { padding: 0 16px; }
     nav .links { display: none; }
     nav .btn { margin-left: auto; }
-    .grid3, .steps, .two { grid-template-columns: 1fr; }
-    .feat, .feat.rev { grid-template-columns: 1fr; gap: 26px; margin-bottom: 64px; }
-    .feat.rev .txt { order: 0; }
-    section { padding: 64px 0; }
-    .hero { padding-top: 56px; }
+    section { padding: 72px 0; }
+    .flow { grid-template-columns: 1fr 1fr; gap: 28px 16px; }
+    .flow::before { display: none; }
+    .bento, .inst { grid-template-columns: 1fr; }
+    .tile.w2, .tile.w3, .tile.w4 { grid-column: auto; }
+    .tile { padding: 22px; }
+    .strip .wrap { grid-template-columns: 1fr; }
+    .strip div.it { border-left: 0; padding: 18px 0; }
+    .strip div.it + div.it { border-top: 1px solid var(--line); }
+    .cta-row .btn { flex: 1 1 100%; }
+    .row { grid-template-columns: auto 1fr; }
+    .row .chip { grid-column: 2; justify-self: start; }
+    .fps { font-size: 32px; }
+    .fps-stats { display: none; }
+    details p { padding-right: 0; }
+    .switch { display: flex; }
+    .switch button { flex: 1; }
+    .switch .full { display: none; }
+    .switch .short { display: inline; }
+    .hud-foot > span:first-child { display: none; }
+    .hud-foot { justify-content: flex-end; }
   }
 </style>
 </head>
@@ -144,127 +278,224 @@
 
 <nav>
   <div class="wrap">
-    <a class="brand" href="#"><img src="img/logo.png" alt="">FrameLab</a>
-    <div class="links"><a href="#features">Возможности</a><a href="#honest">Честно</a><a href="#install">Установка</a><a href="#faq">Вопросы</a></div>
+    <a class="brand" href="#"><img src="img/logo.png" alt="">FrameLab<small class="ver-tag">v<span class="ver">1.2.1</span></small></a>
+    <div class="links"><a href="#how">Как работает</a><a href="#features">Возможности</a><a href="#screens">Скриншоты</a><a href="#honest">Честно</a><a href="#faq">Вопросы</a></div>
     <a class="btn btn-primary" href="https://github.com/Derposd/v60/releases/latest/download/FrameLab-Setup.exe">Скачать</a>
   </div>
 </nav>
 
 <header class="hero">
-  <div class="glow a"></div><div class="glow b"></div>
   <div class="wrap">
-    <span class="kicker"><b>Новое</b> Версия <span class="ver">1.2</span> — теперь и для Counter-Strike 2</span>
-    <h1>Больше FPS и меньше фризов <span class="grad">в Dota 2 и CS2</span></h1>
-    <p class="lead">FrameLab сканирует ваш ПК, находит, что мешает игре, и исправляет это. Честно: у каждой настройки указан реальный эффект, а любое изменение отменяется в один клик.</p>
-    <div class="cta-row">
-      <a class="btn btn-primary" href="https://github.com/Derposd/v60/releases/latest/download/FrameLab-Setup.exe">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10.5l5 5 5-5M5 20h14"/></svg>
-        Скачать для Windows</a>
-      <a class="btn btn-ghost" href="https://github.com/Derposd/v60/releases/latest/download/FrameLab.exe">Версия без установки</a>
+    <div>
+      <a class="pill" href="https://github.com/Derposd/v60/releases/latest"><b>v<span class="ver">1.2.1</span></b>Скан ПК теперь сохраняется</a>
+      <h1>Найдите, что съедает FPS <span class="acc" data-g-name>в CS2</span></h1>
+      <p class="lead">FrameLab сканирует ПК и настройки игры, показывает, что мешает, по важности, и исправляет это. У каждой настройки честный эффект, а любое изменение отменяется в один клик.</p>
+      <div class="switch" role="group" aria-label="Игра">
+        <button type="button" data-set="dota" aria-pressed="false"><i>D2</i>Dota 2</button>
+        <button type="button" data-set="cs2" aria-pressed="true"><i>CS2</i><span class="full">Counter-Strike 2</span><span class="short">CS2</span></button>
+      </div>
+      <div class="cta-row">
+        <a class="btn btn-primary" href="https://github.com/Derposd/v60/releases/latest/download/FrameLab-Setup.exe">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10.5l5 5 5-5M5 20h14"/></svg>
+          Скачать для Windows</a>
+        <a class="btn btn-ghost" href="https://github.com/Derposd/v60/releases/latest/download/FrameLab.exe">Версия без установки</a>
+      </div>
+      <div class="meta"><span>Бесплатно</span><span>Windows 10 и 11</span><span>Без регистрации</span><span>Открытый код</span></div>
     </div>
-    <div class="meta"><span>Бесплатно</span><span>Windows 10 и 11</span><span>~60 МБ</span><span>Без регистрации</span></div>
-    <div class="games"><div class="gtile"><i class="d2">D2</i>Dota 2</div><div class="gtile"><i class="cs">CS2</i>Counter-Strike 2</div></div>
-    <img class="shot-hero" src="img/cs2-home.jpg" width="1600" height="1067" alt="Главный экран FrameLab: выбор игры и мастер оптимизации">
+
+    <div class="hud" aria-label="Пример диагноза в FrameLab">
+      <div class="hud-top"><span class="dots"><i></i><i></i><i></i></span><span class="t">Диагноз · <span data-g-short>CS2</span></span><span class="ex">пример</span></div>
+      <div class="graph">
+        <div class="graph-head">
+          <div><div class="lbl">Время кадра</div><div class="fps" id="fpsv">—<small>FPS</small></div></div>
+          <div class="fps-stats"><span>1% low <b id="low">—</b></span><span>фризы <b id="spk">—</b></span></div>
+        </div>
+        <canvas id="ft" aria-hidden="true"></canvas>
+      </div>
+      <div class="diag" id="diag"></div>
+      <div class="hud-foot"><span>Ничего не меняется без вашего подтверждения</span><span class="mini">Применить выбранное</span></div>
+    </div>
   </div>
 </header>
 
-<section id="principles">
+<div class="strip">
   <div class="wrap">
-    <div class="grid3">
-      <div class="card"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.5l8 3v5.5c0 5-3.5 8.8-8 10.5-4.5-1.7-8-5.5-8-10.5V5.5z"/><path d="M8.5 12l2.5 2.5 4.5-5"/></svg></div>
-        <h3>Не трогает игру</h3><p>Не читает и не меняет память игры, без инъекций и хуков. Меняются только конфиги игры и настройки Windows — VAC-безопасно.</p></div>
-      <div class="card"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5.5L4 10.5l5 5M4 10.5h10.5c3 0 5.5 2.5 5.5 5.5v2.5"/></svg></div>
-        <h3>Отмена в один клик</h3><p>Перед каждым изменением сохраняется копия. Кнопка «Отменить» рядом с каждым пунктом, «Откатить всё» и точка восстановления Windows.</p></div>
-      <div class="card"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 9C8 4 16 4 21.5 9M5.5 12.5c4-3.5 9-3.5 13 0M8.8 16c1.8-1.5 4.6-1.5 6.4 0"/><path d="M4 4l16 16"/></svg></div>
-        <h3>Оффлайн</h3><p>Без аккаунтов, рекламы, телеметрии и автообновлений. В сеть программа выходит только по кнопке теста пинга.</p></div>
+    <div class="it"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.5l8 3v5.5c0 5-3.5 8.8-8 10.5-4.5-1.7-8-5.5-8-10.5V5.5z"/><path d="M8.5 12l2.5 2.5 4.5-5"/></svg><div><b>Не трогает игру</b><span>Без инъекций и чтения памяти — VAC-безопасно</span></div></div>
+    <div class="it"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5.5L4 10.5l5 5M4 10.5h10.5c3 0 5.5 2.5 5.5 5.5v2.5"/></svg><div><b>Отмена в один клик</b><span>Копия перед каждым изменением</span></div></div>
+    <div class="it"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 9C8 4 16 4 21.5 9M5.5 12.5c4-3.5 9-3.5 13 0M8.8 16c1.8-1.5 4.6-1.5 6.4 0"/><path d="M4 4l16 16"/></svg><div><b>Оффлайн</b><span>Без аккаунтов, рекламы и телеметрии</span></div></div>
+    <div class="it"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 7l-5 5 5 5M16 7l5 5-5 5M13.5 4l-3 16"/></svg><div><b>Открытый код</b><span>Можно проверить, что делает программа</span></div></div>
+  </div>
+</div>
+
+<section id="how">
+  <div class="wrap">
+    <div class="head rv"><div class="k">Как работает</div><h2>Четыре шага — <span class="acc">и всё под контролем</span></h2>
+      <p>Мастер ведёт от сканирования до отчёта. По умолчанию программа сначала только показывает, что изменит.</p></div>
+    <div class="flow rv">
+      <div class="st"><div class="n">01</div><h3>Сканирование</h3><p>Видеокарта и драйвер, процессор, память, диск, монитор, питание, Steam и игра. Результат сохраняется.</p></div>
+      <div class="st"><div class="n">02</div><h3>Диагноз</h3><p>Что мешает игре — по важности: проблемы, предупреждения и то, что уже настроено.</p></div>
+      <div class="st"><div class="n">03</div><h3>План</h3><p>Пресет графики под ваш ПК, параметры запуска, настройки Windows. Спорное выключено.</p></div>
+      <div class="st"><div class="n">04</div><h3>Применение</h3><p>Отчёт по каждому шагу и кнопка «Отменить» рядом с каждым пунктом.</p></div>
     </div>
   </div>
 </section>
 
-<section id="features" style="padding-top:20px">
+<section id="features" style="padding-top:0">
   <div class="wrap">
-    <div class="sec-head"><div class="k">Возможности</div><h2>Всё, что мешает игре, — <span class="grad">в одном окне</span></h2>
-      <p>Выберите игру слева: для каждой свой мастер, свои пресеты, своя база проблем и даже свой цвет интерфейса.</p></div>
+    <div class="head rv"><div class="k">Возможности</div><h2>Всё, что мешает игре, — <span class="acc">в одном окне</span></h2>
+      <p>Для каждой игры свой мастер, свои пресеты и своя база проблем. Переключите игру сверху — содержимое поменяется.</p></div>
 
-    <div class="feat">
-      <div class="txt"><span class="tag cs">CS2 · Dota 2</span><h3>Мастер за 4 шага</h3>
-        <p>Сканирование → диагноз → план → применение. По умолчанию программа только показывает, что изменит.</p>
-        <ul><li>Паспорт ПК: видеокарта и возраст драйвера, память и каналы, диск, монитор</li><li>Пресеты «Максимум FPS / Баланс / Качество» под ваш профиль ПК</li><li>Параметры запуска: полезные — добавит, мусор — предложит убрать</li></ul></div>
-      <img class="shot" src="img/cs2-plan.jpg" loading="lazy" width="1600" height="1067" alt="План оптимизации CS2: пресеты графики и параметры запуска">
-    </div>
+    <div class="bento">
+      <div class="tile w3 rv">
+        <span class="tg">Проблемы и решения · <span data-g-short>CS2</span></span>
+        <h3>Выберите симптом — получите причину и исправление</h3>
+        <p>Внутри пошаговое решение и кнопки-исправления: сброс графики, отключение autoexec, DX11 ↔ Vulkan, очистка кеша шейдеров. Всё отменяется там же.</p>
+        <ul class="issues" id="issues"></ul>
+        <div class="more" id="issues-more"></div>
+      </div>
 
-    <div class="feat rev">
-      <div class="txt"><span class="tag cs">Counter-Strike 2</span><h3>Мифы из гайдов по CS:GO — долой</h3>
-        <p>В CS2 нет вступительного ролика, сетевые rate-команды убраны вместе с переходом на subtick, а DirectX 9 остался в CS:GO. Программа найдёт такие параметры и предложит убрать, ваши собственные не тронет.</p>
-        <ul><li><span style="display:flex;flex-wrap:wrap;gap:8px"><s><code>-novid</code></s><s><code>-tickrate 128</code></s><s><code>+cl_updaterate</code></s><s><code>-d3d9ex</code></s></span></li><li>Динамические тени не выключаются ни в одном пресете — по ним видно врага</li><li>Подсказки по NVIDIA Reflex и AMD Anti-Lag 2</li></ul></div>
-      <img class="shot" src="img/cs2-issues.jpg" loading="lazy" width="1600" height="1067" alt="Проблемы CS2 с пошаговыми решениями">
-    </div>
+      <div class="tile w3 rv">
+        <span class="tg">Монитор матча</span>
+        <h3>Почему FPS падает к концу игры</h3>
+        <p>Запишите матч — в конце график FPS по минутам и причина просадки. FPS пишет встроенный Intel PresentMon, к процессу игры программа не обращается.</p>
+        <div class="bars" id="bars" aria-hidden="true"><div class="ax"><span>0 мин</span><span>15</span><span>30</span><span>45</span></div></div>
+        <div class="verdict"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ff5d52" stroke-width="2.2" stroke-linecap="round"><path d="M12 8v5M12 16.5v.5"/><circle cx="12" cy="12" r="9.5"/></svg>
+          <span><b>Пример вывода:</b> частота процессора упала до 62% от базовой — перегрев или ограничение питания.</span></div>
+      </div>
 
-    <div class="feat">
-      <div class="txt"><span class="tag cs">CS2 · Dota 2</span><h3>Проблемы и решения</h3>
-        <p>Выберите симптом — внутри причина, пошаговое решение и исправления в один клик.</p>
-        <ul><li>Просадки в дыму и замесах, фризы после обновления, микрофризы</li><li>«VAC не удалось проверить сеанс», чёрный экран в OBS, «ватная» мышь</li><li>Сброс графики, отключение autoexec, DX11 ↔ Vulkan — всё отменяемо</li></ul></div>
-      <img class="shot" src="img/dota-crash.jpg" loading="lazy" width="1600" height="1067" alt="Диагностика вылетов Dota 2">
-    </div>
+      <div class="tile w2 rv">
+        <span class="tg">Параметры запуска</span>
+        <h3>Мифы из старых гайдов — долой</h3>
+        <p data-g-myths-text>В CS2 нет вступительного ролика, rate-команды ушли вместе с subtick. Найдёт такое и предложит убрать.</p>
+        <div class="codes" id="myths"></div>
+      </div>
 
-    <div class="feat rev">
-      <div class="txt"><span class="tag all">Для всех игр</span><h3>Монитор матча и вылеты</h3>
-        <p>Почему FPS падает к концу игры? Запишите матч — в конце будет график FPS по минутам и причина: нагрев, видеопамять, ОЗУ, упор в процессор или видеокарту.</p>
-        <ul><li>FPS пишет Intel PresentMon (встроен), к процессу игры программа не обращается</li><li>Журнал Windows за 30 дней: модуль сбоя переводится в понятную причину</li><li>Тест сети: проблема у вас, у провайдера или на маршруте до Valve</li></ul></div>
-      <img class="shot" src="img/cs2-monitor.jpg" loading="lazy" width="1600" height="1067" alt="Монитор матча">
+      <div class="tile w2 rv">
+        <span class="tg">Откат</span>
+        <h3>Любое изменение — обратимо</h3>
+        <p>Копия перед каждым шагом, «Откатить всё» и точка восстановления Windows.</p>
+        <div class="undo">
+          <div><span>Графический пресет <span data-g-short>CS2</span></span><b>Отменить</b></div>
+          <div><span>Фоновая запись Game Bar</span><b>Отменить</b></div>
+          <div><span>План питания</span><b>Отменить</b></div>
+        </div>
+      </div>
+
+      <div class="tile w2 rv">
+        <span class="tg">Вылеты и сбои</span>
+        <h3>Журнал Windows — понятным языком</h3>
+        <p>30 дней событий: модуль сбоя переводится в причину.</p>
+        <div class="log"><div class="e">Display 4101 · nvlddmkm</div><div class="r">→ сбой драйвера видеокарты</div><div class="e">Kernel-Power 41</div><div class="r">→ ПК выключился без завершения</div></div>
+      </div>
+
+      <div class="tile w4 rv">
+        <span class="tg">Сеть</span>
+        <h3>Лаги у вас, у провайдера или на маршруте до Valve</h3>
+        <p>Пинг, потери и jitter до роутера, публичных DNS и релеев Valve. Wi-Fi или кабель, уровень сигнала, фоновый трафик. Значения ниже — пример.</p>
+        <div class="ping">
+          <div><span>Роутер</span><span class="ms">2 мс</span><span class="j">±1</span></div>
+          <div><span>Публичный DNS</span><span class="ms">14 мс</span><span class="j">±2</span></div>
+          <div class="bad"><span>Релей Valve (Стокгольм)</span><span class="ms">48 мс · 3% потерь</span><span class="j">±19</span></div>
+        </div>
+      </div>
+
+      <div class="tile w2 rv">
+        <span class="tg">Ноутбуки</span>
+        <h3>Игра на мощной видеокарте</h3>
+        <p>На ноутбуках с двумя GPU показывает, на какой карте реально идёт игра, и переключает на дискретную.</p>
+        <div class="undo"><div><span>Сейчас: встроенная</span><span class="chip lo">iGPU</span></div><div><span>После: дискретная</span><span class="chip hi">Высокий</span></div></div>
+      </div>
     </div>
   </div>
 </section>
 
-<section id="honest">
+<section id="screens" style="padding-top:0">
   <div class="wrap">
-    <div class="sec-head"><div class="k">Честно</div><h2>Без «ускорителей» и <span class="grad">волшебных кнопок</span></h2>
-      <p>У каждой настройки метка эффекта: высокий, средний, низкий или «зависит от железа». Спорное помечено и выключено по умолчанию.</p></div>
-    <div class="two">
-      <div class="card"><h3>Что делает</h3><ul class="list yes">
-        <li><span><b>Пресеты графики</b> — меняет только существующие ключи конфига, остальное байт в байт</span></li>
-        <li><span><b>Игра на мощной видеокарте</b> на ноутбуках с двумя GPU</span></li>
-        <li><span><b>Ограничение FPS</b> — меньше нагрев и троттлинг, ровнее кадры</span></li>
-        <li><span><b>Фоновая запись Game Bar</b>, план питания, игровой режим</span></li>
-        <li><span><b>Кеш шейдеров</b> — очистка при фризах после обновления</span></li></ul></div>
-      <div class="card"><h3>Чего намеренно не делает</h3><ul class="list no">
-        <li><span>Не отключает Defender, обновления и UAC</span></li>
-        <li><span>Не «чистит реестр» и не «освобождает RAM»</span></li>
-        <li><span>Не меняет TCP/Nagle «для пинга» — игры идут через сеть Valve</span></li>
-        <li><span>Не разгоняет и не правит профили драйвера</span></li>
-        <li><span>Не скачивает ничего сама и не собирает данные</span></li></ul></div>
+    <div class="head rv"><div class="k">Скриншоты</div><h2>Так выглядит <span class="acc">программа</span></h2></div>
+    <div class="gallery rv">
+      <div class="tabs" role="tablist">
+        <button role="tab" aria-selected="true" data-i="0">План оптимизации</button>
+        <button role="tab" aria-selected="false" data-i="1">Проблемы</button>
+        <button role="tab" aria-selected="false" data-i="2">Вылеты</button>
+        <button role="tab" aria-selected="false" data-i="3">Монитор матча</button>
+        <button role="tab" aria-selected="false" data-i="4">Главная</button>
+      </div>
+      <div class="stage">
+        <img class="on" src="img/cs2-plan.jpg" width="1600" height="1067" alt="План оптимизации CS2: пресеты графики и параметры запуска" data-cap="Шаг «План»: пресет под ваш профиль ПК, параметры запуска, настройки Windows. У каждого пункта — эффект и статус.">
+        <img src="img/cs2-issues.jpg" loading="lazy" width="1600" height="1067" alt="Проблемы CS2 с пошаговыми решениями" data-cap="«Проблемы»: поиск по симптомам, причина, шаги и исправления в один клик.">
+        <img src="img/dota-crash.jpg" loading="lazy" width="1600" height="1067" alt="Диагностика вылетов Dota 2" data-cap="«Вылеты и сбои»: журнал Windows, дампы и логи игры, очистка кешей шейдеров, проверка файлов.">
+        <img src="img/cs2-monitor.jpg" loading="lazy" width="1600" height="1067" alt="Монитор матча" data-cap="«Монитор матча»: нажмите «Начать запись» перед игрой — после матча будет график и причина просадок.">
+        <img src="img/dota-home.jpg" loading="lazy" width="1600" height="1067" alt="Главный экран FrameLab для Dota 2" data-cap="Игры слева, у каждой свой цвет интерфейса. Общие разделы: сеть, откат, о программе.">
+      </div>
+      <div class="cap" id="cap">Шаг «План»: пресет под ваш профиль ПК, параметры запуска, настройки Windows. У каждого пункта — эффект и статус.</div>
     </div>
   </div>
 </section>
 
-<section id="install">
+<section id="honest" style="padding-top:0">
   <div class="wrap">
-    <div class="sec-head"><div class="k">Установка</div><h2>Три шага — <span class="grad">и можно играть</span></h2></div>
-    <div class="steps">
-      <div class="card step"><h3>Скачайте установщик</h3><p>FrameLab-Setup.exe с GitHub. Права администратора для установки не нужны. Старая версия «Dota 2 Optimizer» обновится сама.</p></div>
-      <div class="card step"><h3>Разрешите запуск</h3><p>Если Windows покажет «Windows защитила ваш компьютер» — «Подробнее» → «Выполнить в любом случае». Так бывает с программами без платной подписи.</p></div>
-      <div class="card step"><h3>Выберите игру</h3><p>Dota 2 или CS2 слева → «Сканировать ПК» → посмотрите план → «Применить выбранное».</p></div>
+    <div class="head rv"><div class="k">Честно</div><h2>Без «ускорителей» и <span class="acc">волшебных кнопок</span></h2>
+      <p>Эффект каждой настройки подписан прямо в программе. Спорное помечено и выключено по умолчанию.</p></div>
+    <div class="honest">
+      <div class="tile rv">
+        <table>
+          <thead><tr><th>Что меняет</th><th>Эффект</th></tr></thead>
+          <tbody>
+            <tr><td>Графический пресет<small>только существующие ключи конфига, остальное байт в байт</small></td><td><span class="chip hi">Высокий</span></td></tr>
+            <tr><td>Игра на мощной видеокарте<small>ноутбуки с двумя GPU</small></td><td><span class="chip hi">Высокий</span></td></tr>
+            <tr><td>Параметры запуска<small>полезные добавит, бесполезные предложит убрать</small></td><td><span class="chip md">Средний</span></td></tr>
+            <tr><td>Фоновая запись Xbox Game Bar</td><td><span class="chip md">Средний</span></td></tr>
+            <tr><td>План питания, HAGS, полноэкранный режим</td><td><span class="chip hw">Зависит от железа</span></td></tr>
+            <tr><td>Игровой режим Windows</td><td><span class="chip lo">Низкий</span></td></tr>
+            <tr><td>Высокий приоритет процесса<small>спорно — выключено по умолчанию</small></td><td><span class="chip lo">Низкий</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="tile rv">
+        <h3>Чего намеренно не делает</h3>
+        <ul class="no">
+          <li>Не отключает Defender, обновления и UAC</li>
+          <li>Не «чистит реестр» и не «освобождает RAM»</li>
+          <li>Не меняет TCP/Nagle «для пинга» — игры идут через сеть Valve</li>
+          <li>Не разгоняет и не правит профили драйвера</li>
+          <li>Не скачивает ничего сама и не собирает данные</li>
+        </ul>
+      </div>
     </div>
   </div>
 </section>
 
-<section id="faq" style="padding-top:20px">
-  <div class="wrap" style="max-width:860px">
-    <div class="sec-head"><div class="k">Вопросы</div><h2>Частые вопросы</h2></div>
-    <details><summary>Меня не забанят? Это безопасно для VAC?</summary><p>Программа не вмешивается в процесс игры: не читает и не меняет её память, не встраивает свои модули. Она меняет только файлы настроек игры, параметры запуска в Steam и настройки Windows — то же самое, что вы можете сделать руками в меню.</p></details>
-    <details><summary>Почему Windows или браузер предупреждают о файле?</summary><p>У программы нет платного сертификата подписи кода, поэтому SmartScreen показывает предупреждение для новых файлов. Скачивайте только по ссылкам с этой страницы — они ведут на официальную страницу релизов на GitHub.</p></details>
-    <details><summary>Насколько вырастет FPS?</summary><p>Зависит от железа и от того, что было настроено раньше. Больше всего дают пресет графики, запуск на дискретной видеокарте в ноутбуках и отключение фоновой записи. Проверить эффект можно в «Мониторе матча».</p></details>
-    <details><summary>Как всё вернуть, как было?</summary><p>Рядом с каждым изменением есть кнопка «Отменить», а на вкладке «Откат» — «Откатить всё». Копии хранятся в %LOCALAPPDATA%\Dota2Optimizer и не удаляются вместе с программой.</p></details>
-    <details><summary>Программа платная? Где подвох?</summary><p>Бесплатно, без рекламы и регистрации. Код открыт на GitHub — можно проверить, что программа делает.</p></details>
+<section id="install" style="padding-top:0">
+  <div class="wrap">
+    <div class="head rv"><div class="k">Установка</div><h2>Три шага — <span class="acc">и можно играть</span></h2></div>
+    <div class="inst">
+      <div class="tile rv"><div class="n">01</div><h3>Скачайте установщик</h3><p>FrameLab-Setup.exe с GitHub. Права администратора для установки не нужны. Старая версия обновится сама.</p></div>
+      <div class="tile rv"><div class="n">02</div><h3>Разрешите запуск</h3><p>Если появится «Windows защитила ваш компьютер» — «Подробнее» → «Выполнить в любом случае». Так бывает у программ без платной подписи.</p></div>
+      <div class="tile rv"><div class="n">03</div><h3>Выберите игру</h3><p>Dota 2 или CS2 слева → «Сканировать ПК» → посмотрите план → «Применить выбранное».</p></div>
+    </div>
   </div>
 </section>
 
-<section style="padding-top:20px">
+<section id="faq" style="padding-top:0">
   <div class="wrap">
-    <div class="final">
+    <div class="head c rv"><div class="k">Вопросы</div><h2>Частые вопросы</h2></div>
+    <div class="faq rv">
+      <details><summary>Меня не забанят? Это безопасно для VAC?</summary><p>Программа не вмешивается в процесс игры: не читает и не меняет её память, не встраивает свои модули. Она меняет только файлы настроек игры, параметры запуска в Steam и настройки Windows — то же самое, что можно сделать руками в меню.</p></details>
+      <details><summary>Почему Windows или браузер предупреждают о файле?</summary><p>У программы нет платного сертификата подписи кода, поэтому SmartScreen показывает предупреждение для новых файлов. Скачивайте только по ссылкам с этой страницы — они ведут на официальную страницу релизов на GitHub.</p></details>
+      <details><summary>Насколько вырастет FPS?</summary><p>Зависит от железа и от того, что было настроено раньше. Больше всего дают пресет графики, запуск на дискретной видеокарте в ноутбуках и отключение фоновой записи. Проверить эффект можно в «Мониторе матча».</p></details>
+      <details><summary>Нужно ли сканировать ПК при каждом запуске?</summary><p>Нет. С версии 1.2.1 результат сохраняется: при следующем запуске программа сразу показывает диагноз, а Steam, игры и настройки Windows перепроверяет за секунду. Полное сканирование повторится само, если сменилась видеокарта, драйвер или процессор.</p></details>
+      <details><summary>Как всё вернуть, как было?</summary><p>Рядом с каждым изменением есть кнопка «Отменить», а на вкладке «Откат» — «Откатить всё». Копии хранятся в %LOCALAPPDATA%\Dota2Optimizer и не удаляются вместе с программой.</p></details>
+      <details><summary>Программа платная? Где подвох?</summary><p>Бесплатно, без рекламы и регистрации. Код открыт на GitHub — можно проверить, что программа делает.</p></details>
+    </div>
+  </div>
+</section>
+
+<section style="padding-top:0">
+  <div class="wrap">
+    <div class="final rv">
       <img src="img/logo.png" alt="">
-      <h2>Попробуйте <span class="grad">FrameLab</span></h2>
-      <p style="color:var(--muted);margin:14px auto 0;max-width:560px">Бесплатно для Windows 10 и 11. Dota 2 и Counter-Strike 2.</p>
+      <h2>Попробуйте <span class="acc">FrameLab</span></h2>
+      <p>Бесплатно для Windows 10 и 11. Dota 2 и Counter-Strike 2.</p>
       <div class="cta-row"><a class="btn btn-primary" href="https://github.com/Derposd/v60/releases/latest/download/FrameLab-Setup.exe">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10.5l5 5 5-5M5 20h14"/></svg>
         Скачать FrameLab</a><a class="btn btn-ghost" href="https://github.com/Derposd/v60/releases">Все версии</a></div>
@@ -281,11 +512,126 @@
 </footer>
 
 <script>
-  // Shows the current version from GitHub's public release list; the page works the same without it.
+(() => {
+  const ICON = {
+    crit: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 7.5v6M12 17v.5"/></svg>',
+    warn: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17v.3"/></svg>',
+    ok: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>'
+  };
+  // Content per game, taken from the app's own issue base, launch options and tweak list.
+  const GAMES = {
+    cs2: {
+      name: 'в CS2', short: 'CS2',
+      diag: [
+        ['crit', 'CS2 запускается на встроенной видеокарте', 'Ноутбук с двумя GPU — переключить на дискретную', 'hi', 'Высокий'],
+        ['warn', 'Включена фоновая запись Xbox Game Bar', 'Пишет видео в фоне и отнимает кадры', 'md', 'Средний'],
+        ['warn', 'В параметрах запуска мифы из CS:GO', '-novid -tickrate 128 ничего не делают в CS2', 'md', 'Средний'],
+        ['ok', 'Игровой режим Windows уже включён', 'Менять ничего не нужно', 'done', 'Настроено']
+      ],
+      issues: ['Низкий FPS или просадки в дыму, на молотовах и в перестрелках', 'Задержка ввода, «ватная» мышь', '«VAC не удалось проверить ваш игровой сеанс»', 'OBS или запись показывают чёрный экран вместо игры', 'Фризы в первых раундах после обновления игры или драйвера'],
+      total: 11,
+      mythsText: 'В CS2 нет вступительного ролика, rate-команды ушли вместе с subtick, DirectX 9 остался в CS:GO. Найдёт такое и предложит убрать.',
+      myths: ['-novid', '-tickrate 128', '+cl_updaterate', '-threads'],
+      keep: ['+fps_max', '-vulkan'],
+      fps: 214
+    },
+    dota: {
+      name: 'в Dota 2', short: 'Dota 2',
+      diag: [
+        ['crit', 'Драйвер видеокарты старше года', 'Обновите с сайта NVIDIA, AMD или Intel', 'hi', 'Высокий'],
+        ['warn', 'Включена фоновая запись Xbox Game Bar', 'Пишет видео в фоне и отнимает кадры', 'md', 'Средний'],
+        ['warn', 'Устаревшие параметры запуска', '-threads и -prewarm не работают в Source 2', 'md', 'Средний'],
+        ['ok', 'Dota 2 установлена на SSD', 'Загрузки и подгрузка героев быстрые', 'done', 'Настроено']
+      ],
+      issues: ['FPS падает к концу матча или от матча к матчу', 'Фризы и рывки после обновления игры или драйвера', 'Регулярные микрофризы во время игры', 'Чёрный экран или вылет при запуске', 'Лаги, «телепорты», скачки пинга'],
+      total: 8,
+      mythsText: 'Параметры старого Source и удалённые Valve ключи. Найдёт такое и предложит убрать, ваши собственные не тронет.',
+      myths: ['-threads 8', '-prewarm', '-dxlevel 95', '-dx9'],
+      keep: ['-dx11', '+fps_max'],
+      fps: 168
+    }
+  };
+
+  const root = document.documentElement;
+  const esc = s => s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  let game = 'cs2';
+
+  function render() {
+    const g = GAMES[game];
+    root.dataset.game = game;
+    document.querySelectorAll('[data-g-name]').forEach(e => e.textContent = g.name);
+    document.querySelectorAll('[data-g-short]').forEach(e => e.textContent = g.short);
+    document.querySelectorAll('[data-g-myths-text]').forEach(e => e.textContent = g.mythsText);
+    document.querySelectorAll('.switch button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.set === game)));
+    document.getElementById('diag').innerHTML = g.diag.map(([s, t, d, c, l]) =>
+      `<div class="row"><div class="sev ${s}">${ICON[s]}</div><div><b>${esc(t)}</b><span>${esc(d)}</span></div><span class="chip ${c}">${l}</span></div>`).join('');
+    document.getElementById('issues').innerHTML = g.issues.map(t => `<li>${esc(t)}<em>Решение</em></li>`).join('');
+    document.getElementById('issues-more').textContent = `И ещё ${g.total - g.issues.length} — всего ${g.total} проблем в базе ${g.short}.`;
+    document.getElementById('myths').innerHTML = g.myths.map(m => `<code>${esc(m)}</code>`).join('') + g.keep.map(m => `<code class="keep">${esc(m)}</code>`).join('');
+    target = g.fps;
+  }
+  document.querySelectorAll('.switch button').forEach(b => b.addEventListener('click', () => { game = b.dataset.set; render(); }));
+
+  // FPS-per-minute bars for the match monitor tile: steady, then a late drop.
+  const bars = document.getElementById('bars');
+  const vals = [92, 95, 93, 96, 94, 95, 93, 94, 92, 90, 88, 84, 78, 70, 64, 60, 62, 58];
+  vals.forEach(v => { const i = document.createElement('i'); i.style.height = v + '%'; if (v < 72) i.className = 'low'; bars.insertBefore(i, bars.lastElementChild); });
+
+  // Animated frame-time line in the hero card (an illustration, not real data).
+  const cv = document.getElementById('ft'), ctx = cv.getContext('2d');
+  const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let pts = [], target = 214, shown = 0, t = 0, spikes = 0;
+  function size() { const r = cv.getBoundingClientRect(), d = devicePixelRatio || 1; cv.width = r.width * d; cv.height = r.height * d; ctx.setTransform(d, 0, 0, d, 0, 0); }
+  function sample() {
+    t++;
+    let ms = 1000 / target + Math.sin(t / 9) * .35 + (Math.random() - .5) * .9;
+    if (Math.random() < .018) { ms += 6 + Math.random() * 9; spikes++; }
+    return ms;
+  }
+  function draw() {
+    const w = cv.clientWidth, h = cv.clientHeight, n = Math.max(60, Math.floor(w / 4));
+    while (pts.length < n) pts.push(sample());
+    if (!still) { pts.shift(); pts.push(sample()); }
+    const acc = getComputedStyle(root).getPropertyValue('--a').trim();
+    ctx.clearRect(0, 0, w, h);
+    ctx.strokeStyle = 'rgba(255,255,255,.06)'; ctx.lineWidth = 1;
+    for (let y = 0; y <= 3; y++) { const yy = Math.round(h * y / 3) + .5; ctx.beginPath(); ctx.moveTo(0, yy); ctx.lineTo(w, yy); ctx.stroke(); }
+    const max = 20, X = i => i * (w / (n - 1)), Y = v => h - Math.min(v, max) / max * (h - 6) - 3;
+    const grad = ctx.createLinearGradient(0, 0, 0, h); grad.addColorStop(0, acc + '55'); grad.addColorStop(1, acc + '00');
+    ctx.beginPath(); ctx.moveTo(0, h); pts.forEach((v, i) => ctx.lineTo(X(i), Y(v))); ctx.lineTo(w, h); ctx.closePath(); ctx.fillStyle = grad; ctx.fill();
+    ctx.beginPath(); pts.forEach((v, i) => i ? ctx.lineTo(X(i), Y(v)) : ctx.moveTo(X(i), Y(v))); ctx.strokeStyle = acc; ctx.lineWidth = 2; ctx.lineJoin = 'round'; ctx.stroke();
+    const recent = pts.slice(-30), avg = recent.reduce((a, b) => a + b, 0) / recent.length;
+    shown += (1000 / avg - shown) * .15;
+    document.getElementById('fpsv').firstChild.nodeValue = Math.round(shown);
+    const sorted = [...pts].sort((a, b) => b - a), low = 1000 / sorted[Math.max(0, Math.floor(pts.length * .01))];
+    document.getElementById('low').textContent = Math.round(low);
+    document.getElementById('spk').textContent = pts.filter(v => v > 1000 / target + 4).length;
+  }
+  function loop() { draw(); if (!still) setTimeout(() => requestAnimationFrame(loop), 50); }
+  addEventListener('resize', () => { size(); pts = []; });
+
+  // Screenshot gallery tabs.
+  const tabs = document.querySelectorAll('.tabs button'), imgs = document.querySelectorAll('.stage img'), cap = document.getElementById('cap');
+  tabs.forEach(b => b.addEventListener('click', () => {
+    tabs.forEach(x => x.setAttribute('aria-selected', String(x === b)));
+    imgs.forEach((im, i) => im.classList.toggle('on', i === +b.dataset.i));
+    cap.textContent = imgs[+b.dataset.i].dataset.cap;
+  }));
+
+  // Reveal on scroll.
+  if ('IntersectionObserver' in window) {
+    const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }), { rootMargin: '0px 0px -8% 0px' });
+    document.querySelectorAll('.rv').forEach(el => io.observe(el));
+  } else document.querySelectorAll('.rv').forEach(el => el.classList.add('in'));
+
+  render(); size(); loop();
+
+  // Current version from GitHub's public release list; the page works the same without it.
   fetch('https://api.github.com/repos/Derposd/v60/releases/latest')
     .then(r => r.ok ? r.json() : null)
     .then(d => { if (d && d.tag_name) document.querySelectorAll('.ver').forEach(e => e.textContent = d.tag_name.replace(/^v/, '')); })
     .catch(() => {});
+})();
 </script>
 </body>
 </html>
