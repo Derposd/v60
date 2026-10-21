@@ -761,56 +761,15 @@ public sealed class WizardViewModel : ObservableObject
                 return;
             }
 
-            var admin = selected.Where(p => p.RequiresAdmin).ToList();
-            var user = selected.Where(p => !p.RequiresAdmin).ToList();
-
-            if (admin.Count > 0 || CreateRestorePoint)
+            var lines = await _s.ApplyPlansAsync(selected, CreateRestorePoint);
+            foreach (var line in lines)
             {
-                var request = new ElevatedRequest
-                {
-                    Mode = "apply",
-                    CreateRestorePoint = CreateRestorePoint,
-                    Items = admin.Select(p => new ElevatedItem { TweakId = p.Tweak.Id, Title = p.Tweak.Title, Actions = p.Actions.ToList() }).ToList(),
-                };
-                Say(admin.Count > 0 ? "Запрашиваю права администратора (точка восстановления и системные настройки)…" : "Запрашиваю права администратора для точки восстановления…");
-                var result = await Task.Run(() => AppServices.RunElevated(request));
-                if (result is null)
-                {
-                    Say("Запрос прав администратора отклонён.");
-                    if (admin.Count > 0)
-                    {
-                        Say("Пропущено (нужны права администратора): " + string.Join(", ", admin.Select(a => a.Tweak.Title)));
-                    }
-
-                    if (user.Count > 0 && CreateRestorePoint &&
-                        !Ui.Confirm("Точку восстановления создать не удалось (нужны права администратора).\n\nПродолжить без неё? Собственные копии файлов и реестра всё равно будут сохранены."))
-                    {
-                        Say("Отменено пользователем.");
-                        return;
-                    }
-                }
-                else
-                {
-                    if (result.RestorePointMessage is not null)
-                    {
-                        Say((result.RestorePointCreated == true ? "✓ " : "⚠ ") + "Точка восстановления: " + result.RestorePointMessage);
-                    }
-
-                    foreach (var r in result.Items)
-                    {
-                        var title = admin.FirstOrDefault(a => a.Tweak.Id == r.TweakId)?.Tweak.Title ?? r.TweakId;
-                        Say(r.Success ? $"✓ {title}" : $"✗ {title}: {r.Error} (изменения этого пункта откачены)", r.Success ? r.ChangeSetId : null);
-                        _s.History.Add(new HistoryEntry(DateTime.Now, r.Success ? "Применено" : "Ошибка", title, r.Error ?? string.Empty));
-                    }
-                }
+                Say(line.Text, line.ChangeSetId);
             }
 
-            foreach (var p in user)
+            if (lines.Count > 0 && lines[^1].Text == "Отменено пользователем.")
             {
-                var r = await Task.Run(() => _s.Executor.Apply(p.Tweak.Id, p.Tweak.Title, p.Actions, dryRun: false));
-                Say(r.Success ? $"✓ {p.Tweak.Title}" : $"✗ {p.Tweak.Title}: {r.Error} (изменения этого пункта откачены)", r.Success ? r.ChangeSetId : null);
-                _s.History.Add(new HistoryEntry(DateTime.Now, r.Success ? "Применено" : "Ошибка", p.Tweak.Title,
-                    string.Join("; ", p.Actions.Select(a => a.Description))));
+                return;
             }
 
             if (selected.Any(p => p.Tweak.RequiresRestart))
@@ -830,6 +789,44 @@ public sealed class WizardViewModel : ObservableObject
     }
 
     private void Say(string text, string? changeSetId = null) => Report.Add(new ReportLine(text, changeSetId));
+
+    /// <summary>
+    /// For the «Оптимизировать» button on the home page: re-reads the game state and returns what this page would apply
+    /// by default — recommended, undisputed, applicable right now and not needing a reboot — plus recommended items blocked right now.
+    /// </summary>
+    public async Task<(IReadOnlyList<TweakPlan> Apply, IReadOnlyList<TweakPlan> Blocked)> OneClickPlanAsync(SystemSnapshot snapshot)
+    {
+        // The page may still be loading the saved scan right after start.
+        while (Busy)
+        {
+            await Task.Delay(100);
+        }
+
+        Busy = true;
+        try
+        {
+            if (_preparedFor is null)
+            {
+                await PrepareAsync(snapshot);
+            }
+
+            var fresh = await Task.Run(() => new SteamLocator(_s.Fs, _s.Registry).Locate(_target, SystemScanner.IsProcessRunning));
+            var current = _s.Snapshot ?? snapshot;
+            var old = current.For(_target.Id);
+            var games = current.Games.ToDictionary(g => g.Key, g => g.Value);
+            games[_target.Id] = fresh with { DiskKind = old.DiskKind, RuntimeGpu = old.RuntimeGpu };
+            _s.Snapshot = _preparedFor = current with { Games = games };
+            _userChoices.Clear();
+            Replan();
+            var apply = Tweaks.Where(t => t.Plan.DefaultSelected && !t.RequiresRestart).Select(t => t.Plan).ToList();
+            var blocked = Tweaks.Where(t => t.Status == TweakStatus.Blocked && t.Plan.RecommendedHere && !t.IsDisputed).Select(t => t.Plan).ToList();
+            return (apply, blocked);
+        }
+        finally
+        {
+            Busy = false;
+        }
+    }
 
     private async Task UndoTweakAsync(TweakItemVm? item)
     {
@@ -869,7 +866,7 @@ public sealed class WizardViewModel : ObservableObject
         Busy = true;
         try
         {
-            _s.Snapshot = _preparedFor = await Task.Run(_s.Scan);
+            _s.Snapshot = _preparedFor = await Task.Run(_s.Rescan);
             Replan();
         }
         finally

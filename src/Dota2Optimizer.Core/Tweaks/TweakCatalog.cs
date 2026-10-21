@@ -22,10 +22,16 @@ public static class TweakCatalog
         new PowerPlanTweak(),
         new GameDvrTweak(),
         new GameModeTweak(),
+        new AccessibilityHotkeysTweak(),
+        new MouseAccelerationTweak(game),
         new ExclusiveFullscreenTweak(game),
         new WindowedGameOptimizationsTweak(game),
         new FullscreenOptimizationsTweak(game),
         new HagsTweak(),
+        new MemoryIntegrityTweak(),
+        new PowerThrottlingTweak(),
+        new MmcssGamesTweak(),
+        new DeliveryOptimizationTweak(),
         new CpuPriorityTweak(game),
     };
 

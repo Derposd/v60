@@ -200,12 +200,14 @@ public sealed class AboutViewModel : ObservableObject
 
 public sealed class MainViewModel : ObservableObject
 {
-    // Tab order in MainWindow.xaml: game pages, a section header, then shared pages.
-    public const int OptimizeTab = 0;
-    public const int IssuesTab = 1;
-    public const int MonitorTab = 2;
-    public const int CrashTab = 3;
-    public const int NetworkTab = 5;
+    // Tab order in MainWindow.xaml: home, a section header, game pages, a section header, then shared pages.
+    public const int HomeTab = 0;
+    public const int OptimizeTab = 2;
+    public const int IssuesTab = 3;
+    public const int MonitorTab = 4;
+    public const int CrashTab = 5;
+    public const int NetworkTab = 7;
+    public const int RollbackTab = 8;
 
     private int _selectedTab;
     private GameWorkspace _current;
@@ -218,9 +220,16 @@ public sealed class MainViewModel : ObservableObject
         Network = new NetworkViewModel(services);
         Rollback = new RollbackViewModel(services);
         About = new AboutViewModel();
+        Home = new HomeViewModel(services, Dota, Cs2, (ws, tab) =>
+        {
+            Select(ws);
+            SelectedTab = tab;
+        });
         _current = UiState.LastGame() == Core.Game.GameId.Cs2 ? Cs2 : Dota;
         Select(_current);
     }
+
+    public HomeViewModel Home { get; }
 
     public GameWorkspace Dota { get; }
     public GameWorkspace Cs2 { get; }
