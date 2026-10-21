@@ -15,6 +15,7 @@ public sealed class AppServices
         Store = new BackupStore(Fs, AppPaths.Backups);
         Executor = new ChangeExecutor(Fs, Registry, Commands, Store);
         History = new HistoryStore(Fs, AppPaths.History);
+        ScanCache = new SnapshotCache(Fs, AppPaths.ScanCache);
     }
 
     public IFileSystem Fs { get; } = new RealFileSystem();
@@ -23,6 +24,10 @@ public sealed class AppServices
     public BackupStore Store { get; }
     public ChangeExecutor Executor { get; }
     public HistoryStore History { get; }
+    public SnapshotCache ScanCache { get; }
+
+    /// <summary>The saved scan is offered once per start; after that only the «Сканировать» button scans.</summary>
+    public bool QuickScanTried { get; set; }
 
     public event Action? SnapshotChanged;
     public event Action? ChangesApplied;
@@ -33,6 +38,11 @@ public sealed class AppServices
         set
         {
             _snapshot = value;
+            if (value is not null)
+            {
+                ScanCache.Save(value);
+            }
+
             SnapshotChanged?.Invoke();
         }
     }
@@ -121,6 +131,10 @@ public sealed class AppServices
     }
 
     public SystemSnapshot Scan() => new SystemScanner(Registry, Fs, Commands).Scan();
+
+    /// <summary>The saved scan with games and Windows settings re-read, or null when a full scan is needed.</summary>
+    public SystemSnapshot? QuickScan() =>
+        ScanCache.Load() is { } cached ? new SystemScanner(Registry, Fs, Commands).Refresh(cached, DateTime.Now) : null;
 
     /// <summary>
     /// Runs a request in an elevated copy of this exe (one UAC prompt). Returns null if the user declined.

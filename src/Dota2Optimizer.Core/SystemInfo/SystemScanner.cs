@@ -49,18 +49,7 @@ public sealed partial class SystemScanner
         var windows = Safe("версия Windows", ScanWindows);
         var power = Safe("план питания", ScanPowerPlan);
         var isLaptop = Safe("тип корпуса", ScanIsLaptop);
-        var games = new Dictionary<GameId, SteamInfo>();
-        foreach (var game in Games.All)
-        {
-            var info = Safe($"Steam ({game.ShortName})", () => new SteamLocator(_fs, _reg).Locate(game, IsProcessRunning)) ?? new SteamInfo { Game = game.Id };
-            var installDir = info.GameInstallDir;
-            info = info with
-            {
-                DiskKind = installDir is null ? DiskKind.Unknown : Safe($"диск с {game.ShortName}", () => DiskKindForPath(installDir)),
-                RuntimeGpu = info.GameRunning ? Safe($"GPU {game.ShortName}", () => GpuUsageProbe.FindGameGpu(gpus, game.ProcessName)) : null,
-            };
-            games[game.Id] = info;
-        }
+        var games = ScanGames(gpus, null);
 
         var snapshot = new SystemSnapshot
         {
@@ -78,6 +67,117 @@ public sealed partial class SystemScanner
         snapshot = snapshot with { Profile = ProfileClassifier.Classify(snapshot.PrimaryGpu, cpu, memory) };
         Log.Info($"Сканирование завершено: GPU={snapshot.PrimaryGpu?.Name}, профиль={snapshot.Profile}, {string.Join(", ", games.Values.Select(g => $"{Games.Get(g.Game).ShortName}={g.GameInstallDir ?? "не найдена"}"))}");
         return snapshot;
+    }
+
+    /// <summary>Saved scans older than this are not reused: a full scan picks up anything the quick check misses.</summary>
+    public static readonly TimeSpan CacheMaxAge = TimeSpan.FromDays(14);
+
+    /// <summary>
+    /// Quick start from a saved scan. Hardware (GPU, CPU, memory, disks, chassis) comes from the cache; things that
+    /// change without new hardware (Windows, monitor mode, power plan, Steam and the games) are read again.
+    /// Returns null when the cache is too old or no longer matches this PC (another video card or driver,
+    /// another CPU), so the caller makes a full scan instead.
+    /// </summary>
+    public SystemSnapshot? Refresh(SystemSnapshot cached, DateTime now)
+    {
+        _warnings.Clear();
+        if (now - cached.ScannedAt > CacheMaxAge || now < cached.ScannedAt || cached.Gpus.Count == 0)
+        {
+            return null;
+        }
+
+        try
+        {
+            if (!SameHardware(cached))
+            {
+                Log.Info("Сохранённый скан устарел: изменилось железо или драйвер видеокарты");
+                return null;
+            }
+        }
+        catch (Exception ex) when (ex is not OutOfMemoryException)
+        {
+            Log.Warn($"Проверка сохранённого скана: {ex.Message}");
+            return null;
+        }
+
+        var display = Safe("монитор", ScanDisplay);
+        var windows = Safe("версия Windows", ScanWindows);
+        var power = Safe("план питания", ScanPowerPlan);
+        var games = ScanGames(cached.Gpus, cached);
+
+        // Keep warnings about the cached hardware sections; the re-read sections report their own.
+        string[] reread = { "монитор", "версия Windows", "план питания", "Steam (", "диск с ", "GPU " };
+        var warnings = cached.ScanWarnings
+            .Where(w => !reread.Any(s => w.StartsWith($"Не удалось определить: {s}", StringComparison.Ordinal)))
+            .Concat(_warnings)
+            .ToList();
+
+        Log.Info($"Скан от {cached.ScannedAt:dd.MM.yyyy HH:mm} использован повторно, игры и настройки Windows прочитаны заново");
+        return cached with
+        {
+            Display = display,
+            Windows = windows,
+            PowerPlan = power,
+            Games = games,
+            ScanWarnings = warnings,
+        };
+    }
+
+    /// <summary>Same video cards with the same drivers and the same thread count as in the saved scan. Cheap: no WMI.</summary>
+    private bool SameHardware(SystemSnapshot cached)
+    {
+        if (cached.Cpu is { LogicalProcessors: > 0 } cpu && cpu.LogicalProcessors != Environment.ProcessorCount)
+        {
+            return false;
+        }
+
+        var now = Native.EnumerateAdapters()
+            .Where(d => (d.Flags & Native.DxgiAdapterFlagSoftware) == 0)
+            .Select(d => ((int)d.VendorId, (int)d.DeviceId))
+            .OrderBy(x => x)
+            .ToList();
+        var before = cached.Gpus.Select(g => (g.VendorId, g.DeviceId)).OrderBy(x => x).ToList();
+        if (now.Count > 0 && !now.SequenceEqual(before))
+        {
+            return false;
+        }
+
+        // The driver version in the display class key changes with every driver install.
+        foreach (var g in cached.Gpus.Where(g => g.DriverVersion.Length > 0))
+        {
+            var current = RegistryDisplayValue(g.VendorId, g.DeviceId, "DriverVersion");
+            if (current is not null && !string.Equals(current, g.DriverVersion, StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /// <summary>Steam and every supported game. With a cached scan the disk type is reused while the game stays in the same folder.</summary>
+    private Dictionary<GameId, SteamInfo> ScanGames(IReadOnlyList<GpuInfo> gpus, SystemSnapshot? cached)
+    {
+        var games = new Dictionary<GameId, SteamInfo>();
+        foreach (var game in Games.All)
+        {
+            var info = Safe($"Steam ({game.ShortName})", () => new SteamLocator(_fs, _reg).Locate(game, IsProcessRunning)) ?? new SteamInfo { Game = game.Id };
+            var installDir = info.GameInstallDir;
+            var old = cached?.For(game.Id);
+            var disk = installDir is null
+                ? DiskKind.Unknown
+                : old is not null && old.DiskKind != DiskKind.Unknown && string.Equals(old.GameInstallDir, installDir, StringComparison.OrdinalIgnoreCase)
+                    ? old.DiskKind
+                    : Safe($"диск с {game.ShortName}", () => DiskKindForPath(installDir));
+            info = info with
+            {
+                DiskKind = disk,
+                RuntimeGpu = info.GameRunning ? Safe($"GPU {game.ShortName}", () => GpuUsageProbe.FindGameGpu(gpus, game.ProcessName)) : null,
+            };
+            games[game.Id] = info;
+        }
+
+        return games;
     }
 
     public static bool IsProcessRunning(string name)

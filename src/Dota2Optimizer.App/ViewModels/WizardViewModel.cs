@@ -266,9 +266,13 @@ public sealed class WizardViewModel : ObservableObject
     public int OptimalCount => Tweaks.Count(t => t.Plan.Status == TweakStatus.AlreadyOptimal);
     public bool Scanned => _s.Snapshot is not null;
 
+    public string ScanButtonText => Scanned ? "Сканировать заново" : "Сканировать ПК";
+
+    public string ScanAgeText => _s.Snapshot is { } s ? $"Сканирование от {s.ScannedAt:dd.MM.yyyy HH:mm}. Результат сохранён: при следующем запуске сканировать заново не нужно." : string.Empty;
+
     private void RaiseSummary()
     {
-        foreach (var n in new[] { nameof(ProfileShort), nameof(GpuShort), nameof(CriticalCount), nameof(WarningCount), nameof(ImproveCount), nameof(OptimalCount), nameof(Scanned) })
+        foreach (var n in new[] { nameof(ProfileShort), nameof(GpuShort), nameof(CriticalCount), nameof(WarningCount), nameof(ImproveCount), nameof(OptimalCount), nameof(Scanned), nameof(ScanButtonText), nameof(ScanAgeText) })
         {
             OnPropertyChanged(n);
         }
@@ -413,6 +417,12 @@ public sealed class WizardViewModel : ObservableObject
     public async Task ActivateAsync()
     {
         IsActive = true;
+        if (_s.Snapshot is null && !_s.QuickScanTried && !Busy)
+        {
+            await QuickStartAsync();
+            return;
+        }
+
         var snapshot = _s.Snapshot;
         if (snapshot is null || ReferenceEquals(snapshot, _preparedFor) || Busy)
         {
@@ -431,6 +441,36 @@ public sealed class WizardViewModel : ObservableObject
                 _preparedFor = snapshot;
                 Replan();
             }
+        }
+        finally
+        {
+            Busy = false;
+        }
+    }
+
+    /// <summary>First page shown after start: picks up the saved scan instead of asking for a new one.</summary>
+    private async Task QuickStartAsync()
+    {
+        _s.QuickScanTried = true;
+        Busy = true;
+        Status = "Загружаю прошлое сканирование…";
+        try
+        {
+            var snapshot = await Task.Run(_s.QuickScan);
+            if (snapshot is null)
+            {
+                Status = "Нажмите «Сканировать», чтобы начать. Ничего не меняется без вашего подтверждения.";
+                return;
+            }
+
+            _s.Snapshot = snapshot;
+            await PrepareAsync(snapshot);
+            Status = "Загружен прошлый скан: железо то же, Steam и игры проверены заново. Нажмите «Далее».";
+        }
+        catch (Exception ex) when (ex is not OutOfMemoryException)
+        {
+            Log.Warn($"Быстрый старт по сохранённому скану: {ex}");
+            Status = "Нажмите «Сканировать», чтобы начать. Ничего не меняется без вашего подтверждения.";
         }
         finally
         {
