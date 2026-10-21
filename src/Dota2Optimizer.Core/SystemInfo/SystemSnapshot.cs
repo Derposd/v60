@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace Dota2Optimizer.Core.SystemInfo;
 
 public enum GpuVendor
@@ -127,13 +129,16 @@ public sealed record SystemSnapshot
     public PcProfile Profile { get; init; }
     public IReadOnlyList<string> ScanWarnings { get; init; } = Array.Empty<string>();
 
+    [JsonIgnore]
     public IEnumerable<GpuInfo> RealGpus => Gpus.Where(g => g.Vendor is not GpuVendor.Microsoft and not GpuVendor.Unknown);
 
     public SteamInfo For(Game.GameId game) => Games.TryGetValue(game, out var info) ? info : new SteamInfo { Game = game };
 
     /// <summary>The GPU games should use: the discrete card if present, otherwise the best integrated one.</summary>
+    [JsonIgnore]
     public GpuInfo? PrimaryGpu =>
         RealGpus.OrderBy(g => g.IsIntegrated).ThenByDescending(g => g.DedicatedVideoMemory).FirstOrDefault();
 
+    [JsonIgnore]
     public bool IsHybridGraphics => RealGpus.Any(g => g.IsIntegrated) && RealGpus.Any(g => !g.IsIntegrated);
 }
