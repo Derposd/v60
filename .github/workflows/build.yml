@@ -4,6 +4,8 @@ on:
   push:
     branches: ["**"]
     tags: ["v*"]
+    # Site-only changes do not need a new build of the app.
+    paths-ignore: ["site/**", ".github/workflows/pages.yml", ".github/scripts/stamp-site.py"]
   pull_request:
 
 permissions:
@@ -73,10 +75,25 @@ jobs:
             installer/Output/FrameLab-Setup.exe
             artifacts/publish/FrameLab.exe
 
-      # Every push to main (and every vX.Y.Z tag) publishes the installer as the latest release,
+      # A release is published once per version. Re-uploading the files of an existing release
+      # would reset their download counters, so pushes to main without a version bump skip it.
+      - name: Is this version released already?
+        id: released
+        if: github.ref == 'refs/heads/main'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: v${{ steps.ver.outputs.version }}
+        run: |
+          gh release view $env:TAG --repo $env:GITHUB_REPOSITORY *> $null
+          $exists = if ($LASTEXITCODE -eq 0) { "true" } else { "false" }
+          "exists=$exists" >> $env:GITHUB_OUTPUT
+          exit 0
+
+      # Every new version on main (and every vX.Y.Z tag) publishes the installer as the latest release,
       # so README can link straight to releases/latest/download/FrameLab-Setup.exe.
       - name: Release
-        if: github.ref_type == 'tag' || github.ref == 'refs/heads/main'
+        if: github.ref_type == 'tag' || (github.ref == 'refs/heads/main' && steps.released.outputs.exists == 'false')
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ steps.ver.outputs.version }}
