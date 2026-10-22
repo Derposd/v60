@@ -2,10 +2,10 @@ name: site
 
 # Publishes the static landing page in site/ to GitHub Pages
 # (Settings → Pages → Source: GitHub Actions).
+# Runs on every push to main, so a new APP_VERSION in build.yml shows up on the site right away.
 on:
   push:
     branches: [main]
-    paths: ["site/**", ".github/workflows/pages.yml"]
   workflow_dispatch:
 
 permissions:
@@ -25,6 +25,8 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+      - name: Put the current version into the page
+        run: python3 .github/scripts/stamp-site.py
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
