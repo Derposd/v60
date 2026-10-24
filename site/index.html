@@ -23,6 +23,7 @@
     --a: #f5a524; --a2: #ffcf6b; --a3: #d27c0c; --on-a: #1f1404; --a-rgb: 245,165,36;
   }
   html[data-game="dota"] { --a: #f0453a; --a2: #ff8a7a; --a3: #b5231b; --on-a: #fff; --a-rgb: 240,69,58; }
+  html[data-game="gta"] { --a: #7c6cff; --a2: #a99cff; --a3: #4c3bd9; --on-a: #fff; --a-rgb: 124,108,255; }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html { scroll-behavior: smooth; }
@@ -149,6 +150,9 @@
   .tile:hover { border-color: var(--line2); }
   .tile.w3 { grid-column: span 3; } .tile.w2 { grid-column: span 2; } .tile.w4 { grid-column: span 4; } .tile.w6 { grid-column: span 6; }
   .undo.three { grid-template-columns: repeat(3, 1fr); }
+  /* With GTA RP picked, the switching tiles already show its modes and redux check. */
+  html[data-game="gta"] .tile.gta-dup { display: none; }
+  html[data-game="gta"] .tile.lag { grid-column: span 6; }
   .tile h3 { font-size: 22px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.2; }
   .tile > p { color: var(--muted); margin-top: 8px; font-size: 15.5px; }
   .tile .tg { display: inline-block; font-family: var(--mono); font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--subtle); margin-bottom: 14px; }
@@ -291,10 +295,11 @@
     <div>
       <a class="pill" href="https://github.com/Derposd/v60/releases/latest"><b>v<span class="ver">1.4</span></b><span class="ver-note">Раздел GTA RP</span></a>
       <h1>Найдите, что съедает FPS <span class="acc" data-g-name>в CS2</span></h1>
-      <p class="lead">FrameLab сканирует ПК и настройки игры, показывает, что мешает, по важности, и исправляет это. У каждой настройки честный эффект, а любое изменение отменяется в один клик.</p>
+      <p class="lead">FrameLab сканирует ПК и настройки игры, показывает, что мешает, по важности, и исправляет это. Dota 2, CS2 и GTA V для RP-проектов: у каждой настройки честный эффект, а любое изменение отменяется в один клик.</p>
       <div class="switch" role="group" aria-label="Игра">
         <button type="button" data-set="dota" aria-pressed="false"><i>D2</i>Dota 2</button>
         <button type="button" data-set="cs2" aria-pressed="true"><i>CS2</i><span class="full">Counter-Strike 2</span><span class="short">CS2</span></button>
+        <button type="button" data-set="gta" aria-pressed="false"><i>RP</i>GTA RP</button>
       </div>
       <div class="cta-row">
         <a class="btn btn-primary" href="https://github.com/Derposd/v60/releases/latest/download/FrameLab-Setup.exe">
@@ -348,7 +353,7 @@
       <p>Для каждой игры свой мастер, свои пресеты и своя база проблем. Переключите игру сверху — содержимое поменяется.</p></div>
 
     <div class="bento">
-      <div class="tile w6 rv">
+      <div class="tile w6 rv gta-dup">
         <span class="tg">GTA RP · GTA5RP, Majestic RP</span>
         <h3>Пять режимов графики GTA V — под ПК и под РП</h3>
         <p>Три подбираются по мощности: «Ультра-слабый ПК» (мыльная картинка, зато играбельно на встроенной графике), «Слабый», «Средний». Два для отыгрыша: «РП красиво» — почти максимум без лишнего, и «Гибрид» — чёткая картинка без просадок в толпе. Меняется только settings.xml, «Вернуть как было» — одной кнопкой.</p>
@@ -359,23 +364,23 @@
         </div>
       </div>
 
-      <div class="tile w3 rv">
+      <div class="tile w3 rv gta-dup">
         <span class="tg">Редуксы</span>
         <h3>Установка графических паков с откатом</h3>
         <p>Папка или архив → проверка → видно, что встанет и что заблокировано. Оригиналы игры сохраняются и возвращаются при удалении.</p>
         <div class="codes"><code>.asi</code><code>.dll</code><code>ScriptHook</code><code>ReShade</code><code class="keep">.ytd .yft .rpf</code></div>
       </div>
 
-      <div class="tile w3 rv">
+      <div class="tile w3 rv lag">
         <span class="tg">Задержка ввода</span>
         <h3>Меньше input lag в Dota 2 и CS2</h3>
         <p>Монитор на 144 Гц, оставленный на 60, Reflex / Anti-Lag, V-Sync и окно без рамки — в диагнозе. Таймер Windows и MPO — по желанию, с пометкой «спорно».</p>
       </div>
 
       <div class="tile w3 rv">
-        <span class="tg">Проблемы и решения · <span data-g-short>CS2</span></span>
-        <h3>Выберите симптом — получите причину и исправление</h3>
-        <p>Внутри пошаговое решение и кнопки-исправления: сброс графики, отключение autoexec, DX11 ↔ Vulkan, очистка кеша шейдеров. Всё отменяется там же.</p>
+        <span class="tg" data-g-issues-tag>Проблемы и решения · CS2</span>
+        <h3 data-g-issues-title>Выберите симптом — получите причину и исправление</h3>
+        <p data-g-issues-text>Внутри пошаговое решение и кнопки-исправления: сброс графики, отключение autoexec, DX11 ↔ Vulkan, очистка кеша шейдеров. Всё отменяется там же.</p>
         <ul class="issues" id="issues"></ul>
         <div class="more" id="issues-more"></div>
       </div>
@@ -390,8 +395,8 @@
       </div>
 
       <div class="tile w2 rv">
-        <span class="tg">Параметры запуска</span>
-        <h3>Мифы из старых гайдов — долой</h3>
+        <span class="tg" data-g-myths-tag>Параметры запуска</span>
+        <h3 data-g-myths-title>Мифы из старых гайдов — долой</h3>
         <p data-g-myths-text>В CS2 нет вступительного ролика, rate-команды ушли вместе с subtick. Найдёт такое и предложит убрать.</p>
         <div class="codes" id="myths"></div>
       </div>
@@ -441,17 +446,23 @@
     <div class="gallery rv">
       <div class="tabs" role="tablist">
         <button role="tab" aria-selected="true" data-i="0">План оптимизации</button>
-        <button role="tab" aria-selected="false" data-i="1">Проблемы</button>
-        <button role="tab" aria-selected="false" data-i="2">Вылеты</button>
-        <button role="tab" aria-selected="false" data-i="3">Монитор матча</button>
-        <button role="tab" aria-selected="false" data-i="4">Главная</button>
+        <button role="tab" aria-selected="false" data-i="1">Главная</button>
+        <button role="tab" aria-selected="false" data-i="2">GTA RP: режимы</button>
+        <button role="tab" aria-selected="false" data-i="3">GTA RP: для РП</button>
+        <button role="tab" aria-selected="false" data-i="4">Редуксы</button>
+        <button role="tab" aria-selected="false" data-i="5">Проблемы</button>
+        <button role="tab" aria-selected="false" data-i="6">Вылеты</button>
+        <button role="tab" aria-selected="false" data-i="7">Монитор матча</button>
       </div>
       <div class="stage">
         <img class="on" src="img/cs2-plan.jpg" width="1600" height="1067" alt="План оптимизации CS2: пресеты графики и параметры запуска" data-cap="Шаг «План»: пресет под ваш профиль ПК, параметры запуска, настройки Windows. У каждого пункта — эффект и статус.">
+        <img src="img/cs2-home.jpg" loading="lazy" width="1600" height="1067" alt="Главная FrameLab: оптимизация в один клик" data-cap="«Главная»: оптимизация в один клик для всех установленных игр, состояние ПК, ускорение на время игры. Слева — переключатель Dota 2 / CS2 / GTA RP.">
+        <img src="img/gta-modes.jpg" loading="lazy" width="1600" height="1067" alt="Режимы графики GTA V для RP-проектов" data-cap="GTA RP: режим под ваш ПК выбран заранее, видно, какой включён сейчас. Меняется только settings.xml, копия сохраняется.">
+        <img src="img/gta-roleplay.jpg" loading="lazy" width="1600" height="1067" alt="Режимы «РП красиво» и «Гибрид»" data-cap="Два режима для РП: «РП красиво» — почти максимум без лишнего, «Гибрид» — красиво и без просадок. «Вернуть как было» — одной кнопкой.">
+        <img src="img/gta-redux.jpg" loading="lazy" width="1600" height="1067" alt="Проверка редукса перед установкой" data-cap="«Редуксы»: перед установкой видно, что встанет, что заблокировано и почему. ASI, DLL, ScriptHook и ReShade не ставятся никогда.">
         <img src="img/cs2-issues.jpg" loading="lazy" width="1600" height="1067" alt="Проблемы CS2 с пошаговыми решениями" data-cap="«Проблемы»: поиск по симптомам, причина, шаги и исправления в один клик.">
         <img src="img/dota-crash.jpg" loading="lazy" width="1600" height="1067" alt="Диагностика вылетов Dota 2" data-cap="«Вылеты и сбои»: журнал Windows, дампы и логи игры, очистка кешей шейдеров, проверка файлов.">
-        <img src="img/cs2-monitor.jpg" loading="lazy" width="1600" height="1067" alt="Монитор матча" data-cap="«Монитор матча»: нажмите «Начать запись» перед игрой — после матча будет график и причина просадок.">
-        <img src="img/dota-home.jpg" loading="lazy" width="1600" height="1067" alt="Главный экран FrameLab для Dota 2" data-cap="Игры слева, у каждой свой цвет интерфейса. Общие разделы: сеть, откат, о программе.">
+        <img src="img/dota-monitor.jpg" loading="lazy" width="1600" height="1067" alt="Монитор матча" data-cap="«Монитор матча»: нажмите «Начать запись» перед игрой — после матча будет график и причина просадок.">
       </div>
       <div class="cap" id="cap">Шаг «План»: пресет под ваш профиль ПК, параметры запуска, настройки Windows. У каждого пункта — эффект и статус.</div>
     </div>
@@ -530,7 +541,7 @@
     <div class="final rv">
       <img src="img/logo.png" alt="">
       <h2>Попробуйте <span class="acc">FrameLab</span></h2>
-      <p>Бесплатно для Windows 10 и 11. Dota 2 и Counter-Strike 2.</p>
+      <p>Бесплатно для Windows 10 и 11. Dota 2, Counter-Strike 2 и GTA V для RP-проектов.</p>
       <div class="cta-row"><a class="btn btn-primary" href="https://github.com/Derposd/v60/releases/latest/download/FrameLab-Setup.exe">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10.5l5 5 5-5M5 20h14"/></svg>
         Скачать FrameLab</a><a class="btn btn-ghost" href="https://github.com/Derposd/v60/releases">Все версии</a></div>
@@ -542,7 +553,7 @@
   <div class="wrap">
     <span>© FrameLab · <a href="https://github.com/Derposd/v60">Исходный код на GitHub</a></span>
     <span>Сайт не использует cookies, счётчики и формы.</span>
-    <span>Не связано с Valve Corporation. Dota 2 и Counter-Strike 2 — товарные знаки Valve Corporation.</span>
+    <span>Не связано с Valve Corporation, Rockstar Games и RP-проектами. Dota 2 и Counter-Strike 2 — товарные знаки Valve Corporation, Grand Theft Auto V — Rockstar Games.</span>
   </div>
 </footer>
 
@@ -584,6 +595,27 @@
       myths: ['-threads 8', '-prewarm', '-dxlevel 95', '-dx9'],
       keep: ['-dx11', '+fps_max'],
       fps: 168
+    },
+    gta: {
+      name: 'в GTA RP', short: 'GTA RP',
+      diag: [
+        ['crit', 'Текстуры не помещаются в видеопамять', 'Игра подвисает каждые несколько секунд', 'hi', 'Высокий'],
+        ['warn', 'Включено сглаживание MSAA ×4', 'Самая дорогая настройка GTA V — хватит FXAA', 'hi', 'Высокий'],
+        ['warn', 'GTA V на обычном жёстком диске', 'Мир подгружается с опозданием — поможет SSD', 'hw', 'Зависит от железа'],
+        ['ok', 'GTA V и RAGE MP идут на дискретной видеокарте', 'Менять ничего не нужно', 'done', 'Настроено']
+      ],
+      issuesTag: 'Режимы графики · GTA5RP, Majestic RP',
+      issuesTitle: 'Пять готовых режимов — под ваш ПК и под РП',
+      issuesText: 'Меняется только settings.xml, текстуры подстраиваются под видеопамять. Режим под ваш ПК выбран заранее, «Вернуть как было» — одной кнопкой.',
+      issues: ['Ультра-слабый ПК — мыльно, зато играбельно', 'Слабый ПК — без теней и тяжёлых эффектов', 'Средний ПК — ровный FPS и приличная картинка', 'РП красиво — почти максимум без лишнего', 'Гибрид — красиво и без просадок в толпе'],
+      em: 'Режим',
+      more: 'Плюс сброс кэша RAGE MP и запуск игры на мощной видеокарте.',
+      mythsTag: 'Редуксы',
+      mythsTitle: 'Графика — да, код — никогда',
+      mythsText: 'Перед установкой пак проверяется: видно, что встанет и что заблокировано. Скрипты, ASI и DLL не ставятся, оригиналы игры возвращаются при удалении.',
+      myths: ['.asi', 'ScriptHookV.dll', 'dxgi.dll', 'dinput8.dll'],
+      keep: ['.ytd', '.yft', '.rpf'],
+      fps: 74
     }
   };
 
@@ -597,11 +629,17 @@
     document.querySelectorAll('[data-g-name]').forEach(e => e.textContent = g.name);
     document.querySelectorAll('[data-g-short]').forEach(e => e.textContent = g.short);
     document.querySelectorAll('[data-g-myths-text]').forEach(e => e.textContent = g.mythsText);
+    const set = (sel, v) => document.querySelectorAll(sel).forEach(e => e.textContent = v);
+    set('[data-g-issues-tag]', g.issuesTag || 'Проблемы и решения · ' + g.short);
+    set('[data-g-issues-title]', g.issuesTitle || 'Выберите симптом — получите причину и исправление');
+    set('[data-g-issues-text]', g.issuesText || 'Внутри пошаговое решение и кнопки-исправления: сброс графики, отключение autoexec, DX11 ↔ Vulkan, очистка кеша шейдеров. Всё отменяется там же.');
+    set('[data-g-myths-tag]', g.mythsTag || 'Параметры запуска');
+    set('[data-g-myths-title]', g.mythsTitle || 'Мифы из старых гайдов — долой');
     document.querySelectorAll('.switch button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.set === game)));
     document.getElementById('diag').innerHTML = g.diag.map(([s, t, d, c, l]) =>
       `<div class="row"><div class="sev ${s}">${ICON[s]}</div><div><b>${esc(t)}</b><span>${esc(d)}</span></div><span class="chip ${c}">${l}</span></div>`).join('');
-    document.getElementById('issues').innerHTML = g.issues.map(t => `<li>${esc(t)}<em>Решение</em></li>`).join('');
-    document.getElementById('issues-more').textContent = `И ещё ${g.total - g.issues.length} — всего ${g.total} проблем в базе ${g.short}.`;
+    document.getElementById('issues').innerHTML = g.issues.map(t => `<li>${esc(t)}<em>${g.em || 'Решение'}</em></li>`).join('');
+    document.getElementById('issues-more').textContent = g.more || `И ещё ${g.total - g.issues.length} — всего ${g.total} проблем в базе ${g.short}.`;
     document.getElementById('myths').innerHTML = g.myths.map(m => `<code>${esc(m)}</code>`).join('') + g.keep.map(m => `<code class="keep">${esc(m)}</code>`).join('');
     target = g.fps;
   }
