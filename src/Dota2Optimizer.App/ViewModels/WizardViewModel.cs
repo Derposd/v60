@@ -536,7 +536,8 @@ public sealed class WizardViewModel : ObservableObject
             var health = await Task.Run(() => new HealthChecks(_s.Commands).Run(snapshot, _target));
             var background = await Task.Run(BackgroundApps.FindRunning);
             Diagnosis.Clear();
-            foreach (var a in DiagnosisEngine.Diagnose(_target, snapshot, Tweaks.Select(t => t.Plan).ToList(), health, background, DateTime.Now))
+            var vSync = InputLagAdvisor.ReadVSync(_s.Fs, steam);
+            foreach (var a in DiagnosisEngine.Diagnose(_target, snapshot, Tweaks.Select(t => t.Plan).ToList(), health, background, DateTime.Now, vSync))
             {
                 Diagnosis.Add(a);
             }

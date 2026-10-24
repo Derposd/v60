@@ -80,7 +80,15 @@ public sealed record MemoryInfo(ulong TotalBytes, IReadOnlyList<MemoryModule> Mo
 
 public sealed record DiskInfo(string Model, DiskKind Kind, ulong SizeBytes);
 
-public sealed record DisplayInfo(int Width, int Height, int RefreshHz, string DeviceName);
+public sealed record DisplayInfo(int Width, int Height, int RefreshHz, string DeviceName)
+{
+    /// <summary>Highest refresh rate the monitor offers at the current resolution; 0 when unknown.</summary>
+    public int MaxRefreshHz { get; init; }
+
+    /// <summary>The monitor runs slower than it can at this resolution (typical: a 165 Hz monitor left at 60 Hz).</summary>
+    [JsonIgnore]
+    public bool BelowMaxRefresh => RefreshHz > 0 && MaxRefreshHz > RefreshHz + 1;
+}
 
 public sealed record WindowsInfo(string ProductName, string DisplayVersion, int Build, bool IsWindows11);
 

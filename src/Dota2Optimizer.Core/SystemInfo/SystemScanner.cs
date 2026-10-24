@@ -385,9 +385,32 @@ public sealed partial class SystemScanner
     private static DisplayInfo? ScanDisplay()
     {
         var mode = new Native.DevMode { dmSize = (short)System.Runtime.InteropServices.Marshal.SizeOf<Native.DevMode>() };
-        return Native.EnumDisplaySettings(null, Native.EnumCurrentSettings, ref mode)
-            ? new DisplayInfo(mode.dmPelsWidth, mode.dmPelsHeight, mode.dmDisplayFrequency > 1 ? mode.dmDisplayFrequency : 0, mode.dmDeviceName)
-            : null;
+        if (!Native.EnumDisplaySettings(null, Native.EnumCurrentSettings, ref mode))
+        {
+            return null;
+        }
+
+        return new DisplayInfo(mode.dmPelsWidth, mode.dmPelsHeight, mode.dmDisplayFrequency > 1 ? mode.dmDisplayFrequency : 0, mode.dmDeviceName)
+        {
+            MaxRefreshHz = MaxRefreshAt(mode.dmDeviceName, mode.dmPelsWidth, mode.dmPelsHeight),
+        };
+    }
+
+    /// <summary>Highest refresh rate among the display's modes with the same resolution. Read-only: no mode is ever set.</summary>
+    private static int MaxRefreshAt(string deviceName, int width, int height)
+    {
+        var max = 0;
+        var probe = new Native.DevMode { dmSize = (short)System.Runtime.InteropServices.Marshal.SizeOf<Native.DevMode>() };
+        // A display has a few hundred modes at most; the cap only guards against a driver that never says "no more".
+        for (var i = 0; i < 4096 && Native.EnumDisplaySettings(deviceName, i, ref probe); i++)
+        {
+            if (probe.dmPelsWidth == width && probe.dmPelsHeight == height && probe.dmDisplayFrequency > max)
+            {
+                max = probe.dmDisplayFrequency;
+            }
+        }
+
+        return max > 1 ? max : 0;
     }
 
     private WindowsInfo ScanWindows()

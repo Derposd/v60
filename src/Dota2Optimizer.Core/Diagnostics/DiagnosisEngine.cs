@@ -12,7 +12,7 @@ public static class DiagnosisEngine
         IReadOnlyList<TweakPlan> plans,
         IReadOnlyList<Advice> health,
         IReadOnlyList<RunningApp> background,
-        DateTime today) => Diagnose(Games.Dota2, s, plans, health, background, today);
+        DateTime today) => Diagnose(Games.Dota2, s, plans, health, background, today, vSyncOn: null);
 
     public static IReadOnlyList<Advice> Diagnose(
         GameDefinition game,
@@ -20,7 +20,8 @@ public static class DiagnosisEngine
         IReadOnlyList<TweakPlan> plans,
         IReadOnlyList<Advice> health,
         IReadOnlyList<RunningApp> background,
-        DateTime today)
+        DateTime today,
+        bool? vSyncOn = null)
     {
         var list = new List<Advice>();
 
@@ -72,6 +73,8 @@ public static class DiagnosisEngine
         {
             list.Add(new Advice(Severity.Warning, $"Сейчас недоступно: {p.Tweak.Title}", p.StatusText));
         }
+
+        list.AddRange(InputLagAdvisor.Evaluate(game, s, plans, vSyncOn));
 
         list.AddRange(health);
 
