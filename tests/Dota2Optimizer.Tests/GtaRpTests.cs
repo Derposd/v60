@@ -1,4 +1,5 @@
 using Dota2Optimizer.Core.Backup;
+using Dota2Optimizer.Core.Diagnostics;
 using Dota2Optimizer.Core.GtaRp;
 using Dota2Optimizer.Core.Infrastructure;
 using Dota2Optimizer.Core.SystemInfo;
@@ -355,5 +356,63 @@ public class GtaRpTests
         Assert.Equal(tweaks.Count, plans.Count);
         // Only one graphics mode is ever preselected, so the default "apply" cannot write the file twice.
         Assert.Single(plans.Where(p => p.DefaultSelected && p.Tweak.Id.StartsWith(GtaCatalog.ModePrefix, StringComparison.Ordinal)));
+    }
+}
+
+public class GtaAdvisorTests
+{
+    private const string Xml =
+        "<Settings><graphics><TextureQuality value=\"2\" /><MSAA value=\"4\" /><MotionBlurStrength value=\"1.000000\" /></graphics><video><VSync value=\"1\" /></video></Settings>";
+
+    private static SystemSnapshot Pc(ulong vramGb, double ramGb) => new()
+    {
+        Profile = PcProfile.Weak,
+        Gpus = new[] { new GpuInfo { Name = "Test", Vendor = GpuVendor.Nvidia, DedicatedVideoMemory = vramGb << 30 } },
+        Memory = new MemoryInfo((ulong)(ramGb * 1024 * 1024 * 1024), Array.Empty<MemoryModule>()),
+        Cpu = new CpuInfo("Test", 2, 4, 3000),
+        Disks = new[] { new DiskInfo("HDD", DiskKind.Hdd, 500UL << 30) },
+    };
+
+    private static IReadOnlyList<Advice> Run(GtaInfo gta, SystemSnapshot s, string? xml) =>
+        GtaAdvisor.Evaluate(gta, s, Array.Empty<TweakPlan>(), xml, Array.Empty<Advice>(), Array.Empty<RunningApp>(), new DateTime(2026, 10, 24));
+
+    [Fact]
+    public void Missing_game_and_settings_are_the_first_things_reported()
+    {
+        var advice = Run(new GtaInfo(), Pc(4, 16), null);
+
+        Assert.Equal(Severity.Critical, advice[0].Severity);
+        Assert.Contains("GTA V не найдена", advice[0].Title);
+        Assert.Contains(advice, a => a.Title.Contains("Нет файла настроек"));
+    }
+
+    [Fact]
+    public void Settings_that_cost_fps_for_nothing_are_explained()
+    {
+        var gta = new GtaInfo { GameDir = @"D:\GTA", SettingsExists = true };
+        var advice = Run(gta, Pc(1, 6), Xml);
+
+        Assert.Contains(advice, a => a.Title.Contains("Текстуры не помещаются"));
+        Assert.Contains(advice, a => a.Title.Contains("MSAA ×4"));
+        Assert.Contains(advice, a => a.Title.Contains("размытие движения"));
+        Assert.Contains(advice, a => a.Title.Contains("вертикальная синхронизация"));
+        Assert.Contains(advice, a => a.Title.Contains("Мало оперативной памяти"));
+        Assert.Contains(advice, a => a.Title.Contains("жёстком диске"));
+    }
+
+    [Fact]
+    public void A_healthy_setup_gets_no_settings_warnings_and_a_broken_file_is_reported()
+    {
+        var gta = new GtaInfo { GameDir = @"D:\GTA", SettingsExists = true };
+        var fine = "<Settings><graphics><TextureQuality value=\"1\" /><MSAA value=\"0\" /><MotionBlurStrength value=\"0.000000\" /></graphics><video><VSync value=\"0\" /></video></Settings>";
+        var strong = Pc(8, 16) with { Disks = new[] { new DiskInfo("NVMe", DiskKind.Nvme, 500UL << 30) }, Cpu = new CpuInfo("Test", 8, 16, 4500) };
+
+        var advice = Run(gta, strong, fine);
+        foreach (var topic in new[] { "Текстуры", "MSAA", "размытие", "синхронизация", "оперативной", "жёстком", "Процессор" })
+        {
+            Assert.DoesNotContain(advice, a => a.Title.Contains(topic, StringComparison.OrdinalIgnoreCase));
+        }
+
+        Assert.Contains(Run(gta, strong, "<Settings><graphics>"), a => a.Title.Contains("повреждён"));
     }
 }
