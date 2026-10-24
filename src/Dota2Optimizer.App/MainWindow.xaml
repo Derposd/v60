@@ -131,39 +131,14 @@
         </Style>
     </Window.Resources>
 
-    <Border x:Name="Root" BorderBrush="#262830" BorderThickness="1" Background="{StaticResource Bg}">
+    <Border x:Name="Root" BorderBrush="#1E2029" BorderThickness="1" Background="{StaticResource Bg}">
     <Grid>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="72" />
-            <ColumnDefinition Width="*" />
-        </Grid.ColumnDefinitions>
-
-        <!-- Game rail: brand on top, one tile per game. -->
-        <Border Background="{StaticResource Rail}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,1,0">
-            <DockPanel>
-                <Border DockPanel.Dock="Top" Width="40" Height="40" CornerRadius="12" Margin="0,18,0,26" ToolTip="FrameLab">
-                    <Border.Background>
-                        <ImageBrush ImageSource="pack://application:,,,/Assets/logo.png" Stretch="UniformToFill" />
-                    </Border.Background>
-                </Border>
-                <TextBlock DockPanel.Dock="Bottom" Text="{Binding About.ShortVersion}" Style="{StaticResource Caption}" FontSize="10.5" HorizontalAlignment="Center" Margin="0,0,0,14" />
-                <StackPanel>
-                    <RadioButton Style="{StaticResource GameTile}" Content="{Binding Dota.Monogram}" Tag="Dota 2" Background="{StaticResource DotaTile}"
-                                 IsChecked="{Binding IsDota}" GroupName="game" ToolTip="Dota 2" />
-                    <RadioButton Style="{StaticResource GameTile}" Content="{Binding Cs2.Monogram}" Tag="CS2" Background="{StaticResource Cs2Tile}" Foreground="#2A1A04"
-                                 IsChecked="{Binding IsCs2}" GroupName="game" ToolTip="Counter-Strike 2" />
-                    <RadioButton Style="{StaticResource GameTile}" Content="RP" Tag="GTA RP" Background="{StaticResource GtaTile}"
-                                 IsChecked="{Binding IsGta}" GroupName="game" ToolTip="GTA V: GTA5RP, Majestic RP и другие RP-проекты" />
-                </StackPanel>
-            </DockPanel>
-        </Border>
-
-    <TabControl x:Name="Nav" Grid.Column="1" Style="{StaticResource SideNav}" SelectedIndex="{Binding SelectedTab}">
+    <TabControl x:Name="Nav" Style="{StaticResource SideNav}" SelectedIndex="{Binding SelectedTab}">
 
         <!-- ===================== HOME (main menu) ===================== -->
         <TabItem Header="Главная" Tag="{StaticResource IconStar}" DataContext="{Binding Home}">
             <ScrollViewer>
-                <StackPanel Margin="36,46,36,26">
+                <StackPanel Margin="40,6,36,26">
                     <TextBlock Text="FrameLab" Style="{StaticResource Kicker}" />
                     <TextBlock Text="Главная" Style="{StaticResource PageTitle}" />
                     <TextBlock Style="{StaticResource PageSub}" Margin="0,4,0,20" Text="Состояние ПК и оптимизация в один клик для Dota 2 и CS2. Тонкая настройка и раздел GTA RP (режимы графики, редуксы) — на страницах игр." />
@@ -381,7 +356,7 @@
 
         <!-- ===================== OPTIMIZE (wizard) ===================== -->
         <TabItem Header="Оптимизация" Tag="{StaticResource IconBolt}" DataContext="{Binding Current.Wizard}" Visibility="{Binding DataContext.IsGamePages, ElementName=Nav, Converter={StaticResource BoolToVis}}">
-            <Grid Margin="36,46,36,22">
+            <Grid Margin="40,6,36,22">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
@@ -854,7 +829,7 @@
         <!-- ===================== KNOWN ISSUES ===================== -->
         <TabItem Header="Проблемы" Tag="{StaticResource IconAlert}" DataContext="{Binding Current.Issues}" Visibility="{Binding DataContext.IsGamePages, ElementName=Nav, Converter={StaticResource BoolToVis}}">
             <ScrollViewer>
-                <StackPanel Margin="36,46,30,28">
+                <StackPanel Margin="40,6,30,28">
                     <Grid Margin="0,0,0,20">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
@@ -1023,7 +998,7 @@
         <!-- ===================== MATCH MONITOR ===================== -->
         <TabItem Header="Монитор матча" Tag="{StaticResource IconPulse}" DataContext="{Binding Current.Monitor}" Visibility="{Binding DataContext.IsGamePages, ElementName=Nav, Converter={StaticResource BoolToVis}}">
             <ScrollViewer>
-                <StackPanel Margin="36,46,30,28">
+                <StackPanel Margin="40,6,30,28">
                     <StackPanel Margin="0,0,0,20">
                         <TextBlock Text="{Binding GameName}" Style="{StaticResource Kicker}" />
                         <TextBlock Text="Монитор матча" Style="{StaticResource PageTitle}" />
@@ -1143,7 +1118,7 @@
         <!-- ===================== CRASHES ===================== -->
         <TabItem Header="Вылеты и сбои" Tag="{StaticResource IconShield}" DataContext="{Binding Current.Crash}" Visibility="{Binding DataContext.IsGamePages, ElementName=Nav, Converter={StaticResource BoolToVis}}">
             <ScrollViewer>
-                <StackPanel Margin="36,46,30,28">
+                <StackPanel Margin="40,6,30,28">
                     <StackPanel Margin="0,0,0,20">
                         <TextBlock Text="{Binding GameName}" Style="{StaticResource Kicker}" />
                         <TextBlock Text="Вылеты и сбои" Style="{StaticResource PageTitle}" />
@@ -1345,7 +1320,7 @@
         <TabItem Header="Режимы графики" Tag="{StaticResource IconSliders}" DataContext="{Binding Gta}"
                  Visibility="{Binding DataContext.IsGta, ElementName=Nav, Converter={StaticResource BoolToVis}}">
             <ScrollViewer>
-                <StackPanel Margin="36,46,36,26">
+                <StackPanel Margin="40,6,36,26">
                     <TextBlock Text="GTA V · RP-проекты" Style="{StaticResource Kicker}" />
                     <TextBlock Text="Режимы графики" Style="{StaticResource PageTitle}" />
                     <TextBlock Style="{StaticResource PageSub}" Margin="0,4,0,8"
@@ -1421,7 +1396,8 @@
                                     </DockPanel.Style>
                                     <ContentControl Style="{StaticResource Icon}" Tag="{StaticResource IconInfo}" Margin="0,0,8,0" VerticalAlignment="Top"
                                                     Foreground="{Binding (TextElement.Foreground), RelativeSource={RelativeSource AncestorType=DockPanel}}" />
-                                    <TextBlock Text="{Binding ActiveText}" TextWrapping="Wrap" />
+                                    <TextBlock Text="{Binding ActiveText}" TextWrapping="Wrap"
+                                               Foreground="{Binding (TextElement.Foreground), RelativeSource={RelativeSource AncestorType=DockPanel}}" />
                                 </DockPanel>
                             </StackPanel>
                         </DockPanel>
@@ -1526,7 +1502,7 @@
         <TabItem Header="Редуксы" Tag="{StaticResource IconFolder}" DataContext="{Binding Gta.Redux}"
                  Visibility="{Binding DataContext.IsGta, ElementName=Nav, Converter={StaticResource BoolToVis}}">
             <ScrollViewer>
-                <StackPanel Margin="36,46,36,26">
+                <StackPanel Margin="40,6,36,26">
                     <TextBlock Text="GTA V · графические моды" Style="{StaticResource Kicker}" />
                     <TextBlock Text="Редуксы" Style="{StaticResource PageTitle}" />
                     <TextBlock Style="{StaticResource PageSub}" Margin="0,4,0,20"
@@ -1745,7 +1721,7 @@
         <TabItem Header="Диагностика" Tag="{StaticResource IconPulse}" DataContext="{Binding Gta}"
                  Visibility="{Binding DataContext.IsGta, ElementName=Nav, Converter={StaticResource BoolToVis}}">
             <ScrollViewer>
-                <StackPanel Margin="36,46,36,26">
+                <StackPanel Margin="40,6,36,26">
                     <TextBlock Text="GTA V · RP-проекты" Style="{StaticResource Kicker}" />
                     <TextBlock Text="Диагностика" Style="{StaticResource PageTitle}" />
                     <TextBlock Style="{StaticResource PageSub}" Margin="0,4,0,18"
@@ -1767,7 +1743,7 @@
 
         <TabItem Header="Сеть" Tag="{StaticResource IconWifi}" DataContext="{Binding Network}">
             <ScrollViewer>
-                <StackPanel Margin="36,46,30,28">
+                <StackPanel Margin="40,6,30,28">
                     <StackPanel Margin="0,0,0,20">
                         <TextBlock Text="Для всех игр" Style="{StaticResource Kicker}" />
                         <TextBlock Text="Сеть и пинг" Style="{StaticResource PageTitle}" />
@@ -1897,7 +1873,7 @@
         <!-- ===================== ROLLBACK ===================== -->
         <TabItem Header="Откат" Tag="{StaticResource IconUndo}" DataContext="{Binding Rollback}">
             <ScrollViewer>
-                <StackPanel Margin="36,46,30,28">
+                <StackPanel Margin="40,6,30,28">
                     <Grid Margin="0,0,0,20">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
@@ -1993,7 +1969,7 @@
 
         <!-- ===================== ABOUT ===================== -->
         <TabItem Header="О программе" Tag="{StaticResource IconInfo}" DataContext="{Binding About}">
-            <Grid Margin="36,46,36,24">
+            <Grid Margin="40,6,36,24">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="*" />
@@ -2079,7 +2055,7 @@
     </TabControl>
 
         <!-- Caption buttons over the top-right corner; the rest of the top strip drags the window. -->
-        <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top">
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top">
             <Button Style="{StaticResource CaptionButton}" Tag="M 0,0.5 L 10,0.5" Click="OnMinimize" ToolTip="Свернуть" />
             <Button x:Name="MaxButton" Style="{StaticResource CaptionButton}" Tag="M 0.5,0.5 L 9.5,0.5 L 9.5,9.5 L 0.5,9.5 Z" Click="OnMaximize" ToolTip="Развернуть" />
             <Button Style="{StaticResource CloseCaptionButton}" Tag="M 0,0 L 10,10 M 10,0 L 0,10" Click="OnClose" ToolTip="Закрыть" />
