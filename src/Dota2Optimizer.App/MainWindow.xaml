@@ -40,6 +40,90 @@
             </Border>
         </DataTemplate>
 
+        <!-- Tweak card with selection, effect / recommendation tags and an inline undo. The ItemsControl's DataContext
+             provides CopyCommand and UndoTweakCommand. -->
+        <DataTemplate x:Key="TweakTemplate">
+            <Border Style="{StaticResource Card}" Padding="18,16">
+                <StackPanel>
+                    <DockPanel>
+                        <Border DockPanel.Dock="Right" Style="{StaticResource Tag}" Margin="12,0,0,0" VerticalAlignment="Top" Padding="10,3"
+                                Background="{Binding Status, Converter={StaticResource StatusSoft}}">
+                            <TextBlock Text="{Binding StatusLabel}" Style="{StaticResource TagText}" Foreground="{Binding Status, Converter={StaticResource StatusBrush}}" />
+                        </Border>
+                        <CheckBox IsChecked="{Binding IsSelected}" IsEnabled="{Binding CanSelect}" Content="{Binding Title}" FontWeight="SemiBold" FontSize="14.5" />
+                    </DockPanel>
+                    <WrapPanel Margin="28,8,0,0">
+                        <Border Style="{StaticResource Tag}" Background="{Binding EffectValue, Converter={StaticResource EffectSoft}}">
+                            <TextBlock Text="{Binding Effect}" Style="{StaticResource TagText}" Foreground="{Binding EffectValue, Converter={StaticResource EffectBrush}}" />
+                        </Border>
+                        <Border Style="{StaticResource Tag}" Background="{DynamicResource AccentSoft}" Visibility="{Binding IsRecommended, Converter={StaticResource BoolToVis}}">
+                            <TextBlock Text="{Binding RecommendationLabel}" Style="{StaticResource TagText}" Foreground="{DynamicResource Accent}" />
+                        </Border>
+                        <Border Style="{StaticResource Tag}" Visibility="{Binding IsRecommended, Converter={StaticResource NotVis}}">
+                            <TextBlock Text="{Binding RecommendationLabel}" Style="{StaticResource TagText}" />
+                        </Border>
+                        <Border Style="{StaticResource Tag}" Background="{StaticResource WarnSoft}" Visibility="{Binding IsDisputed, Converter={StaticResource BoolToVis}}">
+                            <TextBlock Text="спорно" Style="{StaticResource TagText}" Foreground="{StaticResource Warn}" />
+                        </Border>
+                        <Border Style="{StaticResource Tag}" Visibility="{Binding RequiresAdmin, Converter={StaticResource BoolToVis}}">
+                            <TextBlock Text="права администратора" Style="{StaticResource TagText}" />
+                        </Border>
+                        <Border Style="{StaticResource Tag}" Visibility="{Binding RequiresRestart, Converter={StaticResource BoolToVis}}">
+                            <TextBlock Text="нужна перезагрузка" Style="{StaticResource TagText}" />
+                        </Border>
+                    </WrapPanel>
+                    <TextBlock Text="{Binding StatusText}" Margin="28,6,0,0" />
+                    <TextBlock Text="{Binding Explanation}" Style="{StaticResource MutedText}" Margin="28,4,0,0" />
+                    <TextBlock Text="{Binding Risk}" Style="{StaticResource Caption}" Margin="28,6,0,0" />
+                    <TextBlock Text="{Binding ManualSteps}" Style="{StaticResource MutedText}" Margin="28,6,0,0" Visibility="{Binding ManualSteps, Converter={StaticResource NullToCollapsed}}" />
+                    <DockPanel Margin="28,10,0,0" Visibility="{Binding CopyText, Converter={StaticResource NullToCollapsed}}">
+                        <Button DockPanel.Dock="Right" Content="Копировать" Tag="{StaticResource IconCopy}" Style="{StaticResource SecondaryIcon}" Margin="8,0,0,0"
+                                Command="{Binding DataContext.CopyCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                CommandParameter="{Binding CopyText}" />
+                        <TextBox Text="{Binding CopyText, Mode=OneWay}" IsReadOnly="True" FontFamily="{StaticResource MonoFont}" FontSize="12.5" />
+                    </DockPanel>
+                    <Border Margin="28,12,0,0" Padding="12,8" CornerRadius="10" Background="{StaticResource OkSoft}"
+                            Visibility="{Binding CanUndo, Converter={StaticResource BoolToVis}}">
+                        <DockPanel>
+                            <Button DockPanel.Dock="Right" Content="Отменить это изменение" Tag="{StaticResource IconUndo}" Style="{StaticResource UndoIcon}" Margin="8,0,0,0"
+                                    Command="{Binding DataContext.UndoTweakCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                    CommandParameter="{Binding}" />
+                            <ContentControl Style="{StaticResource Icon}" Tag="{StaticResource IconCheck}" Foreground="{StaticResource Ok}" Margin="0,0,8,0" />
+                            <TextBlock Text="{Binding AppliedText}" Foreground="{StaticResource Ok}" VerticalAlignment="Center" />
+                        </DockPanel>
+                    </Border>
+                </StackPanel>
+            </Border>
+        </DataTemplate>
+
+        <!-- GTA V graphics mode card: one of them is picked and applied at a time. -->
+        <DataTemplate x:Key="GtaModeTemplate">
+            <RadioButton Style="{StaticResource ChoiceCard}" GroupName="gtamode" Margin="0,0,12,12" IsChecked="{Binding IsSelected, Mode=TwoWay}"
+                         Command="{Binding DataContext.SelectModeCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}" CommandParameter="{Binding}">
+                <StackPanel>
+                    <DockPanel>
+                        <ContentControl Style="{StaticResource IconBadge}" Tag="{Binding Icon}" Width="40" Height="40" Margin="0,0,12,0" VerticalAlignment="Top" />
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock Text="{Binding Title}" Style="{StaticResource CardTitle}" TextWrapping="Wrap" />
+                            <TextBlock Text="{Binding Tagline}" Style="{StaticResource Caption}" TextWrapping="Wrap" />
+                        </StackPanel>
+                    </DockPanel>
+                    <WrapPanel Margin="0,12,0,0">
+                        <Border Style="{StaticResource Tag}" Background="{Binding EffectValue, Converter={StaticResource EffectSoft}}">
+                            <TextBlock Text="{Binding Effect}" Style="{StaticResource TagText}" Foreground="{Binding EffectValue, Converter={StaticResource EffectBrush}}" />
+                        </Border>
+                        <Border Style="{StaticResource Tag}" Background="{DynamicResource AccentSoft}" Visibility="{Binding IsRecommended, Converter={StaticResource BoolToVis}}">
+                            <TextBlock Text="Рекомендуем для вашего ПК" Style="{StaticResource TagText}" Foreground="{DynamicResource Accent}" />
+                        </Border>
+                        <Border Style="{StaticResource Tag}" Background="{StaticResource OkSoft}" Visibility="{Binding IsActive, Converter={StaticResource BoolToVis}}">
+                            <TextBlock Text="✓ Сейчас включён" Style="{StaticResource TagText}" Foreground="{StaticResource Ok}" />
+                        </Border>
+                    </WrapPanel>
+                    <TextBlock Text="{Binding Explanation}" Style="{StaticResource MutedText}" Margin="0,8,0,0" />
+                </StackPanel>
+            </RadioButton>
+        </DataTemplate>
+
         <!-- Stepper item of the wizard. Tag = step index as a string, Content = label. -->
         <Style x:Key="StepButton" TargetType="Button" BasedOn="{StaticResource Flat}">
             <Setter Property="Command" Value="{Binding GoToStepCommand}" />
@@ -68,11 +152,13 @@
                                  IsChecked="{Binding IsDota}" GroupName="game" ToolTip="Dota 2" />
                     <RadioButton Style="{StaticResource GameTile}" Content="{Binding Cs2.Monogram}" Tag="CS2" Background="{StaticResource Cs2Tile}" Foreground="#2A1A04"
                                  IsChecked="{Binding IsCs2}" GroupName="game" ToolTip="Counter-Strike 2" />
+                    <RadioButton Style="{StaticResource GameTile}" Content="RP" Tag="GTA RP" Background="{StaticResource GtaTile}"
+                                 IsChecked="{Binding IsGta}" GroupName="game" ToolTip="GTA V: GTA5RP, Majestic RP и другие RP-проекты" />
                 </StackPanel>
             </DockPanel>
         </Border>
 
-    <TabControl Grid.Column="1" Style="{StaticResource SideNav}" SelectedIndex="{Binding SelectedTab}">
+    <TabControl x:Name="Nav" Grid.Column="1" Style="{StaticResource SideNav}" SelectedIndex="{Binding SelectedTab}">
 
         <!-- ===================== HOME (main menu) ===================== -->
         <TabItem Header="Главная" Tag="{StaticResource IconStar}" DataContext="{Binding Home}">
@@ -80,7 +166,7 @@
                 <StackPanel Margin="36,46,36,26">
                     <TextBlock Text="FrameLab" Style="{StaticResource Kicker}" />
                     <TextBlock Text="Главная" Style="{StaticResource PageTitle}" />
-                    <TextBlock Style="{StaticResource PageSub}" Margin="0,4,0,20" Text="Состояние ПК и оптимизация в один клик для Dota 2 и CS2. Тонкая настройка — на страницах игр." />
+                    <TextBlock Style="{StaticResource PageSub}" Margin="0,4,0,20" Text="Состояние ПК и оптимизация в один клик для Dota 2 и CS2. Тонкая настройка и раздел GTA RP (режимы графики, редуксы) — на страницах игр." />
 
                     <!-- One-click optimisation -->
                     <Border Style="{StaticResource Hero}" Padding="28,26">
@@ -208,6 +294,19 @@
                                         </DataTemplate>
                                     </ItemsControl.ItemTemplate>
                                 </ItemsControl>
+                                <Border BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0" Padding="0,10">
+                                    <DockPanel>
+                                        <Button DockPanel.Dock="Right" Content="Открыть" Tag="{StaticResource IconChevron}" Style="{StaticResource GhostIcon}" VerticalAlignment="Center"
+                                                Command="{Binding OpenGtaCommand}" />
+                                        <Border Width="40" Height="40" CornerRadius="11" Margin="0,0,14,0" Background="{StaticResource GtaTile}">
+                                            <TextBlock Text="RP" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="Bold" FontSize="12" Foreground="White" />
+                                        </Border>
+                                        <StackPanel VerticalAlignment="Center">
+                                            <TextBlock Text="GTA V · RP" FontWeight="SemiBold" />
+                                            <TextBlock Text="{Binding GtaState}" Style="{StaticResource Caption}" TextTrimming="CharacterEllipsis" />
+                                        </StackPanel>
+                                    </DockPanel>
+                                </Border>
                             </StackPanel>
                         </Border>
                     </Grid>
@@ -278,10 +377,10 @@
             </ScrollViewer>
         </TabItem>
 
-        <TabItem Header="{Binding Current.SectionTitle}" Style="{StaticResource NavSection}" />
+        <TabItem Header="{Binding SectionTitle}" Style="{StaticResource NavSection}" />
 
         <!-- ===================== OPTIMIZE (wizard) ===================== -->
-        <TabItem Header="Оптимизация" Tag="{StaticResource IconBolt}" DataContext="{Binding Current.Wizard}">
+        <TabItem Header="Оптимизация" Tag="{StaticResource IconBolt}" DataContext="{Binding Current.Wizard}" Visibility="{Binding DataContext.IsGamePages, ElementName=Nav, Converter={StaticResource BoolToVis}}">
             <Grid Margin="36,46,36,22">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
@@ -617,63 +716,7 @@
                                     <TextBlock Text="Цвет метки «Эффект»: зелёный — высокий, синий — средний, жёлтый — зависит от железа, серый — низкий." Style="{StaticResource Caption}" Margin="0,2,0,0" />
                                 </StackPanel>
                             </DockPanel>
-                            <ItemsControl ItemsSource="{Binding Tweaks}">
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate>
-                                        <Border Style="{StaticResource Card}" Padding="18,16">
-                                            <StackPanel>
-                                                <DockPanel>
-                                                    <Border DockPanel.Dock="Right" Style="{StaticResource Tag}" Margin="12,0,0,0" VerticalAlignment="Top" Padding="10,3"
-                                                            Background="{Binding Status, Converter={StaticResource StatusSoft}}">
-                                                        <TextBlock Text="{Binding StatusLabel}" Style="{StaticResource TagText}" Foreground="{Binding Status, Converter={StaticResource StatusBrush}}" />
-                                                    </Border>
-                                                    <CheckBox IsChecked="{Binding IsSelected}" IsEnabled="{Binding CanSelect}" Content="{Binding Title}" FontWeight="SemiBold" FontSize="14.5" />
-                                                </DockPanel>
-                                                <WrapPanel Margin="28,8,0,0">
-                                                    <Border Style="{StaticResource Tag}" Background="{Binding EffectValue, Converter={StaticResource EffectSoft}}">
-                                                        <TextBlock Text="{Binding Effect}" Style="{StaticResource TagText}" Foreground="{Binding EffectValue, Converter={StaticResource EffectBrush}}" />
-                                                    </Border>
-                                                    <Border Style="{StaticResource Tag}" Background="{DynamicResource AccentSoft}" Visibility="{Binding IsRecommended, Converter={StaticResource BoolToVis}}">
-                                                        <TextBlock Text="{Binding RecommendationLabel}" Style="{StaticResource TagText}" Foreground="{DynamicResource Accent}" />
-                                                    </Border>
-                                                    <Border Style="{StaticResource Tag}" Visibility="{Binding IsRecommended, Converter={StaticResource NotVis}}">
-                                                        <TextBlock Text="{Binding RecommendationLabel}" Style="{StaticResource TagText}" />
-                                                    </Border>
-                                                    <Border Style="{StaticResource Tag}" Background="{StaticResource WarnSoft}" Visibility="{Binding IsDisputed, Converter={StaticResource BoolToVis}}">
-                                                        <TextBlock Text="спорно" Style="{StaticResource TagText}" Foreground="{StaticResource Warn}" />
-                                                    </Border>
-                                                    <Border Style="{StaticResource Tag}" Visibility="{Binding RequiresAdmin, Converter={StaticResource BoolToVis}}">
-                                                        <TextBlock Text="права администратора" Style="{StaticResource TagText}" />
-                                                    </Border>
-                                                    <Border Style="{StaticResource Tag}" Visibility="{Binding RequiresRestart, Converter={StaticResource BoolToVis}}">
-                                                        <TextBlock Text="нужна перезагрузка" Style="{StaticResource TagText}" />
-                                                    </Border>
-                                                </WrapPanel>
-                                                <TextBlock Text="{Binding StatusText}" Margin="28,6,0,0" />
-                                                <TextBlock Text="{Binding Explanation}" Style="{StaticResource MutedText}" Margin="28,4,0,0" />
-                                                <TextBlock Text="{Binding Risk}" Style="{StaticResource Caption}" Margin="28,6,0,0" />
-                                                <TextBlock Text="{Binding ManualSteps}" Style="{StaticResource MutedText}" Margin="28,6,0,0" Visibility="{Binding ManualSteps, Converter={StaticResource NullToCollapsed}}" />
-                                                <DockPanel Margin="28,10,0,0" Visibility="{Binding CopyText, Converter={StaticResource NullToCollapsed}}">
-                                                    <Button DockPanel.Dock="Right" Content="Копировать" Tag="{StaticResource IconCopy}" Style="{StaticResource SecondaryIcon}" Margin="8,0,0,0"
-                                                            Command="{Binding DataContext.CopyCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                                                            CommandParameter="{Binding CopyText}" />
-                                                    <TextBox Text="{Binding CopyText, Mode=OneWay}" IsReadOnly="True" FontFamily="{StaticResource MonoFont}" FontSize="12.5" />
-                                                </DockPanel>
-                                                <Border Margin="28,12,0,0" Padding="12,8" CornerRadius="10" Background="{StaticResource OkSoft}"
-                                                        Visibility="{Binding CanUndo, Converter={StaticResource BoolToVis}}">
-                                                    <DockPanel>
-                                                        <Button DockPanel.Dock="Right" Content="Отменить это изменение" Tag="{StaticResource IconUndo}" Style="{StaticResource UndoIcon}" Margin="8,0,0,0"
-                                                                Command="{Binding DataContext.UndoTweakCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                                                                CommandParameter="{Binding}" />
-                                                        <ContentControl Style="{StaticResource Icon}" Tag="{StaticResource IconCheck}" Foreground="{StaticResource Ok}" Margin="0,0,8,0" />
-                                                        <TextBlock Text="{Binding AppliedText}" Foreground="{StaticResource Ok}" VerticalAlignment="Center" />
-                                                    </DockPanel>
-                                                </Border>
-                                            </StackPanel>
-                                        </Border>
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
+                            <ItemsControl ItemsSource="{Binding Tweaks}" ItemTemplate="{StaticResource TweakTemplate}" />
 
                             <Border Style="{StaticResource Card}" DataContext="{Binding Vendor}" Margin="0,10,0,12">
                                 <StackPanel>
@@ -809,7 +852,7 @@
         </TabItem>
 
         <!-- ===================== KNOWN ISSUES ===================== -->
-        <TabItem Header="Проблемы" Tag="{StaticResource IconAlert}" DataContext="{Binding Current.Issues}">
+        <TabItem Header="Проблемы" Tag="{StaticResource IconAlert}" DataContext="{Binding Current.Issues}" Visibility="{Binding DataContext.IsGamePages, ElementName=Nav, Converter={StaticResource BoolToVis}}">
             <ScrollViewer>
                 <StackPanel Margin="36,46,30,28">
                     <Grid Margin="0,0,0,20">
@@ -978,7 +1021,7 @@
         </TabItem>
 
         <!-- ===================== MATCH MONITOR ===================== -->
-        <TabItem Header="Монитор матча" Tag="{StaticResource IconPulse}" DataContext="{Binding Current.Monitor}">
+        <TabItem Header="Монитор матча" Tag="{StaticResource IconPulse}" DataContext="{Binding Current.Monitor}" Visibility="{Binding DataContext.IsGamePages, ElementName=Nav, Converter={StaticResource BoolToVis}}">
             <ScrollViewer>
                 <StackPanel Margin="36,46,30,28">
                     <StackPanel Margin="0,0,0,20">
@@ -1098,7 +1141,7 @@
         </TabItem>
 
         <!-- ===================== CRASHES ===================== -->
-        <TabItem Header="Вылеты и сбои" Tag="{StaticResource IconShield}" DataContext="{Binding Current.Crash}">
+        <TabItem Header="Вылеты и сбои" Tag="{StaticResource IconShield}" DataContext="{Binding Current.Crash}" Visibility="{Binding DataContext.IsGamePages, ElementName=Nav, Converter={StaticResource BoolToVis}}">
             <ScrollViewer>
                 <StackPanel Margin="36,46,30,28">
                     <StackPanel Margin="0,0,0,20">
@@ -1298,6 +1341,427 @@
             </ScrollViewer>
         </TabItem>
 
+        <!-- ===================== GTA RP: GRAPHICS MODES ===================== -->
+        <TabItem Header="Режимы графики" Tag="{StaticResource IconSliders}" DataContext="{Binding Gta}"
+                 Visibility="{Binding DataContext.IsGta, ElementName=Nav, Converter={StaticResource BoolToVis}}">
+            <ScrollViewer>
+                <StackPanel Margin="36,46,36,26">
+                    <TextBlock Text="GTA V · RP-проекты" Style="{StaticResource Kicker}" />
+                    <TextBlock Text="Режимы графики" Style="{StaticResource PageTitle}" />
+                    <TextBlock Style="{StaticResource PageSub}" Margin="0,4,0,8"
+                               Text="Готовые настройки GTA V: три подбираются по мощности ПК, два сделаны для РП. Меняются только значения в settings.xml («Документы»), копия файла сохраняется, и всё возвращается одной кнопкой." />
+                    <TextBlock Text="{Binding Status}" Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,0,0,18" />
+
+                    <!-- Where GTA V, its settings and RAGE MP are -->
+                    <Border Style="{StaticResource Card}" Padding="20,16" Margin="0,0,0,14">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="18" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="18" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <DockPanel>
+                                <ContentControl Style="{StaticResource IconBadge}" Tag="{StaticResource IconPlay}" Margin="0,0,12,0" VerticalAlignment="Top" />
+                                <StackPanel>
+                                    <TextBlock Text="GTA V" Style="{StaticResource Overline}" />
+                                    <TextBlock Text="{Binding GameText}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" ToolTip="{Binding GameText}" Margin="0,2,0,0" />
+                                    <TextBlock Text="{Binding EditionText}" Style="{StaticResource Caption}" TextWrapping="Wrap" />
+                                </StackPanel>
+                            </DockPanel>
+                            <DockPanel Grid.Column="2">
+                                <ContentControl Style="{StaticResource IconBadge}" Tag="{StaticResource IconSliders}" Margin="0,0,12,0" VerticalAlignment="Top" />
+                                <StackPanel>
+                                    <TextBlock Text="ФАЙЛ НАСТРОЕК" Style="{StaticResource Overline}" />
+                                    <TextBlock Text="{Binding SettingsText}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" Margin="0,2,0,0" />
+                                    <Button Content="Открыть папку" Tag="{StaticResource IconFolder}" Style="{StaticResource GhostIcon}" HorizontalAlignment="Left" Margin="-14,0,0,-6"
+                                            Command="{Binding OpenSettingsFolderCommand}" ToolTip="{Binding SettingsPathText}" />
+                                </StackPanel>
+                            </DockPanel>
+                            <DockPanel Grid.Column="4">
+                                <ContentControl Style="{StaticResource IconBadge}" Tag="{StaticResource IconWifi}" Margin="0,0,12,0" VerticalAlignment="Top" />
+                                <StackPanel>
+                                    <TextBlock Text="RAGE MP" Style="{StaticResource Overline}" />
+                                    <TextBlock Text="{Binding RageMpText}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" ToolTip="{Binding RageMpText}" Margin="0,2,0,0" />
+                                    <TextBlock Text="{Binding RageMpSub}" Style="{StaticResource Caption}" TextWrapping="Wrap" />
+                                </StackPanel>
+                            </DockPanel>
+                            <Button Grid.Column="5" Content="Проверить снова" Tag="{StaticResource IconRefresh}" Style="{StaticResource SecondaryIcon}"
+                                    VerticalAlignment="Center" Margin="18,0,0,0" Command="{Binding RefreshCommand}" />
+                        </Grid>
+                    </Border>
+
+                    <Border Padding="16,12" CornerRadius="12" Background="{StaticResource WarnSoft}" Margin="0,0,0,14"
+                            Visibility="{Binding GameRunning, Converter={StaticResource BoolToVis}}">
+                        <DockPanel>
+                            <ContentControl Style="{StaticResource Icon}" Tag="{StaticResource IconAlert}" Foreground="{StaticResource Warn}" Margin="0,1,10,0" VerticalAlignment="Top" />
+                            <TextBlock Text="{Binding RunningText}" Foreground="{StaticResource Warn}" TextWrapping="Wrap" />
+                        </DockPanel>
+                    </Border>
+
+                    <!-- Recommendation -->
+                    <Border Style="{StaticResource Hero}" Margin="0,0,0,22">
+                        <DockPanel>
+                            <ContentControl Style="{StaticResource IconBadge}" Tag="{StaticResource IconStar}" Width="52" Height="52" VerticalAlignment="Top" Margin="0,0,18,0" />
+                            <StackPanel VerticalAlignment="Center">
+                                <TextBlock Text="{Binding RecommendTitle}" Style="{StaticResource H1}" TextWrapping="Wrap" />
+                                <TextBlock Text="{Binding RecommendReason}" Style="{StaticResource MutedText}" Margin="0,6,0,0" />
+                                <DockPanel Margin="0,10,0,0">
+                                    <DockPanel.Style>
+                                        <Style TargetType="DockPanel">
+                                            <Setter Property="TextElement.Foreground" Value="{StaticResource Muted}" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding HasActiveMode}" Value="True">
+                                                    <Setter Property="TextElement.Foreground" Value="{StaticResource Ok}" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </DockPanel.Style>
+                                    <ContentControl Style="{StaticResource Icon}" Tag="{StaticResource IconInfo}" Margin="0,0,8,0" VerticalAlignment="Top"
+                                                    Foreground="{Binding (TextElement.Foreground), RelativeSource={RelativeSource AncestorType=DockPanel}}" />
+                                    <TextBlock Text="{Binding ActiveText}" TextWrapping="Wrap" />
+                                </DockPanel>
+                            </StackPanel>
+                        </DockPanel>
+                    </Border>
+
+                    <TextBlock Text="По мощности ПК" Style="{StaticResource Section}" />
+                    <TextBlock Text="Больше FPS ценой картинки. Текстуры дополнительно ограничиваются объёмом видеопамяти." Style="{StaticResource Caption}" Margin="0,2,0,10" />
+                    <ItemsControl ItemsSource="{Binding PerformanceModes}" ItemTemplate="{StaticResource GtaModeTemplate}" Margin="0,0,-12,0">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <UniformGrid Columns="3" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                    </ItemsControl>
+
+                    <TextBlock Text="Для РП" Style="{StaticResource Section}" Margin="0,10,0,0" />
+                    <TextBlock Text="Красивая картинка для отыгрыша — или золотая середина между картинкой и FPS." Style="{StaticResource Caption}" Margin="0,2,0,10" />
+                    <ItemsControl ItemsSource="{Binding RoleplayModes}" ItemTemplate="{StaticResource GtaModeTemplate}" Margin="0,0,-12,0">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <UniformGrid Columns="2" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                    </ItemsControl>
+
+                    <!-- Apply bar -->
+                    <Border Style="{StaticResource Card}" Margin="0,6,0,12">
+                        <DockPanel>
+                            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center" Margin="16,0,0,0">
+                                <Button Content="Вернуть как было" Tag="{StaticResource IconUndo}" Style="{StaticResource UndoIcon}" Command="{Binding UndoModeCommand}" Margin="0,0,10,0"
+                                        ToolTip="Восстановить settings.xml, который был до первого применения режима" />
+                                <Button Content="Применить режим" Tag="{StaticResource IconBolt}" Style="{StaticResource PrimaryIcon}" Command="{Binding ApplyModeCommand}" Padding="24,12" />
+                            </StackPanel>
+                            <StackPanel VerticalAlignment="Center">
+                                <TextBlock Text="{Binding SelectedText}" Style="{StaticResource CardTitle}" />
+                                <TextBlock Text="{Binding SelectedStatus}" Style="{StaticResource MutedText}" Margin="0,4,0,0" />
+                                <TextBlock Text="Применяется один режим за раз: следующий заменяет предыдущий, а «Вернуть как было» восстанавливает исходный файл." Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,6,0,0" />
+                            </StackPanel>
+                        </DockPanel>
+                    </Border>
+
+                    <Border Style="{StaticResource Card}" Margin="0,0,0,16" Visibility="{Binding HasReport, Converter={StaticResource BoolToVis}}">
+                        <StackPanel>
+                            <TextBlock Text="Отчёт" Style="{StaticResource Section}" Margin="0,0,0,6" />
+                            <ItemsControl ItemsSource="{Binding Report}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0" Padding="0,8">
+                                            <DockPanel>
+                                                <Button DockPanel.Dock="Right" Content="Отменить" Tag="{StaticResource IconUndo}" Style="{StaticResource UndoIcon}" Margin="8,0,0,0" VerticalAlignment="Center"
+                                                        Visibility="{Binding CanUndo, Converter={StaticResource BoolToVis}}"
+                                                        Command="{Binding DataContext.UndoLineCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                        CommandParameter="{Binding}" />
+                                                <TextBlock Text="{Binding Text}" VerticalAlignment="Center" TextWrapping="Wrap" />
+                                            </DockPanel>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Roleplay project -->
+                    <Border Style="{StaticResource Card}" Margin="0,0,0,22">
+                        <StackPanel>
+                            <DockPanel>
+                                <Border DockPanel.Dock="Right" Style="{StaticResource SegmentHost}" VerticalAlignment="Center" Margin="16,0,0,0">
+                                    <StackPanel Orientation="Horizontal">
+                                        <RadioButton Style="{StaticResource Segment}" Content="GTA5RP" IsChecked="{Binding IsGta5Rp}" GroupName="rpproject" />
+                                        <RadioButton Style="{StaticResource Segment}" Content="Majestic RP" IsChecked="{Binding IsMajestic}" GroupName="rpproject" />
+                                    </StackPanel>
+                                </Border>
+                                <ContentControl Style="{StaticResource IconBadge}" Tag="{StaticResource IconInfo}" Margin="0,0,14,0" />
+                                <StackPanel VerticalAlignment="Center">
+                                    <TextBlock Text="Ваш проект" Style="{StaticResource CardTitle}" />
+                                    <TextBlock Text="Игра и её настройки общие для всех серверов: выбор проекта меняет только подсказки." Style="{StaticResource Caption}" TextWrapping="Wrap" />
+                                </StackPanel>
+                            </DockPanel>
+                            <Border Style="{StaticResource Inset}" Margin="0,14,0,0">
+                                <StackPanel>
+                                    <TextBlock Text="{Binding Project.Name}" FontWeight="SemiBold" />
+                                    <TextBlock Text="{Binding Project.Text}" Style="{StaticResource MutedText}" Margin="0,4,0,0" />
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Other GTA / Windows tweaks -->
+                    <DockPanel Margin="0,0,0,10" Visibility="{Binding HasTweaks, Converter={StaticResource BoolToVis}}">
+                        <Button DockPanel.Dock="Right" Content="Применить выбранное" Tag="{StaticResource IconCheck}" Style="{StaticResource SecondaryIcon}" Command="{Binding ApplyTweaksCommand}" VerticalAlignment="Center" />
+                        <StackPanel>
+                            <TextBlock Text="Ещё для GTA V и Windows" Style="{StaticResource Section}" />
+                            <TextBlock Text="Отмечены только рекомендуемые для вашего ПК пункты; спорные по умолчанию выключены. Всё отменяется здесь или на вкладке «Откат»." Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,2,0,0" />
+                        </StackPanel>
+                    </DockPanel>
+                    <ItemsControl ItemsSource="{Binding Tweaks}" ItemTemplate="{StaticResource TweakTemplate}" />
+                </StackPanel>
+            </ScrollViewer>
+        </TabItem>
+
+        <!-- ===================== GTA RP: REDUX ===================== -->
+        <TabItem Header="Редуксы" Tag="{StaticResource IconFolder}" DataContext="{Binding Gta.Redux}"
+                 Visibility="{Binding DataContext.IsGta, ElementName=Nav, Converter={StaticResource BoolToVis}}">
+            <ScrollViewer>
+                <StackPanel Margin="36,46,36,26">
+                    <TextBlock Text="GTA V · графические моды" Style="{StaticResource Kicker}" />
+                    <TextBlock Text="Редуксы" Style="{StaticResource PageTitle}" />
+                    <TextBlock Style="{StaticResource PageSub}" Margin="0,4,0,20"
+                               Text="Установка графического пака в папку GTA V с резервной копией. Перед копированием пак проверяется: видно, что встанет, что заблокировано и почему. Удаление возвращает оригинальные файлы игры." />
+
+                    <Border Padding="18,14" CornerRadius="14" Background="{StaticResource CritSoft}" Margin="0,0,0,14">
+                        <DockPanel>
+                            <ContentControl Style="{StaticResource Icon}" Tag="{StaticResource IconShield}" Foreground="{StaticResource Crit}" Margin="0,1,12,0" VerticalAlignment="Top" />
+                            <StackPanel>
+                                <TextBlock Text="Скрипты, DLL, ASI и ReShade не устанавливаются" FontWeight="SemiBold" Foreground="{StaticResource Crit}" />
+                                <TextBlock TextWrapping="Wrap" Margin="0,4,0,0"
+                                           Text="Проверьте правила вашего проекта: паки, убирающие объекты, делающие текстуры прозрачными или дающие другое преимущество, считаются читом и ведут к бану. Приложение ставит только файлы графики — модели, текстуры, таймциклы." />
+                            </StackPanel>
+                        </DockPanel>
+                    </Border>
+
+                    <Border Padding="18,12" CornerRadius="14" Background="{StaticResource WarnSoft}" Margin="0,0,0,14"
+                            Visibility="{Binding HasUnfinished, Converter={StaticResource BoolToVis}}">
+                        <DockPanel>
+                            <ContentControl Style="{StaticResource Icon}" Tag="{StaticResource IconAlert}" Foreground="{StaticResource Warn}" Margin="0,1,10,0" VerticalAlignment="Top" />
+                            <TextBlock Foreground="{StaticResource Warn}" TextWrapping="Wrap"
+                                       Text="Есть прерванная установка (программа или ПК выключились посреди копирования). Откатите её в списке «Установленные паки» ниже — оригиналы вернутся на место." />
+                        </DockPanel>
+                    </Border>
+
+                    <!-- 1. GTA V folder -->
+                    <Border Style="{StaticResource Card}">
+                        <StackPanel>
+                            <TextBlock Text="1. Папка GTA V" Style="{StaticResource CardTitle}" />
+                            <DockPanel Margin="0,10,0,0">
+                                <Button DockPanel.Dock="Right" Content="Выбрать…" Tag="{StaticResource IconFolder}" Style="{StaticResource SecondaryIcon}" Command="{Binding BrowseGtaCommand}" Margin="8,0,0,0" />
+                                <Button DockPanel.Dock="Right" Content="Найти" Tag="{StaticResource IconSearch}" Style="{StaticResource GhostIcon}" Command="{Binding FindGtaCommand}" Margin="8,0,0,0"
+                                        ToolTip="Подставить папку, найденную автоматически" />
+                                <TextBox Text="{Binding GtaDir, UpdateSourceTrigger=PropertyChanged, Delay=300}" VerticalContentAlignment="Center" />
+                            </DockPanel>
+                            <TextBlock Text="{Binding GtaDirState}" Margin="2,8,0,0">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock" BasedOn="{StaticResource Caption}">
+                                        <Setter Property="Foreground" Value="{StaticResource Warn}" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding GtaDirOk}" Value="True">
+                                                <Setter Property="Foreground" Value="{StaticResource Ok}" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- 2. Pack -->
+                    <Border Style="{StaticResource Card}">
+                        <StackPanel>
+                            <TextBlock Text="2. Пак: папка или архив .zip / .7z / .rar" Style="{StaticResource CardTitle}" />
+                            <DockPanel Margin="0,10,0,0">
+                                <Button DockPanel.Dock="Right" Content="Архив…" Tag="{StaticResource IconFolder}" Style="{StaticResource SecondaryIcon}" Command="{Binding BrowsePackArchiveCommand}" Margin="8,0,0,0" />
+                                <Button DockPanel.Dock="Right" Content="Папка…" Tag="{StaticResource IconFolder}" Style="{StaticResource SecondaryIcon}" Command="{Binding BrowsePackFolderCommand}" Margin="8,0,0,0" />
+                                <TextBox Text="{Binding PackPath, UpdateSourceTrigger=PropertyChanged}" VerticalContentAlignment="Center" />
+                            </DockPanel>
+                            <DockPanel Margin="0,12,0,0">
+                                <Button DockPanel.Dock="Right" Content="Проверить" Tag="{StaticResource IconSearch}" Style="{StaticResource PrimaryIcon}" Command="{Binding CheckCommand}" Padding="22,11" />
+                                <TextBlock Style="{StaticResource Caption}" TextWrapping="Wrap" VerticalAlignment="Center" Margin="2,0,16,0"
+                                           Text="Для .7z и .rar нужен бесплатный 7-Zip, иначе используется встроенный в Windows tar. Проверка ничего не копирует в игру." />
+                            </DockPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <TextBlock Text="{Binding Status}" Style="{StaticResource MutedText}" Margin="2,2,0,12" />
+
+                    <Border Style="{StaticResource Card}" Visibility="{Binding Installing, Converter={StaticResource BoolToVis}}">
+                        <DockPanel>
+                            <Button DockPanel.Dock="Right" Content="Отмена" Tag="{StaticResource IconX}" Style="{StaticResource SecondaryIcon}" Command="{Binding CancelCommand}" VerticalAlignment="Center" Margin="16,0,0,0" />
+                            <StackPanel VerticalAlignment="Center">
+                                <TextBlock Text="Устанавливаю…" Style="{StaticResource CardTitle}" />
+                                <ProgressBar Style="{StaticResource Progress}" Value="{Binding ProgressValue, Mode=OneWay}" Margin="0,10,0,8" />
+                                <TextBlock Text="{Binding ProgressText}" Style="{StaticResource Caption}" TextTrimming="CharacterEllipsis" />
+                            </StackPanel>
+                        </DockPanel>
+                    </Border>
+
+                    <!-- Check result -->
+                    <Border Style="{StaticResource Card}" Visibility="{Binding HasPlan, Converter={StaticResource BoolToVis}}">
+                        <StackPanel>
+                            <DockPanel>
+                                <ContentControl Style="{StaticResource IconBadge}" Tag="{StaticResource IconFolder}" Margin="0,0,14,0" VerticalAlignment="Top" />
+                                <StackPanel>
+                                    <TextBlock Text="{Binding PlanTitle}" Style="{StaticResource CardTitle}" TextTrimming="CharacterEllipsis" />
+                                    <TextBlock Text="{Binding RootText}" Style="{StaticResource Caption}" TextWrapping="Wrap" />
+                                </StackPanel>
+                            </DockPanel>
+                            <WrapPanel Margin="0,12,0,4">
+                                <Border Style="{StaticResource Tag}" Background="{StaticResource OkSoft}">
+                                    <TextBlock Text="{Binding InstallSummary}" Style="{StaticResource TagText}" Foreground="{StaticResource Ok}" />
+                                </Border>
+                                <Border Style="{StaticResource Tag}" Background="{StaticResource CritSoft}">
+                                    <TextBlock Text="{Binding BlockedCount, StringFormat=Заблокировано: {0}}" Style="{StaticResource TagText}" Foreground="{StaticResource Crit}" />
+                                </Border>
+                                <Border Style="{StaticResource Tag}" Background="{StaticResource NeutralSoft}">
+                                    <TextBlock Text="{Binding SkippedCount, StringFormat=Пропущено: {0}}" Style="{StaticResource TagText}" />
+                                </Border>
+                            </WrapPanel>
+
+                            <ItemsControl ItemsSource="{Binding Warnings}" Margin="0,6,0,0">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <DockPanel Margin="0,0,0,8">
+                                            <ContentControl Style="{StaticResource Icon}" Tag="{StaticResource IconAlert}" Foreground="{StaticResource Warn}" Margin="0,1,10,0" VerticalAlignment="Top" />
+                                            <TextBlock Text="{Binding}" TextWrapping="Wrap" />
+                                        </DockPanel>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+
+                            <Border Style="{StaticResource Inset}" Margin="0,4,0,4" Visibility="{Binding NeedsRootConfirmation, Converter={StaticResource BoolToVis}}">
+                                <CheckBox IsChecked="{Binding AcceptUnknownRoot}"
+                                          Content="Я проверил пак: скопировать файлы в папку GTA V так, как они лежат в паке" />
+                            </Border>
+
+                            <Expander Header="{Binding InstallHeader}" Margin="0,8,0,0">
+                                <Border Style="{StaticResource Inset}" Margin="18,8,0,0">
+                                    <ScrollViewer MaxHeight="260" VerticalScrollBarVisibility="Auto">
+                                        <ItemsControl ItemsSource="{Binding InstallFiles}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <DockPanel Margin="0,1">
+                                                        <TextBlock DockPanel.Dock="Right" Text="{Binding Detail}" Style="{StaticResource Caption}" Margin="12,0,6,0" />
+                                                        <TextBlock Text="{Binding Path}" FontFamily="{StaticResource MonoFont}" FontSize="12" TextTrimming="CharacterEllipsis" />
+                                                    </DockPanel>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </ScrollViewer>
+                                </Border>
+                            </Expander>
+                            <Expander Header="{Binding BlockedHeader}" Margin="0,6,0,0" Visibility="{Binding BlockedCount, Converter={StaticResource CountToVisible}}">
+                                <Border Style="{StaticResource Inset}" Margin="18,8,0,0">
+                                    <ScrollViewer MaxHeight="220" VerticalScrollBarVisibility="Auto">
+                                        <ItemsControl ItemsSource="{Binding BlockedFiles}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <StackPanel Margin="0,2,0,4">
+                                                        <TextBlock Text="{Binding Path}" FontFamily="{StaticResource MonoFont}" FontSize="12" TextTrimming="CharacterEllipsis" />
+                                                        <TextBlock Text="{Binding Detail}" Style="{StaticResource Caption}" Foreground="{StaticResource Crit}" TextWrapping="Wrap" />
+                                                    </StackPanel>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </ScrollViewer>
+                                </Border>
+                            </Expander>
+                            <Expander Header="{Binding SkippedHeader}" Margin="0,6,0,0" Visibility="{Binding SkippedCount, Converter={StaticResource CountToVisible}}">
+                                <Border Style="{StaticResource Inset}" Margin="18,8,0,0">
+                                    <ScrollViewer MaxHeight="220" VerticalScrollBarVisibility="Auto">
+                                        <ItemsControl ItemsSource="{Binding SkippedFiles}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <DockPanel Margin="0,1">
+                                                        <TextBlock DockPanel.Dock="Right" Text="{Binding Detail}" Style="{StaticResource Caption}" Margin="12,0,6,0" />
+                                                        <TextBlock Text="{Binding Path}" FontFamily="{StaticResource MonoFont}" FontSize="12" TextTrimming="CharacterEllipsis" />
+                                                    </DockPanel>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </ScrollViewer>
+                                </Border>
+                            </Expander>
+
+                            <DockPanel Margin="0,16,0,0">
+                                <Button DockPanel.Dock="Right" Content="Установить" Tag="{StaticResource IconCheck}" Style="{StaticResource PrimaryIcon}" Command="{Binding InstallCommand}" Padding="24,12" />
+                                <Button DockPanel.Dock="Right" Content="Сбросить" Tag="{StaticResource IconX}" Style="{StaticResource GhostIcon}" Command="{Binding ClearCommand}" Margin="0,0,8,0" />
+                                <TextBlock Style="{StaticResource Caption}" TextWrapping="Wrap" VerticalAlignment="Center" Margin="2,0,16,0"
+                                           Text="Заменяемые файлы игры переносятся в папку .framelab внутри GTA V (тот же диск, лишнего места не нужно) и вернутся при удалении пака." />
+                            </DockPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Installed packs -->
+                    <TextBlock Text="Установленные паки" Style="{StaticResource Section}" Margin="0,12,0,10" />
+                    <Border Style="{StaticResource Inset}" Visibility="{Binding HasInstalled, Converter={StaticResource NotVis}}">
+                        <TextBlock Text="Пока ничего не установлено через FrameLab." Style="{StaticResource MutedText}" />
+                    </Border>
+                    <ItemsControl ItemsSource="{Binding Installed}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Padding="18,14" CornerRadius="14" BorderThickness="1" Margin="0,0,0,10">
+                                    <Border.Style>
+                                        <Style TargetType="Border">
+                                            <Setter Property="Background" Value="{StaticResource Panel}" />
+                                            <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsUnfinished}" Value="True">
+                                                    <Setter Property="Background" Value="{StaticResource WarnSoft}" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
+                                    <DockPanel>
+                                        <Button DockPanel.Dock="Right" Content="{Binding ButtonText}" Tag="{StaticResource IconUndo}" Style="{StaticResource UndoIcon}" VerticalAlignment="Center" Margin="16,0,0,0"
+                                                Command="{Binding DataContext.RemoveCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}" CommandParameter="{Binding}" />
+                                        <StackPanel VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding Name}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                                            <TextBlock Text="{Binding Details}" Style="{StaticResource Caption}" TextWrapping="Wrap" />
+                                        </StackPanel>
+                                    </DockPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <TextBlock Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="2,4,0,0"
+                               Text="После обновления GTA V пак может перестать работать: удалите его здесь (оригиналы вернутся) или проверьте целостность файлов в Steam / Rockstar Games Launcher." />
+                </StackPanel>
+            </ScrollViewer>
+        </TabItem>
+
+        <!-- ===================== GTA RP: DIAGNOSIS ===================== -->
+        <TabItem Header="Диагностика" Tag="{StaticResource IconPulse}" DataContext="{Binding Gta}"
+                 Visibility="{Binding DataContext.IsGta, ElementName=Nav, Converter={StaticResource BoolToVis}}">
+            <ScrollViewer>
+                <StackPanel Margin="36,46,36,26">
+                    <TextBlock Text="GTA V · RP-проекты" Style="{StaticResource Kicker}" />
+                    <TextBlock Text="Диагностика" Style="{StaticResource PageTitle}" />
+                    <TextBlock Style="{StaticResource PageSub}" Margin="0,4,0,18"
+                               Text="Что мешает GTA V на этом ПК: память, диск, драйвер, настройки игры, фоновые программы. Сверху — самое важное. Здесь ничего не меняется и не закрывается." />
+                    <Border Style="{StaticResource Card}" Padding="20,14" Margin="0,0,0,14">
+                        <DockPanel>
+                            <Button DockPanel.Dock="Right" Content="Пересканировать ПК" Tag="{StaticResource IconRefresh}" Style="{StaticResource SecondaryIcon}" Command="{Binding RescanCommand}" VerticalAlignment="Center" Margin="16,0,0,0" />
+                            <ContentControl Style="{StaticResource Icon}" Tag="{StaticResource IconInfo}" Foreground="{StaticResource Info}" Margin="0,2,10,0" VerticalAlignment="Center" />
+                            <TextBlock Text="{Binding Status}" Style="{StaticResource MutedText}" VerticalAlignment="Center" />
+                        </DockPanel>
+                    </Border>
+                    <ItemsControl ItemsSource="{Binding Diagnosis}" ItemTemplate="{StaticResource AdviceTemplate}" />
+                </StackPanel>
+            </ScrollViewer>
+        </TabItem>
+
         <!-- ===================== NETWORK ===================== -->
         <TabItem Header="ОБЩЕЕ ДЛЯ ВСЕХ ИГР" Style="{StaticResource NavSection}" />
 
@@ -1442,7 +1906,7 @@
                         <StackPanel>
                             <TextBlock Text="Для всех игр" Style="{StaticResource Kicker}" />
                             <TextBlock Text="Откат изменений" Style="{StaticResource PageTitle}" />
-                            <TextBlock Style="{StaticResource PageSub}" Text="Всё, что программа меняла, с копиями «до». Отменяйте по одному или всё сразу — от новых к старым." />
+                            <TextBlock Style="{StaticResource PageSub}" Text="Всё, что программа меняла, с копиями «до», включая графику GTA V. Отменяйте по одному или всё сразу — от новых к старым. Редуксы удаляются на странице GTA RP → «Редуксы»: у них свой список с оригиналами файлов." />
                         </StackPanel>
                         <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Bottom" Margin="20,0,0,0">
                             <Button Content="Обновить" Tag="{StaticResource IconRefresh}" Style="{StaticResource GhostIcon}" Command="{Binding RefreshCommand}" />
@@ -1548,7 +2012,7 @@
                             </Border>
                             <StackPanel Grid.Column="1" Margin="20,0,0,0" VerticalAlignment="Center">
                                 <TextBlock Text="FrameLab" Style="{StaticResource PageTitle}" />
-                                <TextBlock Text="Оптимизация игр: Dota 2 и Counter-Strike 2" Style="{StaticResource MutedText}" Margin="0,2,0,0" />
+                                <TextBlock Text="Оптимизация игр: Dota 2, Counter-Strike 2 и GTA V для RP-проектов" Style="{StaticResource MutedText}" Margin="0,2,0,0" />
                                 <TextBlock Text="{Binding Version}" Style="{StaticResource Caption}" Margin="0,6,0,0" />
                             </StackPanel>
                         </Grid>

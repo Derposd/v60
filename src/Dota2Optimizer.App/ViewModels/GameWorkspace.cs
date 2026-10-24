@@ -36,7 +36,7 @@ public sealed class GameWorkspace
 }
 
 /// <summary>
-/// Each game has its own accent colour (Dota — crimson, CS2 — amber). The brushes are replaced in the
+/// Each section has its own accent colour (Dota — crimson, CS2 — amber, GTA RP — violet-blue). The brushes are replaced in the
 /// application resources, and every accent use in XAML is a DynamicResource, so the whole window recolours.
 /// </summary>
 public static class GameTheme
@@ -46,7 +46,14 @@ public static class GameTheme
         var (accent, hover, pressed, onAccent) = game == GameId.Cs2
             ? (Color.FromRgb(0xF5, 0xA5, 0x24), Color.FromRgb(0xF8, 0xB9, 0x4D), Color.FromRgb(0xDB, 0x8C, 0x10), Color.FromRgb(0x1B, 0x12, 0x04))
             : (Color.FromRgb(0xF0, 0x45, 0x3A), Color.FromRgb(0xF4, 0x67, 0x5D), Color.FromRgb(0xD3, 0x31, 0x27), Colors.White);
+        Apply(accent, hover, pressed, onAccent);
+    }
 
+    public static void ApplyGta() =>
+        Apply(Color.FromRgb(0x7C, 0x6C, 0xFF), Color.FromRgb(0x95, 0x88, 0xFF), Color.FromRgb(0x5F, 0x4D, 0xE8), Colors.White);
+
+    private static void Apply(Color accent, Color hover, Color pressed, Color onAccent)
+    {
         var r = Application.Current.Resources;
         r["AccentColor"] = accent;
         r["Accent"] = Frozen(new SolidColorBrush(accent));
@@ -79,10 +86,27 @@ public static class GameTheme
     }
 }
 
-/// <summary>Remembers the last opened game between launches. A plain text file in the app's data folder.</summary>
+/// <summary>Remembers the last opened section between launches. A plain text file in the app's data folder.</summary>
 internal static class UiState
 {
+    /// <summary>Written instead of a <see cref="GameId"/> when the GTA RP section was open; older versions read it as Dota 2.</summary>
+    private const string GtaSection = "GtaRp";
+
     private static string File => Path.Combine(AppPaths.Root, "last-game.txt");
+
+    public static bool LastWasGta()
+    {
+        try
+        {
+            return System.IO.File.Exists(File) && System.IO.File.ReadAllText(File).Trim() == GtaSection;
+        }
+        catch (IOException)
+        {
+            return false;
+        }
+    }
+
+    public static void SaveGta() => Save(GtaSection);
 
     public static GameId LastGame()
     {
@@ -96,12 +120,14 @@ internal static class UiState
         }
     }
 
-    public static void SaveLastGame(GameId game)
+    public static void SaveLastGame(GameId game) => Save(game.ToString());
+
+    private static void Save(string section)
     {
         try
         {
             Directory.CreateDirectory(AppPaths.Root);
-            System.IO.File.WriteAllText(File, game.ToString());
+            System.IO.File.WriteAllText(File, section);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {

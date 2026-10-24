@@ -48,6 +48,10 @@
         <GradientStop Color="#FAC25E" Offset="0" />
         <GradientStop Color="#D67F0C" Offset="1" />
     </LinearGradientBrush>
+    <LinearGradientBrush x:Key="GtaTile" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#A08CFF" Offset="0" />
+        <GradientStop Color="#4C3BD9" Offset="1" />
+    </LinearGradientBrush>
 
     <SolidColorBrush x:Key="Ok" Color="#34D399" />
     <SolidColorBrush x:Key="OkSoft" Color="#1A34D399" />
@@ -837,6 +841,52 @@
                             <Setter TargetName="pill" Property="Opacity" Value="1" />
                             <Setter TargetName="pill" Property="Height" Value="34" />
                             <Setter TargetName="pill" Property="Margin" Value="0,7,0,0" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Thin rounded progress bar in the section accent. -->
+    <Style TargetType="ProgressBar" x:Key="Progress">
+        <Setter Property="Height" Value="8" />
+        <Setter Property="Minimum" Value="0" />
+        <Setter Property="Maximum" Value="100" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ProgressBar">
+                    <Border CornerRadius="4" Background="{StaticResource PanelAlt}" ClipToBounds="True">
+                        <Grid>
+                            <Border x:Name="PART_Track" />
+                            <Border x:Name="PART_Indicator" HorizontalAlignment="Left" CornerRadius="4" Background="{DynamicResource AccentGradient}" />
+                        </Grid>
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- A choice card (RadioButton): highlighted border and soft accent fill when checked. Content = any layout. -->
+    <Style TargetType="RadioButton" x:Key="ChoiceCard">
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="Foreground" Value="{StaticResource Text}" />
+        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="RadioButton">
+                    <Border x:Name="card" CornerRadius="16" Padding="18,16" Background="{StaticResource Panel}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1"
+                            SnapsToDevicePixels="True">
+                        <ContentPresenter />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="card" Property="BorderBrush" Value="{StaticResource BorderStrong}" />
+                        </Trigger>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="card" Property="BorderBrush" Value="{DynamicResource Accent}" />
+                            <Setter TargetName="card" Property="Background" Value="{DynamicResource AccentSoft}" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>

@@ -200,23 +200,29 @@ public sealed class AboutViewModel : ObservableObject
 
 public sealed class MainViewModel : ObservableObject
 {
-    // Tab order in MainWindow.xaml: home, a section header, game pages, a section header, then shared pages.
+    // Tab order in MainWindow.xaml: home, a section header, the Dota 2 / CS2 pages, the GTA RP pages (only one group is visible),
+    // a section header, then shared pages.
     public const int HomeTab = 0;
     public const int OptimizeTab = 2;
     public const int IssuesTab = 3;
     public const int MonitorTab = 4;
     public const int CrashTab = 5;
-    public const int NetworkTab = 7;
-    public const int RollbackTab = 8;
+    public const int GtaModesTab = 6;
+    public const int GtaReduxTab = 7;
+    public const int GtaDiagnosisTab = 8;
+    public const int NetworkTab = 10;
+    public const int RollbackTab = 11;
 
     private int _selectedTab;
     private GameWorkspace _current;
+    private bool _isGta;
 
     public MainViewModel()
     {
         var services = new AppServices();
         Dota = new GameWorkspace(services, Core.Game.Games.Dota2, i => SelectedTab = i);
         Cs2 = new GameWorkspace(services, Core.Game.Games.Cs2, i => SelectedTab = i);
+        Gta = new GtaViewModel(services);
         Network = new NetworkViewModel(services);
         Rollback = new RollbackViewModel(services);
         About = new AboutViewModel();
@@ -224,26 +230,55 @@ public sealed class MainViewModel : ObservableObject
         {
             Select(ws);
             SelectedTab = tab;
+        }, () =>
+        {
+            SelectGta();
+            SelectedTab = GtaModesTab;
         });
         _current = UiState.LastGame() == Core.Game.GameId.Cs2 ? Cs2 : Dota;
-        Select(_current);
+        if (UiState.LastWasGta())
+        {
+            SelectGta();
+        }
+        else
+        {
+            Select(_current);
+        }
     }
 
     public HomeViewModel Home { get; }
 
     public GameWorkspace Dota { get; }
     public GameWorkspace Cs2 { get; }
+    public GtaViewModel Gta { get; }
 
-    /// <summary>The game whose pages are shown.</summary>
+    /// <summary>The Steam game whose pages are shown (or were shown last, while the GTA RP section is open).</summary>
     public GameWorkspace Current
     {
         get => _current;
         private set => Set(ref _current, value);
     }
 
+    /// <summary>True while the GTA RP section is open: its pages replace the Dota 2 / CS2 ones.</summary>
+    public bool IsGta
+    {
+        get => _isGta;
+        set
+        {
+            if (value)
+            {
+                SelectGta();
+            }
+        }
+    }
+
+    public bool IsGamePages => !IsGta;
+
+    public string SectionTitle => IsGta ? "GTA RP" : Current.SectionTitle;
+
     public bool IsDota
     {
-        get => Current == Dota;
+        get => !IsGta && Current == Dota;
         set
         {
             if (value)
@@ -255,7 +290,7 @@ public sealed class MainViewModel : ObservableObject
 
     public bool IsCs2
     {
-        get => Current == Cs2;
+        get => !IsGta && Current == Cs2;
         set
         {
             if (value)
@@ -279,12 +314,43 @@ public sealed class MainViewModel : ObservableObject
     {
         var other = ws == Dota ? Cs2 : Dota;
         other.Wizard.IsActive = false;
+        Gta.IsActive = false;
         // Theme first: converters read the accent brushes while the new page's bindings are evaluated.
         GameTheme.Apply(ws.Game.Id);
         Current = ws;
+        _isGta = false;
+        if (SelectedTab is >= GtaModesTab and <= GtaDiagnosisTab)
+        {
+            SelectedTab = OptimizeTab;
+        }
+
         UiState.SaveLastGame(ws.Game.Id);
+        RaiseSection();
+        _ = ws.Wizard.ActivateAsync();
+    }
+
+    private void SelectGta()
+    {
+        Dota.Wizard.IsActive = false;
+        Cs2.Wizard.IsActive = false;
+        GameTheme.ApplyGta();
+        _isGta = true;
+        if (SelectedTab is >= OptimizeTab and <= CrashTab)
+        {
+            SelectedTab = GtaModesTab;
+        }
+
+        UiState.SaveGta();
+        RaiseSection();
+        _ = Gta.ActivateAsync();
+    }
+
+    private void RaiseSection()
+    {
+        OnPropertyChanged(nameof(IsGta));
+        OnPropertyChanged(nameof(IsGamePages));
         OnPropertyChanged(nameof(IsDota));
         OnPropertyChanged(nameof(IsCs2));
-        _ = ws.Wizard.ActivateAsync();
+        OnPropertyChanged(nameof(SectionTitle));
     }
 }

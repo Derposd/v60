@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>FrameLab — бесплатная оптимизация Dota 2 и CS2</title>
-<meta name="description" content="FrameLab — бесплатная программа для Windows: больше FPS и меньше фризов в Dota 2 и Counter-Strike 2. Оффлайн, не трогает игру, любое изменение отменяется в один клик.">
-<meta property="og:title" content="FrameLab — оптимизация Dota 2 и CS2">
+<title>FrameLab — бесплатная оптимизация Dota 2, CS2 и GTA RP</title>
+<meta name="description" content="FrameLab — бесплатная программа для Windows: больше FPS и меньше фризов в Dota 2, Counter-Strike 2 и GTA V для RP-проектов (GTA5RP, Majestic RP). Оффлайн, не трогает игру, любое изменение отменяется в один клик.">
+<meta property="og:title" content="FrameLab — оптимизация Dota 2, CS2 и GTA RP">
 <meta property="og:description" content="Бесплатно, оффлайн, VAC-безопасно. Пресеты графики, параметры запуска, решения типичных проблем и монитор матча.">
 <meta property="og:image" content="img/cs2-plan.jpg">
 <meta property="og:type" content="website">
@@ -147,7 +147,8 @@
   .bento { display: grid; grid-template-columns: repeat(6, 1fr); gap: 16px; }
   .tile { position: relative; overflow: hidden; border-radius: 22px; background: linear-gradient(180deg, var(--panel2), var(--panel)); border: 1px solid var(--line); padding: 28px; }
   .tile:hover { border-color: var(--line2); }
-  .tile.w3 { grid-column: span 3; } .tile.w2 { grid-column: span 2; } .tile.w4 { grid-column: span 4; }
+  .tile.w3 { grid-column: span 3; } .tile.w2 { grid-column: span 2; } .tile.w4 { grid-column: span 4; } .tile.w6 { grid-column: span 6; }
+  .undo.three { grid-template-columns: repeat(3, 1fr); }
   .tile h3 { font-size: 22px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.2; }
   .tile > p { color: var(--muted); margin-top: 8px; font-size: 15.5px; }
   .tile .tg { display: inline-block; font-family: var(--mono); font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--subtle); margin-bottom: 14px; }
@@ -239,7 +240,7 @@
     .hero .wrap { grid-template-columns: 1fr; gap: 44px; }
     .hero { padding-top: 52px; }
     .bento { grid-template-columns: repeat(2, 1fr); }
-    .tile.w3, .tile.w4 { grid-column: span 2; } .tile.w2 { grid-column: span 1; }
+    .tile.w3, .tile.w4, .tile.w6 { grid-column: span 2; } .tile.w2 { grid-column: span 1; }
     .honest { grid-template-columns: 1fr; }
     .strip .wrap { grid-template-columns: 1fr 1fr; }
     .strip div.it:nth-child(3) { border-left: 0; padding-left: 0; }
@@ -254,7 +255,8 @@
     .flow { grid-template-columns: 1fr 1fr; gap: 28px 16px; }
     .flow::before { display: none; }
     .bento, .inst { grid-template-columns: 1fr; }
-    .tile.w2, .tile.w3, .tile.w4 { grid-column: auto; }
+    .tile.w2, .tile.w3, .tile.w4, .tile.w6 { grid-column: auto; }
+    .undo.three { grid-template-columns: 1fr; }
     .tile { padding: 22px; }
     .strip .wrap { grid-template-columns: 1fr; }
     .strip div.it { border-left: 0; padding: 18px 0; }
@@ -278,7 +280,7 @@
 
 <nav>
   <div class="wrap">
-    <a class="brand" href="#"><img src="img/logo.png" alt="">FrameLab<small class="ver-tag">v<span class="ver">1.3</span></small></a>
+    <a class="brand" href="#"><img src="img/logo.png" alt="">FrameLab<small class="ver-tag">v<span class="ver">1.4</span></small></a>
     <div class="links"><a href="#how">Как работает</a><a href="#features">Возможности</a><a href="#screens">Скриншоты</a><a href="#honest">Честно</a><a href="#faq">Вопросы</a></div>
     <a class="btn btn-primary" href="https://github.com/Derposd/v60/releases/latest/download/FrameLab-Setup.exe">Скачать</a>
   </div>
@@ -287,7 +289,7 @@
 <header class="hero">
   <div class="wrap">
     <div>
-      <a class="pill" href="https://github.com/Derposd/v60/releases/latest"><b>v<span class="ver">1.3</span></b><span class="ver-note">Главное меню и кнопка «Оптимизировать»</span></a>
+      <a class="pill" href="https://github.com/Derposd/v60/releases/latest"><b>v<span class="ver">1.4</span></b><span class="ver-note">Раздел GTA RP</span></a>
       <h1>Найдите, что съедает FPS <span class="acc" data-g-name>в CS2</span></h1>
       <p class="lead">FrameLab сканирует ПК и настройки игры, показывает, что мешает, по важности, и исправляет это. У каждой настройки честный эффект, а любое изменение отменяется в один клик.</p>
       <div class="switch" role="group" aria-label="Игра">
@@ -346,6 +348,30 @@
       <p>Для каждой игры свой мастер, свои пресеты и своя база проблем. Переключите игру сверху — содержимое поменяется.</p></div>
 
     <div class="bento">
+      <div class="tile w6 rv">
+        <span class="tg">GTA RP · GTA5RP, Majestic RP</span>
+        <h3>Пять режимов графики GTA V — под ПК и под РП</h3>
+        <p>Три подбираются по мощности: «Ультра-слабый ПК» (мыльная картинка, зато играбельно на встроенной графике), «Слабый», «Средний». Два для отыгрыша: «РП красиво» — почти максимум без лишнего, и «Гибрид» — чёткая картинка без просадок в толпе. Меняется только settings.xml, «Вернуть как было» — одной кнопкой.</p>
+        <div class="undo three">
+          <div><span>Ультра-слабый ПК</span><span class="chip hi">Высокий</span></div>
+          <div><span>Гибрид</span><span class="chip md">Средний</span></div>
+          <div><span>РП красиво</span><span class="chip hw">Зависит от железа</span></div>
+        </div>
+      </div>
+
+      <div class="tile w3 rv">
+        <span class="tg">Редуксы</span>
+        <h3>Установка графических паков с откатом</h3>
+        <p>Папка или архив → проверка → видно, что встанет и что заблокировано. Оригиналы игры сохраняются и возвращаются при удалении.</p>
+        <div class="codes"><code>.asi</code><code>.dll</code><code>ScriptHook</code><code>ReShade</code><code class="keep">.ytd .yft .rpf</code></div>
+      </div>
+
+      <div class="tile w3 rv">
+        <span class="tg">Задержка ввода</span>
+        <h3>Меньше input lag в Dota 2 и CS2</h3>
+        <p>Монитор на 144 Гц, оставленный на 60, Reflex / Anti-Lag, V-Sync и окно без рамки — в диагнозе. Таймер Windows и MPO — по желанию, с пометкой «спорно».</p>
+      </div>
+
       <div class="tile w3 rv">
         <span class="tg">Проблемы и решения · <span data-g-short>CS2</span></span>
         <h3>Выберите симптом — получите причину и исправление</h3>
@@ -450,6 +476,9 @@
             <tr><td>«Залипание клавиш» по Shift ×5<small>не про FPS: игра больше не сворачивается</small></td><td><span class="chip lo">Низкий</span></td></tr>
             <tr><td>Приоритет игр в MMCSS, Power Throttling<small>спорно — выключено по умолчанию</small></td><td><span class="chip lo">Низкий</span></td></tr>
             <tr><td>Высокий приоритет процесса<small>спорно — выключено по умолчанию</small></td><td><span class="chip lo">Низкий</span></td></tr>
+            <tr><td>Частота монитора на максимум<small>задержка ввода: подсказка, режим экрана программа не меняет</small></td><td><span class="chip hi">Высокий</span></td></tr>
+            <tr><td>Таймер Windows 1 мс, отключение MPO<small>спорно — выключено по умолчанию</small></td><td><span class="chip hw">Зависит от железа</span></td></tr>
+            <tr><td>Режимы графики GTA V<small>только settings.xml; «РП красиво» — про картинку, а не FPS</small></td><td><span class="chip hi">Высокий</span></td></tr>
           </tbody>
         </table>
       </div>
@@ -461,6 +490,7 @@
           <li>Не меняет TCP/Nagle «для пинга» — игры идут через сеть Valve</li>
           <li>Не разгоняет и не правит профили драйвера</li>
           <li>Не скачивает ничего сама и не собирает данные</li>
+          <li>Не ставит в GTA V скрипты, ASI, DLL и ReShade — только файлы графики</li>
         </ul>
       </div>
     </div>
@@ -473,7 +503,7 @@
     <div class="inst">
       <div class="tile rv"><div class="n">01</div><h3>Скачайте установщик</h3><p>FrameLab-Setup.exe с GitHub. Права администратора для установки не нужны. Старая версия обновится сама.</p></div>
       <div class="tile rv"><div class="n">02</div><h3>Разрешите запуск</h3><p>Если появится «Windows защитила ваш компьютер» — «Подробнее» → «Выполнить в любом случае». Так бывает у программ без платной подписи.</p></div>
-      <div class="tile rv"><div class="n">03</div><h3>Выберите игру</h3><p>Dota 2 или CS2 слева → «Сканировать ПК» → посмотрите план → «Применить выбранное».</p></div>
+      <div class="tile rv"><div class="n">03</div><h3>Выберите игру</h3><p>Dota 2, CS2 или GTA RP слева → «Сканировать ПК» → посмотрите план → «Применить». Для GTA RP — выберите режим графики.</p></div>
     </div>
   </div>
 </section>
@@ -487,6 +517,8 @@
       <details><summary>Насколько вырастет FPS?</summary><p>Зависит от железа и от того, что было настроено раньше. Больше всего дают пресет графики, запуск на дискретной видеокарте в ноутбуках и отключение фоновой записи. Проверить эффект можно в «Мониторе матча».</p></details>
       <details><summary>Нужно ли сканировать ПК при каждом запуске?</summary><p>Нет. С версии 1.2.1 результат сохраняется: при следующем запуске программа сразу показывает диагноз, а Steam, игры и настройки Windows перепроверяет за секунду. Полное сканирование повторится само, если сменилась видеокарта, драйвер или процессор.</p></details>
       <details><summary>Что делает кнопка «Оптимизировать»?</summary><p>Применяет для всех установленных игр только то, что мастер выбрал бы сам: рекомендованные для вашего ПК настройки без спорных пунктов и без перезагрузки. Перед применением показывает список, после — отчёт и кнопку «Отменить всё». Программы не закрываются, ничего не удаляется и не разгоняется.</p></details>
+      <details><summary>Подходит для GTA5RP и Majestic RP? Не забанят за редукс?</summary><p>Режимы графики меняют только settings.xml — то же, что меню настроек игры, поэтому работают на любом RP-сервере. Менеджер редуксов ставит только файлы графики и никогда не ставит код (скрипты, ASI, DLL, ReShade). Но правила модов у каждого проекта свои: паки, убирающие объекты, делающие текстуры прозрачными или дающие другое преимущество, считаются читом. Прочитайте правила проекта перед установкой.</p></details>
+      <details><summary>Как вернуть оригинальные файлы GTA V после редукса?</summary><p>На вкладке «Редуксы» нажмите «Удалить (вернуть оригиналы)». Заменённые файлы игры при установке переносятся в папку .framelab внутри GTA V и возвращаются на место. Прерванная установка откатывается там же.</p></details>
       <details><summary>Как всё вернуть, как было?</summary><p>Рядом с каждым изменением есть кнопка «Отменить», а на вкладке «Откат» — «Откатить всё». Копии хранятся в %LOCALAPPDATA%\Dota2Optimizer и не удаляются вместе с программой.</p></details>
       <details><summary>Программа платная? Где подвох?</summary><p>Бесплатно, без рекламы и регистрации. Код открыт на GitHub — можно проверить, что программа делает.</p></details>
     </div>

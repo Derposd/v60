@@ -232,6 +232,15 @@ public sealed class AppServices
             }
         }
 
+        // GTA V rewrites settings.xml on exit, and RAGE MP holds its resource cache open while it runs.
+        var gtaFile = files.Any(f => f.Replace('/', '\\').EndsWith(@"GTA V\settings.xml", StringComparison.OrdinalIgnoreCase));
+        if ((gtaFile || set.TweakId == "gta.ragemp.cache") &&
+            (SystemScanner.IsProcessRunning(Path.GetFileNameWithoutExtension(Core.GtaRp.GtaInfo.GameExeName)) ||
+             SystemScanner.IsProcessRunning(Path.GetFileNameWithoutExtension(Core.GtaRp.GtaInfo.RageMpExeName))))
+        {
+            return "Закройте GTA V и клиент RAGE MP: иначе при выходе игра перезапишет восстановленные настройки.";
+        }
+
         if (files.Any(f => f.EndsWith("localconfig.vdf", StringComparison.OrdinalIgnoreCase)) && SystemScanner.IsProcessRunning("steam"))
         {
             return "Закройте Steam полностью: иначе он перезапишет восстановленный localconfig.vdf.";

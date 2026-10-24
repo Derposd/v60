@@ -38,6 +38,17 @@ public sealed partial class HealthChecks
         return list;
     }
 
+    /// <summary>The checks that do not depend on a Steam game: page file, overheating, USB and network-card power saving.</summary>
+    public IReadOnlyList<Advice> RunGeneral(SystemSnapshot s)
+    {
+        var list = new List<Advice>();
+        Try(list, () => CheckPageFile(s, list));
+        Try(list, () => CheckThermal(list));
+        Try(list, () => CheckUsbSuspend(list));
+        Try(list, () => CheckNicPowerSaving(list));
+        return list;
+    }
+
     private static void Try(List<Advice> list, Action a)
     {
         try

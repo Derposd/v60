@@ -54,8 +54,9 @@ public sealed class HomeViewModel : ObservableObject
     private string _boostState = string.Empty;
     private string _tempText = "Подсчитываю…";
     private TempSummary? _temp;
+    private string _gtaState = "Режимы графики, редуксы, диагностика";
 
-    public HomeViewModel(AppServices services, GameWorkspace dota, GameWorkspace cs2, Action<GameWorkspace, int> open)
+    public HomeViewModel(AppServices services, GameWorkspace dota, GameWorkspace cs2, Action<GameWorkspace, int> open, Action openGta)
     {
         _s = services;
         _open = open;
@@ -72,6 +73,7 @@ public sealed class HomeViewModel : ObservableObject
             }
         });
         OpenRollbackCommand = new RelayCommand(() => _open(dota, MainViewModel.RollbackTab));
+        OpenGtaCommand = new RelayCommand(openGta);
         RefreshBackgroundCommand = new AsyncCommand(RefreshBackgroundAsync);
         CleanTempCommand = new AsyncCommand(CleanTempAsync, () => _temp is { Files: > 0 });
 
@@ -103,6 +105,7 @@ public sealed class HomeViewModel : ObservableObject
     public ICommand UndoLineCommand { get; }
     public ICommand OpenGameCommand { get; }
     public ICommand OpenRollbackCommand { get; }
+    public ICommand OpenGtaCommand { get; }
     public ICommand RefreshBackgroundCommand { get; }
     public ICommand CleanTempCommand { get; }
 
@@ -207,9 +210,17 @@ public sealed class HomeViewModel : ObservableObject
         }
     }
 
+    /// <summary>GTA V is found outside Steam, so its line on the games card is filled separately.</summary>
+    public string GtaState
+    {
+        get => _gtaState;
+        private set => Set(ref _gtaState, value);
+    }
+
     /// <summary>Called when the window shows: picks up the saved scan, so the page is filled without scanning again.</summary>
     public async Task LoadAsync()
     {
+        _ = FindGtaAsync();
         if (_s.Snapshot is null && !_s.QuickScanTried)
         {
             _s.QuickScanTried = true;
@@ -221,6 +232,22 @@ public sealed class HomeViewModel : ObservableObject
         }
 
         RaisePc();
+    }
+
+    private async Task FindGtaAsync()
+    {
+        try
+        {
+            var documents = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+            var gta = await Task.Run(() => new Core.GtaRp.GtaLocator(_s.Fs, _s.Registry, documents).Locate(SystemScanner.IsProcessRunning));
+            GtaState = gta.GameFound
+                ? $"GTA V найдена · {gta.EditionRu}" + (gta.RageMpDir is null ? string.Empty : " · RAGE MP")
+                : "GTA V не найдена · режимы работают через settings.xml";
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            Log.Warn($"Поиск GTA V: {ex.Message}");
+        }
     }
 
     private async Task OptimizeAsync()

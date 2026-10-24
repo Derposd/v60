@@ -180,6 +180,12 @@ public sealed class WizardViewModel : ObservableObject
                 _ = RefreshAfterChangeAsync();
             }
         };
+        // The side panel shows the PC card of this wizard even while another section (GTA RP) made the scan.
+        _s.SnapshotChanged += () => System.Windows.Application.Current.Dispatcher.BeginInvoke(() =>
+        {
+            OnPropertyChanged(nameof(ProfileShort));
+            OnPropertyChanged(nameof(GpuShort));
+        });
         SelectRecommendedCommand = new RelayCommand(() =>
         {
             _userChoices.Clear();
