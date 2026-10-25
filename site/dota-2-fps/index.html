@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="ru" data-game="dota">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Как поднять FPS в Dota 2 и убрать фризы — без мифов | FrameLab</title>
+<meta name="description" content="Почему FPS в Dota 2 падает к концу матча, откуда фризы после обновления и микрофризы, какие параметры запуска устарели (-threads, -prewarm, -dx9). Честные шаги и бесплатная программа с откатом.">
+<link rel="canonical" href="https://derposd.github.io/v60/dota-2-fps/">
+<meta property="og:type" content="article">
+<meta property="og:locale" content="ru_RU">
+<meta property="og:site_name" content="FrameLab">
+<meta property="og:title" content="Как поднять FPS в Dota 2 и убрать фризы">
+<meta property="og:description" content="Падение FPS к концу матча, фризы после обновления, микрофризы и устаревшие параметры запуска — что реально помогает.">
+<meta property="og:url" content="https://derposd.github.io/v60/dota-2-fps/">
+<meta property="og:image" content="https://derposd.github.io/v60/img/og-dota.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#09090c">
+<link rel="icon" href="../img/favicon.png">
+<link rel="stylesheet" href="../guides.css">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@graph":[
+ {"@type":"Article","headline":"Как поднять FPS в Dota 2 и убрать фризы","inLanguage":"ru","datePublished":"2026-10-25","dateModified":"2026-10-25",
+  "image":"https://derposd.github.io/v60/img/og-dota.jpg","author":{"@type":"Organization","name":"FrameLab","url":"https://derposd.github.io/v60/"},
+  "publisher":{"@type":"Organization","name":"FrameLab","logo":{"@type":"ImageObject","url":"https://derposd.github.io/v60/img/logo.png"}},
+  "mainEntityOfPage":"https://derposd.github.io/v60/dota-2-fps/"},
+ {"@type":"BreadcrumbList","itemListElement":[
+  {"@type":"ListItem","position":1,"name":"FrameLab","item":"https://derposd.github.io/v60/"},
+  {"@type":"ListItem","position":2,"name":"FPS в Dota 2","item":"https://derposd.github.io/v60/dota-2-fps/"}]},
+ {"@type":"FAQPage","mainEntity":[
+  {"@type":"Question","name":"Почему FPS в Dota 2 падает к концу матча?","acceptedAnswer":{"@type":"Answer","text":"Чаще всего это нагрев и троттлинг (особенно ноутбуки), нехватка видеопамяти или ОЗУ, рост потребления памяти самой игрой или деградация от матча к матчу без перезапуска. В поздних драках к этому добавляется нагрузка на процессор от юнитов и эффектов."}},
+  {"@type":"Question","name":"Работают ли -threads и -prewarm в Dota 2?","acceptedAnswer":{"@type":"Answer","text":"Нет, это параметры старого Source. В Source 2 они ничего не дают, как и -dxlevel 95 и -dx9."}},
+  {"@type":"Question","name":"Откуда фризы после обновления игры или драйвера?","acceptedAnswer":{"@type":"Answer","text":"Шейдеры компилируются заново. Очистите кеш шейдеров и сыграйте 1–2 матча или демо героя — кеш соберётся, фризы пропадут."}}]}
+]}
+</script>
+</head>
+<body>
+
+<nav>
+  <div class="wrap">
+    <a class="brand" href="../"><img src="../img/logo.png" alt="">FrameLab</a>
+    <div class="links"><a href="../gta-5-rp/">GTA 5 RP</a><a href="../reduksy-gta-5-rp/">Редуксы</a><a href="../cs2-input-lag/">CS2</a><a href="../dota-2-fps/" aria-current="page">Dota 2</a></div>
+    <a class="btn btn-primary" href="https://github.com/Derposd/v60/releases/latest/download/FrameLab-Setup.exe">Скачать</a>
+  </div>
+</nav>
+
+<div class="wrap">
+  <div class="crumbs"><a href="../">FrameLab</a> › FPS в Dota 2</div>
+  <div class="layout">
+    <article>
+      <div class="k">Гайд · Dota 2</div>
+      <h1>Как поднять FPS в Dota 2 и убрать фризы</h1>
+      <p class="lead">В Dota 2 чаще всего жалуются на три вещи: FPS падает к концу матча, всё фризит после обновления, и регулярно проскакивают микрофризы. У каждой — свои причины, и консольной «волшебной команды» ни от одной из них нет.</p>
+      <p class="meta">Обновлено 25 октября 2026 · 6 минут чтения</p>
+
+      <h2 id="late">FPS падает к концу матча</h2>
+      <p>Обычно это не «игра тормозит со временем», а одно из четырёх: нагрев и троттлинг (особенно на ноутбуках), заканчивается видеопамять или ОЗУ, растёт потребление памяти самой игрой, или игра деградирует от матча к матчу без перезапуска. В поздних драках к этому добавляется много юнитов и эффектов — это нагрузка на процессор.</p>
+      <ul>
+        <li>Ограничьте FPS через <code>+fps_max</code> под частоту монитора: меньше нагрев — нет троттлинга к 40-й минуте. На ноутбуке играйте от сети.</li>
+        <li>Перезапускайте Dota 2 каждые 2–3 матча: независимое расследование показало, что игра работает хуже с каждой следующей игрой без перезапуска.</li>
+        <li>Если заполняется видеопамять — снизьте качество текстур; если ОЗУ — закройте браузер и включите автоматический файл подкачки.</li>
+      </ul>
+      <div class="note"><b>Монитор матча в FrameLab</b> записывает всю игру и в конце показывает FPS по минутам и причину просадки: троттлинг, видеопамять, ОЗУ или рост памяти игры.</div>
+      <figure><img class="shot" src="../img/dota-monitor.jpg" width="1600" height="1067" loading="lazy" alt="Монитор матча Dota 2 в FrameLab"><figcaption>Нажмите «Начать запись» перед игрой — после матча будет график и причина просадок.</figcaption></figure>
+
+      <h2 id="update">Фризы после обновления игры или драйвера</h2>
+      <p>После обновления шейдеры компилируются заново, и кеш драйвера и Steam устаревает. Особенно заметно на Vulkan в первых матчах.</p>
+      <ol class="steps">
+        <li>Очистите кеш шейдеров и сыграйте 1–2 матча или демо героя — кеш соберётся заново.</li>
+        <li>В Steam включите предварительное кеширование шейдеров и обработку шейдеров Vulkan в фоне.</li>
+        <li>На HDD фризы при первом появлении героев и способностей сильнее — перенос игры на SSD помогает больше любых настроек.</li>
+      </ol>
+
+      <h2 id="micro">Регулярные микрофризы</h2>
+      <ul>
+        <li>Закройте фоновые программы: RGB-софт, запись Game Bar, оверлеи (Discord, MSI Afterburner/RTSS), синхронизацию облака.</li>
+        <li>Выключите фоновую запись Xbox Game Bar и включите план питания «Высокая производительность».</li>
+        <li>Играете в «окне без рамки» на Windows 11 24H2? Попробуйте переключить «Оптимизацию для оконных игр» или перейти в полноэкранный режим — эффект зависит от системы.</li>
+      </ul>
+
+      <h2 id="params">Устаревшие параметры запуска</h2>
+      <p>Многие советы в интернете — из времён старого Source. В Source 2 эти параметры ничего не делают:</p>
+      <p><code>-threads 8</code> <code>-prewarm</code> <code>-dxlevel 95</code> <code>-dx9</code></p>
+      <p>Рабочие — <code>+fps_max</code> и при необходимости <code>-dx11</code>. FrameLab находит устаревшие параметры и предлагает убрать, ваши собственные не трогает.</p>
+
+      <h2 id="hw">Что ещё проверить</h2>
+      <ul>
+        <li><b>Драйвер видеокарты</b> старше года — обновите с сайта NVIDIA, AMD или Intel.</li>
+        <li><b>Ноутбук с двумя видеокартами</b> — Dota 2 должна идти на дискретной.</li>
+        <li><b>Одна планка памяти</b> на встроенной графике — второй такой же модуль (двухканальный режим) по тестам обычно даёт прирост в десятки процентов FPS.</li>
+        <li><b>NVIDIA Reflex</b> — в Dota 2 он включается в Настройки → Видео (GTX 900 и новее).</li>
+      </ul>
+
+      <h2 id="faq">Частые вопросы</h2>
+      <details><summary>Почему FPS в Dota 2 падает к концу матча?</summary><p>Чаще всего это нагрев и троттлинг (особенно ноутбуки), нехватка видеопамяти или ОЗУ, рост потребления памяти самой игрой или деградация от матча к матчу без перезапуска. В поздних драках к этому добавляется нагрузка на процессор от юнитов и эффектов.</p></details>
+      <details><summary>Работают ли -threads и -prewarm в Dota 2?</summary><p>Нет, это параметры старого Source. В Source 2 они ничего не дают, как и -dxlevel 95 и -dx9.</p></details>
+      <details><summary>Откуда фризы после обновления игры или драйвера?</summary><p>Шейдеры компилируются заново. Очистите кеш шейдеров и сыграйте 1–2 матча или демо героя — кеш соберётся, фризы пропадут.</p></details>
+
+      <div class="cta">
+        <h2>Найдите, что съедает FPS, в FrameLab</h2>
+        <p>Бесплатно, оффлайн, безопасно для VAC. Каждое изменение можно отменить кнопкой «Отменить» или на вкладке «Откат».</p>
+        <div class="row"><a class="btn btn-primary" href="https://github.com/Derposd/v60/releases/latest/download/FrameLab-Setup.exe">Скачать FrameLab</a><a class="btn btn-ghost" href="../">О программе</a></div>
+      </div>
+
+      <h2>Ещё гайды</h2>
+      <div class="related">
+        <a href="../cs2-input-lag/">Задержка ввода в CS2<span>144 Гц, V-Sync, Reflex и мифы параметров.</span></a>
+        <a href="../gta-5-rp/">FPS в GTA 5 RP<span>Пять режимов графики для слабых ПК.</span></a>
+        <a href="../reduksy-gta-5-rp/">Редуксы GTA 5 RP<span>Установка в три шага и с откатом.</span></a>
+      </div>
+    </article>
+
+    <aside>
+      <div class="box">
+        <div class="dl"><img src="../img/logo.png" alt=""><b>FrameLab <span class="ver">1.4</span></b><p>Бесплатно для Windows 10 и 11</p><a class="btn btn-primary" href="https://github.com/Derposd/v60/releases/latest/download/FrameLab-Setup.exe">Скачать</a></div>
+        <div class="toc"><b>Содержание</b><a href="#late">FPS к концу матча</a><a href="#update">Фризы после обновления</a><a href="#micro">Микрофризы</a><a href="#params">Устаревшие параметры</a><a href="#hw">Что ещё проверить</a><a href="#faq">Вопросы</a></div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<footer>
+  <div class="wrap">
+    <span>© FrameLab · <a href="https://github.com/Derposd/v60">Исходный код на GitHub</a></span>
+    <span>Сайт не использует cookies, счётчики и формы.</span>
+    <span>Не связано с Valve Corporation. Dota 2 — товарный знак Valve Corporation.</span>
+  </div>
+</footer>
+</body>
+</html>

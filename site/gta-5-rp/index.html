@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="ru" data-game="gta">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Как поднять FPS в GTA 5 RP на слабом ПК — 5 режимов графики | FrameLab</title>
+<meta name="description" content="Почему GTA 5 RP (GTA5RP, Majestic RP) тормозит сильнее обычной GTA V и что реально помогает на слабом ПК и ноутбуке: режимы графики, MSAA, текстуры и видеопамять, SSD, 8 ГБ ОЗУ. Бесплатно и с откатом.">
+<link rel="canonical" href="https://derposd.github.io/v60/gta-5-rp/">
+<meta property="og:type" content="article">
+<meta property="og:locale" content="ru_RU">
+<meta property="og:site_name" content="FrameLab">
+<meta property="og:title" content="Как поднять FPS в GTA 5 RP на слабом ПК">
+<meta property="og:description" content="Что тормозит GTA 5 RP и как это исправить: 5 готовых режимов графики, проверка ПК и честные советы.">
+<meta property="og:url" content="https://derposd.github.io/v60/gta-5-rp/">
+<meta property="og:image" content="https://derposd.github.io/v60/img/og-gta.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#09090c">
+<link rel="icon" href="../img/favicon.png">
+<link rel="stylesheet" href="../guides.css">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@graph":[
+ {"@type":"Article","headline":"Как поднять FPS в GTA 5 RP на слабом ПК","inLanguage":"ru","datePublished":"2026-10-25","dateModified":"2026-10-25",
+  "image":"https://derposd.github.io/v60/img/og-gta.jpg","author":{"@type":"Organization","name":"FrameLab","url":"https://derposd.github.io/v60/"},
+  "publisher":{"@type":"Organization","name":"FrameLab","logo":{"@type":"ImageObject","url":"https://derposd.github.io/v60/img/logo.png"}},
+  "mainEntityOfPage":"https://derposd.github.io/v60/gta-5-rp/"},
+ {"@type":"BreadcrumbList","itemListElement":[
+  {"@type":"ListItem","position":1,"name":"FrameLab","item":"https://derposd.github.io/v60/"},
+  {"@type":"ListItem","position":2,"name":"FPS в GTA 5 RP","item":"https://derposd.github.io/v60/gta-5-rp/"}]},
+ {"@type":"FAQPage","mainEntity":[
+  {"@type":"Question","name":"Не забанят ли на GTA5RP или Majestic RP за режимы графики?","acceptedAnswer":{"@type":"Answer","text":"Режимы меняют только settings.xml — тот же файл, который игра пишет, когда вы двигаете ползунки в меню графики. В процесс игры и клиента проекта программа не вмешивается."}},
+  {"@type":"Question","name":"Почему на спавне FPS всё равно проседает?","acceptedAnswer":{"@type":"Answer","text":"В людных местах нагрузка идёт в основном на процессор: много игроков, машин и скриптов вокруг. Графика это лечит лишь частично — помогает сокращение дальности прорисовки в режимах «Слабый ПК» и «Ультра-слабый ПК»."}},
+  {"@type":"Question","name":"Как вернуть мои настройки графики?","acceptedAnswer":{"@type":"Answer","text":"Перед применением режима сохраняется копия settings.xml. Кнопка «Вернуть как было» восстанавливает исходный файл."}},
+  {"@type":"Question","name":"Сколько FPS прибавится?","acceptedAnswer":{"@type":"Answer","text":"Зависит от железа и от того, что стояло раньше. Программа не обещает конкретных цифр: у каждого режима честная метка эффекта — «Высокая», «Средняя» или «Зависит от железа»."}}]}
+]}
+</script>
+</head>
+<body>
+
+<nav>
+  <div class="wrap">
+    <a class="brand" href="../"><img src="../img/logo.png" alt="">FrameLab</a>
+    <div class="links"><a href="../gta-5-rp/" aria-current="page">GTA 5 RP</a><a href="../reduksy-gta-5-rp/">Редуксы</a><a href="../cs2-input-lag/">CS2</a><a href="../dota-2-fps/">Dota 2</a></div>
+    <a class="btn btn-primary" href="https://github.com/Derposd/v60/releases/latest/download/FrameLab-Setup.exe">Скачать</a>
+  </div>
+</nav>
+
+<div class="wrap">
+  <div class="crumbs"><a href="../">FrameLab</a> › FPS в GTA 5 RP</div>
+  <div class="layout">
+    <article>
+      <div class="k">Гайд · GTA5RP · Majestic RP</div>
+      <h1>Как поднять FPS в GTA 5 RP на слабом ПК</h1>
+      <p class="lead">GTA 5 RP тормозит заметно сильнее одиночной GTA V, и дело не только в видеокарте. Разбираем, что на самом деле съедает FPS на RP-серверах, и что из этого можно исправить настройками.</p>
+      <p class="meta">Обновлено 25 октября 2026 · 7 минут чтения</p>
+
+      <h2 id="why">Почему GTA 5 RP тормозит сильнее обычной GTA V</h2>
+      <p>На RP-сервере вокруг вас десятки живых игроков, машин и серверных скриптов. Большую часть этой работы делает <strong>процессор</strong>, а не видеокарта. Поэтому на спавне и в людных местах FPS проседает сильнее всего — и это не всегда лечится ползунками графики.</p>
+      <p>Вторая частая причина — <strong>оперативная память</strong>. GTA V вместе с клиентом проекта, Discord и браузером не помещается в 8 ГБ: Windows начинает подкачку, и игра подвисает. Для комфортной игры лучше 16 ГБ, а на 8 ГБ закрывайте браузер перед игрой.</p>
+      <p>Третья — <strong>жёсткий диск</strong>. GTA V постоянно подгружает мир с диска. На обычном HDD это «подтормаживающие» текстуры и пустые участки дороги на скорости. Перенос игры на SSD — самое заметное улучшение плавности, режимы графики его не заменят.</p>
+
+      <h2 id="settings">Какие настройки графики бьют по FPS сильнее всего</h2>
+      <ul>
+        <li><strong>MSAA</strong> — самая дорогая настройка GTA V: съедает до трети FPS. Для сглаживания достаточно FXAA, оно почти бесплатно.</li>
+        <li><strong>Текстуры выше объёма видеопамяти.</strong> Если качество текстур не помещается в память видеокарты, игра подвисает каждые несколько секунд, подгружая текстуры через оперативную память. Снизьте текстуры на ступень.</li>
+        <li><strong>Дальность прорисовки, тени, отражения, трава</strong> — нагружают и видеокарту, и процессор. В толпе дальность прорисовки важнее всего.</li>
+        <li><strong>Размытие движения и глубина резкости</strong> — стоят FPS, а в РП ничего не добавляют.</li>
+      </ul>
+
+      <h2 id="modes">5 готовых режимов графики</h2>
+      <p>Подбирать всё это вручную долго, поэтому в FrameLab есть пять готовых режимов. Три подбираются по мощности ПК, два сделаны для РП. Режим под ваш ПК предвыбран, меняется только <code>settings.xml</code> в «Документах», а копия файла сохраняется.</p>
+      <div class="tbl-wrap"><table class="tbl">
+        <thead><tr><th>Режим</th><th>Для какого ПК</th><th>Что меняется</th><th>Прирост FPS</th></tr></thead>
+        <tbody>
+          <tr><td><b>Ультра-слабый ПК</b><br>мыльно, но играбельно</td><td>Ноутбуки со встроенной графикой, видеокарты до 2 ГБ, 8 ГБ памяти</td><td>Всё на минимуме, дальность прорисовки сокращена, на 16:9 разрешение 1280×720</td><td><span class="tag t-hi">Высокая</span></td></tr>
+          <tr><td><b>Слабый ПК</b><br>играбельно и без лишнего</td><td>GTX 750 / 1050, офисные ПК</td><td>Тени, отражения и тяжёлые эффекты выключены, лёгкое FXAA, разрешение не меняется</td><td><span class="tag t-hi">Высокая</span></td></tr>
+          <tr><td><b>Средний ПК</b><br>ровный FPS, приличная картинка</td><td>GTX 1060 / RX 580 и похожие</td><td>Тени и отражения на «нормальном», FXAA, текстуры по объёму видеопамяти</td><td><span class="tag t-md">Средняя</span></td></tr>
+          <tr><td><b>РП красиво</b><br>почти максимум</td><td>От GTX 1660 / RX 6600 и 16 ГБ памяти</td><td>Высокие текстуры, тени, SSAO, фильтрация 16×; без размытия, глубины резкости и MSAA</td><td><span class="tag t-dep">Зависит от железа</span></td></tr>
+          <tr><td><b>Гибрид</b><br>красиво и без просадок</td><td>Когда нужна картинка, но FPS в толпе важнее</td><td>Чёткие текстуры, фильтрация 8×, отражения; тени, SSAO и дальность — как у среднего</td><td><span class="tag t-md">Средняя</span></td></tr>
+        </tbody>
+      </table></div>
+      <figure><img class="shot" src="../img/gta-modes.jpg" width="1600" height="1067" loading="lazy" alt="Режимы графики GTA V в FrameLab: Ультра-слабый, Слабый и Средний ПК"><figcaption>Режим под ваш ПК выбран заранее, видно, какой включён сейчас.</figcaption></figure>
+
+      <h2 id="check">Что ещё проверить на слабом ПК и ноутбуке</h2>
+      <ul>
+        <li><strong>Ноутбук с двумя видеокартами.</strong> Убедитесь, что GTA V и клиент проекта запускаются на дискретной видеокарте, а не на встроенной.</li>
+        <li><strong>Частота монитора.</strong> Монитор на 144 Гц, работающий на 60 Гц, — частая и незаметная ошибка. Проверка: Параметры → Система → Дисплей → Расширенные параметры дисплея.</li>
+        <li><strong>Фоновые программы.</strong> Браузер с вкладками, запись экрана и тяжёлые лаунчеры отнимают память и процессор.</li>
+        <li><strong>Кэш клиента.</strong> Если после обновления проекта начались вылеты или зависания, помогает сброс кэша клиента RAGE MP.</li>
+      </ul>
+      <div class="note"><b>Диагностика в FrameLab</b> делает эти проверки сама: память, HDD или SSD, процессор, MSAA, текстуры больше видеопамяти, частота монитора и фоновые программы. Ничего не меняется без вашего подтверждения.</div>
+
+      <h2 id="how">Как включить режим в FrameLab</h2>
+      <ol class="steps">
+        <li>Скачайте и запустите FrameLab, слева выберите <b>GTA RP</b>.</li>
+        <li>Откройте «Режимы графики» — программа найдёт GTA V и файл настроек и предложит режим под ваш ПК.</li>
+        <li>Выберите режим и нажмите <b>«Применить режим»</b>. Не понравилось — <b>«Вернуть как было»</b>.</li>
+      </ol>
+      <div class="note warn"><b>Перед применением закройте игру.</b> GTA V перезаписывает settings.xml при выходе, поэтому настройки, изменённые при запущенной игре, могут потеряться.</div>
+
+      <h2 id="faq">Частые вопросы</h2>
+      <details><summary>Не забанят ли на GTA5RP или Majestic RP за режимы графики?</summary><p>Режимы меняют только settings.xml — тот же файл, который игра пишет, когда вы двигаете ползунки в меню графики. В процесс игры и клиента проекта программа не вмешивается.</p></details>
+      <details><summary>Почему на спавне FPS всё равно проседает?</summary><p>В людных местах нагрузка идёт в основном на процессор: много игроков, машин и скриптов вокруг. Графика это лечит лишь частично — помогает сокращение дальности прорисовки в режимах «Слабый ПК» и «Ультра-слабый ПК».</p></details>
+      <details><summary>Как вернуть мои настройки графики?</summary><p>Перед применением режима сохраняется копия settings.xml. Кнопка «Вернуть как было» восстанавливает исходный файл.</p></details>
+      <details><summary>Сколько FPS прибавится?</summary><p>Зависит от железа и от того, что стояло раньше. Программа не обещает конкретных цифр: у каждого режима честная метка эффекта — «Высокая», «Средняя» или «Зависит от железа».</p></details>
+
+      <div class="cta">
+        <h2>Попробуйте режимы в FrameLab</h2>
+        <p>Бесплатно, без рекламы и регистрации. Работает оффлайн, любое изменение отменяется одной кнопкой.</p>
+        <div class="row"><a class="btn btn-primary" href="https://github.com/Derposd/v60/releases/latest/download/FrameLab-Setup.exe">Скачать FrameLab</a><a class="btn btn-ghost" href="../">О программе</a></div>
+      </div>
+
+      <h2>Ещё гайды</h2>
+      <div class="related">
+        <a href="../reduksy-gta-5-rp/">Как установить редукс в GTA 5 RP<span>Три шага, проверка до копирования и удаление в один клик.</span></a>
+        <a href="../cs2-input-lag/">Задержка ввода в CS2<span>144 Гц, V-Sync, полноэкранный режим и мифы параметров запуска.</span></a>
+        <a href="../dota-2-fps/">FPS в Dota 2<span>Фризы, падение FPS к концу матча и устаревшие параметры.</span></a>
+      </div>
+    </article>
+
+    <aside>
+      <div class="box">
+        <div class="dl"><img src="../img/logo.png" alt=""><b>FrameLab <span class="ver">1.4</span></b><p>Бесплатно для Windows 10 и 11</p><a class="btn btn-primary" href="https://github.com/Derposd/v60/releases/latest/download/FrameLab-Setup.exe">Скачать</a></div>
+        <div class="toc"><b>Содержание</b><a href="#why">Почему тормозит</a><a href="#settings">Тяжёлые настройки</a><a href="#modes">5 режимов графики</a><a href="#check">Что ещё проверить</a><a href="#how">Как включить</a><a href="#faq">Вопросы</a></div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<footer>
+  <div class="wrap">
+    <span>© FrameLab · <a href="https://github.com/Derposd/v60">Исходный код на GitHub</a></span>
+    <span>Сайт не использует cookies, счётчики и формы.</span>
+    <span>Не связано с Rockstar Games, Valve Corporation и RP-проектами. Grand Theft Auto V — товарный знак Rockstar Games.</span>
+  </div>
+</footer>
+</body>
+</html>

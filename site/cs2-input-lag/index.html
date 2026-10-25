@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="ru" data-game="cs2">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Задержка ввода в CS2: «ватная» мышь, 144 Гц, V-Sync и Reflex | FrameLab</title>
+<meta name="description" content="Почему в CS2 мышь ощущается «ватной» и что реально уменьшает задержку ввода: частота монитора 144 Гц вместо 60, V-Sync, полноэкранный режим, NVIDIA Reflex и AMD Anti-Lag 2, план питания. Без мифов про -tickrate 128.">
+<link rel="canonical" href="https://derposd.github.io/v60/cs2-input-lag/">
+<meta property="og:type" content="article">
+<meta property="og:locale" content="ru_RU">
+<meta property="og:site_name" content="FrameLab">
+<meta property="og:title" content="Задержка ввода в CS2: что реально помогает">
+<meta property="og:description" content="144 Гц вместо 60, V-Sync, полноэкранный режим, Reflex и Anti-Lag 2 — по шагам и без мифов.">
+<meta property="og:url" content="https://derposd.github.io/v60/cs2-input-lag/">
+<meta property="og:image" content="https://derposd.github.io/v60/img/og-cs2.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#09090c">
+<link rel="icon" href="../img/favicon.png">
+<link rel="stylesheet" href="../guides.css">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@graph":[
+ {"@type":"Article","headline":"Задержка ввода в CS2: что реально помогает","inLanguage":"ru","datePublished":"2026-10-25","dateModified":"2026-10-25",
+  "image":"https://derposd.github.io/v60/img/og-cs2.jpg","author":{"@type":"Organization","name":"FrameLab","url":"https://derposd.github.io/v60/"},
+  "publisher":{"@type":"Organization","name":"FrameLab","logo":{"@type":"ImageObject","url":"https://derposd.github.io/v60/img/logo.png"}},
+  "mainEntityOfPage":"https://derposd.github.io/v60/cs2-input-lag/"},
+ {"@type":"BreadcrumbList","itemListElement":[
+  {"@type":"ListItem","position":1,"name":"FrameLab","item":"https://derposd.github.io/v60/"},
+  {"@type":"ListItem","position":2,"name":"Задержка ввода в CS2","item":"https://derposd.github.io/v60/cs2-input-lag/"}]},
+ {"@type":"FAQPage","mainEntity":[
+  {"@type":"Question","name":"Как проверить, на какой частоте работает монитор?","acceptedAnswer":{"@type":"Answer","text":"Параметры → Система → Дисплей → Расширенные параметры дисплея → «Выберите частоту обновления». Если нужной частоты нет в списке, проверьте кабель (лучше DisplayPort), режим в меню монитора и драйвер видеокарты."}},
+  {"@type":"Question","name":"Нужен ли -tickrate 128 в параметрах запуска CS2?","acceptedAnswer":{"@type":"Answer","text":"Нет. В CS2 работает subtick, параметр -tickrate 128 и rate-команды из CS:GO ничего не делают. Так же бесполезны -novid и -threads."}},
+  {"@type":"Question","name":"Reflex «Вкл» или «Вкл + усиление»?","acceptedAnswer":{"@type":"Answer","text":"Начните с «Вкл». Режим «Вкл + усиление» держит частоты видеокарты выше; помогает ли он на вашем ПК, лучше проверить замером."}}]}
+]}
+</script>
+</head>
+<body>
+
+<nav>
+  <div class="wrap">
+    <a class="brand" href="../"><img src="../img/logo.png" alt="">FrameLab</a>
+    <div class="links"><a href="../gta-5-rp/">GTA 5 RP</a><a href="../reduksy-gta-5-rp/">Редуксы</a><a href="../cs2-input-lag/" aria-current="page">CS2</a><a href="../dota-2-fps/">Dota 2</a></div>
+    <a class="btn btn-primary" href="https://github.com/Derposd/v60/releases/latest/download/FrameLab-Setup.exe">Скачать</a>
+  </div>
+</nav>
+
+<div class="wrap">
+  <div class="crumbs"><a href="../">FrameLab</a> › Задержка ввода в CS2</div>
+  <div class="layout">
+    <article>
+      <div class="k">Гайд · Counter-Strike 2 · Dota 2</div>
+      <h1>Задержка ввода в CS2: что реально помогает</h1>
+      <p class="lead">Если мышь в CS2 ощущается «ватной», чаще всего виноваты не «секретные» параметры запуска, а несколько простых настроек: частота монитора, V-Sync, оконный режим и режим низкой задержки. Всё по порядку.</p>
+      <p class="meta">Обновлено 25 октября 2026 · 6 минут чтения</p>
+
+      <h2 id="hz">1. Монитор на 144 Гц работает на 60 Гц</h2>
+      <p>Самая частая причина «ватной» мыши. Windows не всегда включает высокую частоту сама — например, после переустановки драйвера или при подключении через старый HDMI. При этом всё работает, и ошибку легко не заметить годами.</p>
+      <div class="tbl-wrap"><table class="tbl">
+        <thead><tr><th>Частота монитора</th><th>Сколько показывается один кадр</th></tr></thead>
+        <tbody><tr><td>60 Гц</td><td>до 16,7 мс</td></tr><tr><td>144 Гц</td><td>до 6,9 мс</td></tr><tr><td>240 Гц</td><td>до 4,2 мс</td></tr></tbody>
+      </table></div>
+      <p><b>Как проверить:</b></p>
+      <p><span class="path">Параметры → Система → Дисплей → Расширенные параметры дисплея → «Выберите частоту обновления»</span></p>
+      <p>Если нужной частоты нет в списке: подключите монитор кабелем DisplayPort (или HDMI нужной версии), проверьте в меню самого монитора, что высокая частота включена, и обновите драйвер видеокарты.</p>
+
+      <h2 id="vsync">2. V-Sync выключен, FPS ограничен правильно</h2>
+      <p>V-Sync держит готовые кадры в очереди до обновления монитора и добавляет заметную задержку. В игре его лучше выключить и ограничивать FPS через <code>+fps_max</code>, а не через V-Sync или драйвер.</p>
+      <p>Монитор с G-Sync или FreeSync: включите синхронизацию в панели драйвера, в игре оставьте V-Sync выключенным и ограничьте FPS на 3 ниже частоты монитора.</p>
+
+      <h2 id="fullscreen">3. Полноэкранный режим вместо окна</h2>
+      <p>В эксклюзивном полноэкранном режиме игра выводит кадр на монитор без прослойки рабочего стола, и задержка обычно ниже. Минус — Alt+Tab медленнее, хуже работают оверлеи и запись экрана.</p>
+
+      <h2 id="reflex">4. NVIDIA Reflex и AMD Anti-Lag 2</h2>
+      <p>Обе функции официально встроены в CS2.</p>
+      <ul>
+        <li><b>NVIDIA:</b> Настройки → Видео → Расширенные → NVIDIA Reflex Low Latency → «Вкл». Режим «Вкл + усиление» держит частоты видеокарты выше — проверяйте замером.</li>
+        <li><b>AMD:</b> включите AMD Anti-Lag 2 там же, в настройках видео CS2.</li>
+      </ul>
+
+      <h2 id="power">5. План питания</h2>
+      <p>При плане «Сбалансированная» частота процессора растёт не мгновенно, и первые кадры после паузы выходят позже. План «Высокая производительность» убирает этот эффект — особенно заметно на ноутбуках.</p>
+
+      <h2 id="myths">Что не работает: мифы параметров запуска</h2>
+      <p>В CS2 нет вступительного ролика, rate-команды ушли вместе с subtick, DirectX 9 остался в CS:GO. Эти параметры ничего не дают:</p>
+      <p><code>-novid</code> <code>-tickrate 128</code> <code>+cl_updaterate</code> <code>-threads</code></p>
+      <p>А вот <code>+fps_max</code> и <code>-vulkan</code> (по ситуации) — рабочие параметры, их стоит оставить, если вы ими пользуетесь.</p>
+
+      <h2 id="framelab">Как это проверить одной программой</h2>
+      <p>FrameLab проверяет всё перечисленное сам: частоту монитора, V-Sync, оконный режим и режим низкой задержки. В диагнозе каждая проблема отмечена честной меткой эффекта, а параметры-мифы программа предлагает убрать, не трогая ваши собственные.</p>
+      <div class="tbl-wrap"><table class="tbl">
+        <thead><tr><th>Настройка в FrameLab</th><th>Эффект</th><th>По умолчанию</th></tr></thead>
+        <tbody>
+          <tr><td>Частота обновления монитора на максимум</td><td><span class="tag t-hi">Высокая</span></td><td>подсказка, как переключить</td></tr>
+          <tr><td>Глобальное разрешение таймера Windows (1 мс для игр)</td><td><span class="tag t-md">Средняя</span></td><td>по желанию</td></tr>
+          <tr><td>Отключить Multiplane Overlay (если мерцает или фризит)</td><td><span class="tag t-dep">Зависит от железа</span></td><td>выключено: спорное</td></tr>
+          <tr><td>Не усыплять USB-порты (мышь и клавиатура)</td><td><span class="tag t-dep">Зависит от железа</span></td><td>выключено: спорное</td></tr>
+        </tbody>
+      </table></div>
+      <figure><img class="shot" src="../img/cs2-plan.jpg" width="1600" height="1067" loading="lazy" alt="План оптимизации CS2 в FrameLab: пресет графики и параметры запуска с метками эффекта"><figcaption>План для CS2: у каждого пункта видно эффект и статус, спорное по умолчанию выключено.</figcaption></figure>
+
+      <h2 id="faq">Частые вопросы</h2>
+      <details><summary>Как проверить, на какой частоте работает монитор?</summary><p>Параметры → Система → Дисплей → Расширенные параметры дисплея → «Выберите частоту обновления». Если нужной частоты нет в списке, проверьте кабель (лучше DisplayPort), режим в меню монитора и драйвер видеокарты.</p></details>
+      <details><summary>Нужен ли -tickrate 128 в параметрах запуска CS2?</summary><p>Нет. В CS2 работает subtick, параметр -tickrate 128 и rate-команды из CS:GO ничего не делают. Так же бесполезны -novid и -threads.</p></details>
+      <details><summary>Reflex «Вкл» или «Вкл + усиление»?</summary><p>Начните с «Вкл». Режим «Вкл + усиление» держит частоты видеокарты выше; помогает ли он на вашем ПК, лучше проверить замером.</p></details>
+
+      <div class="cta">
+        <h2>Проверьте свой ПК в FrameLab</h2>
+        <p>Бесплатно, оффлайн, безопасно для VAC: программа не трогает процесс и память игры, любое изменение отменяется одной кнопкой.</p>
+        <div class="row"><a class="btn btn-primary" href="https://github.com/Derposd/v60/releases/latest/download/FrameLab-Setup.exe">Скачать FrameLab</a><a class="btn btn-ghost" href="../">О программе</a></div>
+      </div>
+
+      <h2>Ещё гайды</h2>
+      <div class="related">
+        <a href="../dota-2-fps/">FPS в Dota 2<span>Фризы, падение FPS к концу матча и устаревшие параметры.</span></a>
+        <a href="../gta-5-rp/">FPS в GTA 5 RP<span>Пять режимов графики для слабых ПК.</span></a>
+        <a href="../reduksy-gta-5-rp/">Редуксы GTA 5 RP<span>Установка в три шага и с откатом.</span></a>
+      </div>
+    </article>
+
+    <aside>
+      <div class="box">
+        <div class="dl"><img src="../img/logo.png" alt=""><b>FrameLab <span class="ver">1.4</span></b><p>Бесплатно для Windows 10 и 11</p><a class="btn btn-primary" href="https://github.com/Derposd/v60/releases/latest/download/FrameLab-Setup.exe">Скачать</a></div>
+        <div class="toc"><b>Содержание</b><a href="#hz">144 Гц на 60</a><a href="#vsync">V-Sync</a><a href="#fullscreen">Полноэкранный режим</a><a href="#reflex">Reflex и Anti-Lag 2</a><a href="#power">План питания</a><a href="#myths">Мифы</a><a href="#framelab">Проверка в FrameLab</a><a href="#faq">Вопросы</a></div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<footer>
+  <div class="wrap">
+    <span>© FrameLab · <a href="https://github.com/Derposd/v60">Исходный код на GitHub</a></span>
+    <span>Сайт не использует cookies, счётчики и формы.</span>
+    <span>Не связано с Valve Corporation. Counter-Strike 2 и Dota 2 — товарные знаки Valve Corporation.</span>
+  </div>
+</footer>
+</body>
+</html>
