@@ -215,6 +215,9 @@ public sealed class MainViewModel : ObservableObject
     public const int SystemTweaksTab = 13;
     public const int GameModeTab = 14;
     public const int StartupTab = 15;
+    public const int BoostTab = 16;
+    public const int PresetsTab = 17;
+    public const int BenchmarkTab = 18;
 
     private int _selectedTab;
     private GameWorkspace _current;
@@ -230,6 +233,9 @@ public sealed class MainViewModel : ObservableObject
         Rollback = new RollbackViewModel(services);
         SystemTweaks = new SystemTweaksViewModel(services);
         Startup = new StartupViewModel(services);
+        Boost = new BoostViewModel(services);
+        Presets = new PresetsViewModel(services);
+        Benchmark = new BenchmarkViewModel(services);
         About = new AboutViewModel();
         Home = new HomeViewModel(services, Dota, Cs2, (ws, tab) =>
         {
@@ -241,6 +247,7 @@ public sealed class MainViewModel : ObservableObject
             SelectedTab = GtaModesTab;
         });
         GameMode = new GameModeViewModel(services, Home);
+        SystemTweaks.GameMode = GameMode;
         _current = UiState.LastGame() == Core.Game.GameId.Cs2 ? Cs2 : Dota;
         if (UiState.LastWasGta())
         {
@@ -322,6 +329,9 @@ public sealed class MainViewModel : ObservableObject
     public SystemTweaksViewModel SystemTweaks { get; }
     public GameModeViewModel GameMode { get; }
     public StartupViewModel Startup { get; }
+    public BoostViewModel Boost { get; }
+    public PresetsViewModel Presets { get; }
+    public BenchmarkViewModel Benchmark { get; }
     public RollbackViewModel Rollback { get; }
     public AboutViewModel About { get; }
 
@@ -368,6 +378,8 @@ public sealed class MainViewModel : ObservableObject
             SystemTweaksTab => SystemTweaks.ActivateAsync(),
             GameModeTab => GameMode.ActivateAsync(),
             StartupTab => Startup.ActivateAsync(),
+            PresetsTab => Presets.ActivateAsync(),
+            BenchmarkTab => Benchmark.ActivateAsync(),
             _ => Task.CompletedTask,
         };
     }

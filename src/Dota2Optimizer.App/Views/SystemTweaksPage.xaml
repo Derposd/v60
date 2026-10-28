@@ -25,6 +25,22 @@
                 </DockPanel>
             </Border>
 
+            <Border Style="{StaticResource Card}" v:Fx.Appear="True">
+                <DockPanel>
+                    <Border DockPanel.Dock="Right" Style="{StaticResource SegmentHost}" VerticalAlignment="Center" Margin="16,0,0,0">
+                        <StackPanel Orientation="Horizontal">
+                            <RadioButton Style="{StaticResource Segment}" GroupName="profile" Content="Игры" IsChecked="{Binding IsGamesProfile, Mode=OneWay}" Command="{Binding GamesProfileCommand}" />
+                            <RadioButton Style="{StaticResource Segment}" GroupName="profile" Content="Работа" IsChecked="{Binding IsWorkProfile, Mode=OneWay}" Command="{Binding WorkProfileCommand}" />
+                        </StackPanel>
+                    </Border>
+                    <ContentControl Style="{StaticResource IconBadge}" Tag="{StaticResource IconSwap}" Margin="0,0,14,0" />
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="Профиль одной кнопкой" Style="{StaticResource CardTitle}" />
+                        <TextBlock Text="{Binding ProfileText}" Style="{StaticResource Caption}" Margin="0,2,0,0" />
+                    </StackPanel>
+                </DockPanel>
+            </Border>
+
             <DockPanel Margin="0,4,0,14">
                 <TextBox DockPanel.Dock="Right" Width="240" Style="{StaticResource SearchBox}" Text="{Binding Search, UpdateSourceTrigger=PropertyChanged}" Tag="Поиск по твикам" />
                 <Border Style="{StaticResource SegmentHost}">

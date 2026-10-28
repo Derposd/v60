@@ -51,7 +51,7 @@ public sealed class GamePresetTweak : Tweak
     public override TweakCategory Category => TweakCategory.Game;
     public override Effectiveness Effectiveness => Preset.Effect;
     public override string Explanation => Preset.Description;
-    public override string AppliesTo => Game.Caveat;
+    public override bool Recommended => false;
     public override string Risk => "Минимальный: меняются только значения в файле настроек игры, копия файла сохраняется и возвращается выключением";
 
     public override TweakPlan Plan(TweakContext ctx)

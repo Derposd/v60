@@ -13,7 +13,8 @@ public sealed class ElevatedItem
 
 public sealed class ElevatedRequest
 {
-    public string Mode { get; set; } = "apply"; // apply | rollback | restorePoint
+    public string Mode { get; set; } = "apply"; // apply | rollback | restorePoint | boost
+    public string? BoostId { get; set; }
     public bool CreateRestorePoint { get; set; }
     public List<ElevatedItem> Items { get; set; } = new();
     public List<string> ChangeSetIds { get; set; } = new();
@@ -119,10 +120,31 @@ public static class ElevatedHost
                 }
 
                 break;
+            case "boost":
+                var b = RunBoost(request.BoostId);
+                result.Items.Add(new ElevatedItemResult { TweakId = request.BoostId ?? string.Empty, Success = b.Success, Error = b.Success ? null : b.Message });
+                result.Messages.Add(b.Message);
+                break;
         }
 
         File.WriteAllText(request.ResultPath, JsonSerializer.Serialize(result, Json));
         return 0;
+    }
+
+    /// <summary>One-off admin actions; only the known ids are accepted.</summary>
+    private static Boost.BoostResult RunBoost(string? id) => id switch
+    {
+        Boost.BoostCatalog.Standby => Boost.MemoryTools.PurgeStandbyList(),
+        Boost.BoostCatalog.Trim => Trim(),
+        _ => new Boost.BoostResult(false, $"Неизвестное действие: {id}"),
+    };
+
+    private static Boost.BoostResult Trim()
+    {
+        var r = new ProcessCommandRunner().Run("defrag.exe", "/C /L", TimeSpan.FromMinutes(10));
+        return r.Success
+            ? new Boost.BoostResult(true, "TRIM выполнен для всех SSD.")
+            : new Boost.BoostResult(false, $"defrag вернул код {r.ExitCode}: {r.StdOut.Trim().Split('\n').LastOrDefault()}");
     }
 
     private static void TryDelete(string path)

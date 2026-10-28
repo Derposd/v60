@@ -2023,6 +2023,18 @@
             <v:StartupPage />
         </TabItem>
 
+        <TabItem Header="Ускорения" Tag="{StaticResource IconRocket}" DataContext="{Binding Boost}">
+            <v:BoostPage />
+        </TabItem>
+
+        <TabItem Header="Пресеты игр" Tag="{StaticResource IconLayers}" DataContext="{Binding Presets}">
+            <v:PresetsPage />
+        </TabItem>
+
+        <TabItem Header="Бенчмарк" Tag="{StaticResource IconGauge}" DataContext="{Binding Benchmark}">
+            <v:BenchmarkPage />
+        </TabItem>
+
         <!-- ===================== ABOUT ===================== -->
         <TabItem Header="О программе" Tag="{StaticResource IconInfo}" DataContext="{Binding About}">
             <Grid Margin="40,6,36,24">
@@ -2075,7 +2087,7 @@
                                     <TextBlock Text="Что программа намеренно НЕ делает" Style="{StaticResource CardTitle}" VerticalAlignment="Center" />
                                 </DockPanel>
                                 <TextBlock Style="{StaticResource MutedText}"
-                                           Text="Не отключает Defender, обновления и UAC; не «чистит реестр» и не «освобождает RAM»; не убивает процессы; не правит профили драйвера; не меняет TCP/Nagle/MTU; не разгоняет; не скачивает драйверы сама." />
+                                           Text="Не отключает Defender, обновления Windows и драйверов, UAC; не «чистит реестр»; не читает и не меняет память игр, не внедряется в процесс и не обходит античиты; не меняет Nagle/MTU «для пинга»; не разгоняет; ничего не скачивает без вашего согласия. Программы закрывает только «Игровой режим» и только из вашего списка; профиль драйвера NVIDIA меняется только по вашему переключателю и с копией прежних значений." />
                             </StackPanel>
                         </Border>
                     </Grid>

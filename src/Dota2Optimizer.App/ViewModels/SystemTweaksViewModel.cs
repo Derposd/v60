@@ -161,6 +161,7 @@ public sealed class SystemTweaksViewModel : ObservableObject
     private TweakCategory? _only;
     private string? _status;
     private bool _showUnsupported;
+    private readonly ProfileState _profile;
 
     public SystemTweaksViewModel(AppServices services)
     {
@@ -170,6 +171,9 @@ public sealed class SystemTweaksViewModel : ObservableObject
         RefreshCommand = new AsyncCommand(() => LoadAsync(force: true), () => !IsLoading);
         ApplyRecommendedCommand = new AsyncCommand(ApplyRecommendedAsync, () => !IsLoading && Recommended().Any());
         FilterCommand = new RelayCommand(p => Only = p is TweakCategory c ? c : null);
+        _profile = ProfileState.Load(_s.Fs, Core.Infrastructure.AppPaths.Profiles);
+        GamesProfileCommand = new AsyncCommand(() => SwitchProfileAsync(ProfileKind.Games), () => !IsLoading && _loaded);
+        WorkProfileCommand = new AsyncCommand(() => SwitchProfileAsync(ProfileKind.Work), () => !IsLoading && _loaded);
         _s.ChangesApplied += () => Application.Current.Dispatcher.BeginInvoke(() => _ = LoadAsync(force: true));
     }
 
@@ -178,6 +182,18 @@ public sealed class SystemTweaksViewModel : ObservableObject
     public ICommand RefreshCommand { get; }
     public ICommand ApplyRecommendedCommand { get; }
     public ICommand FilterCommand { get; }
+    public ICommand GamesProfileCommand { get; }
+    public ICommand WorkProfileCommand { get; }
+
+    /// <summary>Set by the main view model: «Работа» pauses the real-time game mode.</summary>
+    public GameModeViewModel? GameMode { get; set; }
+
+    public bool IsGamesProfile => _profile.Active == ProfileKind.Games;
+    public bool IsWorkProfile => _profile.Active == ProfileKind.Work;
+
+    public string ProfileText => IsWorkProfile
+        ? $"Профиль «Работа»: игровые изменения откачены ({_profile.GameTweaks.Count}), игровой режим на паузе. «Игры» включит их снова."
+        : "Профиль «Игры»: всё, что вы включили здесь. «Работа» откатит эти изменения и поставит игровой режим на паузу, «Игры» вернёт.";
 
     public bool IsLoading
     {
@@ -312,6 +328,79 @@ public sealed class SystemTweaksViewModel : ObservableObject
     private IEnumerable<TweakRowVm> Recommended() =>
         Groups.SelectMany(g => g.Rows).Where(r => r.IsRecommended && r.State is { CanTurnOn: true });
 
+    private async Task SwitchProfileAsync(ProfileKind target)
+    {
+        var rows = Groups.SelectMany(g => g.Rows).Where(r => r.State is not null).ToList();
+        if (target == ProfileKind.Work)
+        {
+            var ids = ProfileState.ToRevert(rows.Select(r => r.State!));
+            var sets = ids.SelectMany(id => TweakEngine.OwnChanges(id, _s.Store)).Select(c => c.Id).ToList();
+            var gameModeOn = GameMode?.Enabled == true;
+            if (sets.Count > 0 && await _s.UndoManyAsync(sets, "Профиль «Работа»") is null)
+            {
+                RaiseProfile();
+                return;
+            }
+
+            _profile.GameTweaks = ids.Count > 0 ? ids.ToList() : _profile.GameTweaks;
+            _profile.GameModeWasOn = gameModeOn;
+            _profile.Active = ProfileKind.Work;
+            if (GameMode is { Enabled: true })
+            {
+                GameMode.Enabled = false;
+            }
+
+            Status = sets.Count == 0 ? "Профиль «Работа»: откатывать нечего." : $"Профиль «Работа»: откачено изменений — {ids.Count}.";
+        }
+        else
+        {
+            var ids = _profile.ToApply(rows.Select(r => r.State!)).ToHashSet();
+            var plans = rows.Where(r => ids.Contains(r.Tweak.Id)).Select(r => r.State!.Plan).ToList();
+            if (plans.Count > 0)
+            {
+                var lines = await _s.ConfirmAndApplyAsync(plans, $"Профиль «Игры»: {plans.Count}");
+                if (lines is null)
+                {
+                    RaiseProfile();
+                    return;
+                }
+
+                Status = string.Join("\n", lines.Select(l => l.Text));
+            }
+            else
+            {
+                Status = "Профиль «Игры»: всё уже включено.";
+            }
+
+            if (_profile.GameModeWasOn && GameMode is { Enabled: false })
+            {
+                GameMode.Enabled = true;
+            }
+
+            _profile.Active = ProfileKind.Games;
+        }
+
+        try
+        {
+            _profile.Save(_s.Fs, Core.Infrastructure.AppPaths.Profiles);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            Core.Infrastructure.Log.Warn($"Не удалось сохранить профиль: {ex.Message}");
+        }
+
+        await ReevaluateAsync(rows, null);
+        RaiseProfile();
+    }
+
+    /// <summary>Also after a cancel: the segment the user clicked snaps back to the active profile.</summary>
+    private void RaiseProfile()
+    {
+        OnPropertyChanged(nameof(IsGamesProfile));
+        OnPropertyChanged(nameof(IsWorkProfile));
+        OnPropertyChanged(nameof(ProfileText));
+    }
+
     private async Task ApplyRecommendedAsync()
     {
         var rows = Recommended().ToList();
@@ -337,71 +426,23 @@ public sealed class SystemTweaksViewModel : ObservableObject
 
     private async Task ToggleAsync(TweakRowVm row)
     {
-        if (row.State is not { } state)
+        var status = await TweakToggler.ToggleAsync(_s, row);
+        if (status is not null)
         {
-            return;
+            Status = status;
         }
 
-        row.IsBusy = true;
-        MarkState? result = null;
-        try
-        {
-            if (state.CanTurnOff)
-            {
-                var messages = await _s.RevertTweakAsync(row.Tweak.Id, row.Title);
-                if (messages is not null)
-                {
-                    Status = $"«{row.Title}» выключено: " + string.Join("; ", messages);
-                    result = messages.Any(m => m.StartsWith("Ошибка", StringComparison.Ordinal)) ? MarkState.Error : MarkState.Undone;
-                }
-            }
-            else if (state.CanTurnOn)
-            {
-                var lines = await _s.ConfirmAndApplyAsync(new[] { state.Plan }, row.Title);
-                if (lines is not null)
-                {
-                    Status = string.Join("\n", lines.Select(l => l.Text));
-                    result = lines.Any(l => l.Text.StartsWith("✗", StringComparison.Ordinal) || l.Text.StartsWith("Пропущено", StringComparison.Ordinal))
-                        ? MarkState.Error
-                        : MarkState.Done;
-                }
-            }
-
-            await ReevaluateAsync(new[] { row }, result);
-        }
-        finally
-        {
-            row.IsBusy = false;
-            if (result is { } r)
-            {
-                row.Mark = r;
-            }
-            else if (row.Mark == MarkState.Busy)
-            {
-                row.Mark = MarkState.None;
-            }
-        }
+        Raise();
     }
 
-    /// <summary>Re-reads the state of the given rows; power plan changes need a fresh look at the PC.</summary>
     private async Task ReevaluateAsync(IReadOnlyList<TweakRowVm> rows, MarkState? mark)
     {
-        var snapshot = rows.Any(r => r.Tweak.Id.Contains("powerplan", StringComparison.Ordinal))
-            ? await Task.Run(_s.Rescan)
-            : await _s.EnsureSnapshotAsync();
-        if (!ReferenceEquals(snapshot, _s.Snapshot))
+        await TweakToggler.EvaluateAsync(_s, rows);
+        if (mark is { } m)
         {
-            _s.Snapshot = snapshot;
-        }
-
-        var ctx = _s.Context(snapshot);
-        var states = await Task.Run(() => rows.Select(r => TweakEngine.Evaluate(r.Tweak, ctx, _s.Store)).ToList());
-        for (var i = 0; i < rows.Count; i++)
-        {
-            rows[i].Update(states[i]);
-            if (mark is { } m)
+            foreach (var r in rows)
             {
-                rows[i].Mark = m;
+                r.Mark = m;
             }
         }
 

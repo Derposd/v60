@@ -17,6 +17,8 @@ public static class AppPaths
     public static string SessionBoost => Path.Combine(Root, "session-power.txt");
     public static string SessionBoostOff => Path.Combine(Root, "session-boost-off");
     public static string GameSession => Path.Combine(Root, "game-session.json");
+    public static string Benchmarks => Path.Combine(Root, "benchmarks.json");
+    public static string Profiles => Path.Combine(Root, "profiles.json");
     public static string GameModeConfig => Path.Combine(Root, "game-mode.json");
     public static string RestorePointMarker => Path.Combine(Root, "restore-point-created.txt");
 

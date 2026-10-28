@@ -124,11 +124,14 @@ public sealed class FpsCapture
     }
 
     /// <summary>Starts a whole-match capture that ends by itself when the game closes (or after 90 minutes).</summary>
-    public static FpsCapture Start(string presentMon, string exeName = "dota2.exe")
+    public static FpsCapture Start(string presentMon, string exeName = "dota2.exe") => Start(presentMon, exeName, 5400, "match", "D2OMatch");
+
+    /// <summary>Starts a capture of a fixed length (the benchmark uses 30–120 s).</summary>
+    public static FpsCapture Start(string presentMon, string exeName, int seconds, string filePrefix, string session)
     {
         var dir = PresentMonTool.CaptureFolder;
         var stamp = DateTime.Now.ToString("yyyyMMdd-HHmmss", System.Globalization.CultureInfo.InvariantCulture);
-        var capture = new FpsCapture(Path.Combine(dir, $"match-{stamp}.csv"), Path.Combine(dir, $"match-{stamp}.log"), exeName);
+        var capture = new FpsCapture(Path.Combine(dir, $"{filePrefix}-{stamp}.csv"), Path.Combine(dir, $"{filePrefix}-{stamp}.log"), exeName);
         try
         {
             Directory.CreateDirectory(dir);
@@ -139,8 +142,8 @@ public sealed class FpsCapture
             return capture;
         }
 
-        var args = $"--process_name {exeName} --output_file \"{capture.CsvPath}\" --timed 5400 --terminate_after_timed " +
-                   "--terminate_on_proc_exit --stop_existing_session --session_name D2OMatch --no_console_stats";
+        var args = $"--process_name {exeName} --output_file \"{capture.CsvPath}\" --timed {seconds} --terminate_after_timed " +
+                   $"--terminate_on_proc_exit --stop_existing_session --session_name {session} --no_console_stats";
         Log.Info($"Запуск PresentMon: {presentMon} {args}");
         try
         {
