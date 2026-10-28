@@ -60,7 +60,9 @@ public sealed class RingGauge : FrameworkElement
     {
         var g = (RingGauge)d;
         var to = double.IsNaN((double)e.NewValue) ? 0 : (double)e.NewValue;
-        if (!Motion.Enabled)
+        var shown = (double)g.GetValue(ShownProperty);
+        // Live values twitch by a percent or two every sample: those are drawn at once, only real changes animate.
+        if (!Motion.Enabled || Math.Abs(to - shown) < g.Maximum * 0.03)
         {
             g.BeginAnimation(ShownProperty, null);
             g.SetValue(ShownProperty, to);

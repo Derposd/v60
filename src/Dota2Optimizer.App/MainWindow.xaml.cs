@@ -18,7 +18,11 @@ public partial class MainWindow : Window
         SourceInitialized += (_, _) => UseRoundCorners();
         Loaded += async (_, _) => await vm.Home.LoadAsync();
         Closed += (_, _) => vm.Shutdown();
-        StateChanged += (_, _) => OnStateChanged();
+        StateChanged += (_, _) =>
+        {
+            OnStateChanged();
+            vm.WindowHidden = WindowState == WindowState.Minimized;
+        };
     }
 
     [DllImport("dwmapi.dll")]

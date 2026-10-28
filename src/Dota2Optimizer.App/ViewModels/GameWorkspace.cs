@@ -75,6 +75,10 @@ public static class GameTheme
             new(Color.FromArgb(0x00, accent.R, accent.G, accent.B), 1),
         }, new Point(0, 0), new Point(1, 1)));
         r["HeroBorder"] = Frozen(new SolidColorBrush(Color.FromArgb(0x40, accent.R, accent.G, accent.B)));
+        r["Glow.Button"] = Views.Motion.Performance ? null : Frozen(new System.Windows.Media.Effects.DropShadowEffect
+        {
+            Color = accent, BlurRadius = 22, ShadowDepth = 3, Direction = 270, Opacity = 0.38, RenderingBias = System.Windows.Media.Effects.RenderingBias.Performance,
+        });
         r["Glow"] = Views.Motion.Performance ? Brushes.Transparent : Frozen(new RadialGradientBrush(new GradientStopCollection
         {
             new(Color.FromArgb(0x2C, accent.R, accent.G, accent.B), 0),

@@ -187,7 +187,8 @@ public static class Fx
         }
 
         var from = e.OldValue is double old && !double.IsNaN(old) ? (double)tb.GetValue(ShownProperty) : 0;
-        if (!Motion.Enabled)
+        // A change of a few percent (live load) is shown at once; counting up is for real results.
+        if (!Motion.Enabled || (from != 0 && Math.Abs(to - from) <= Math.Max(2, Math.Abs(from) * 0.03)))
         {
             tb.BeginAnimation(ShownProperty, null);
             tb.SetValue(ShownProperty, to);

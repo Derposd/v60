@@ -48,5 +48,6 @@
     <sys:Double x:Key="Font.Display">32</sys:Double>
 
     <!-- Elevation: one soft shadow for floating elements; removed in performance mode. -->
+    <DropShadowEffect x:Key="Glow.Button" Color="#F0453A" BlurRadius="22" ShadowDepth="3" Direction="270" Opacity="0.38" RenderingBias="Performance" />
     <DropShadowEffect x:Key="Shadow.Float" BlurRadius="24" ShadowDepth="6" Direction="270" Opacity="0.35" Color="Black" RenderingBias="Performance" />
 </ResourceDictionary>

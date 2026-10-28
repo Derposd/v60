@@ -244,6 +244,7 @@ public sealed class MainViewModel : ObservableObject
         Presets = new PresetsViewModel(services);
         Benchmark = new BenchmarkViewModel(services);
         About = new AboutViewModel();
+        Settings = new SettingsViewModel(ReapplyTheme);
         Home = new HomeViewModel(services, Dota, Cs2, (ws, tab) =>
         {
             Select(ws);
@@ -262,9 +263,17 @@ public sealed class MainViewModel : ObservableObject
         // The app always opens on the «ПК» section; the Dota 2 / CS2 chip returns to the game opened last time.
         _current = UiState.LastGame() == Core.Game.GameId.Cs2 ? Cs2 : Dota;
         SelectPc();
+        Live.Active = true; // the app opens on the home page
     }
 
     public HomeViewModel Home { get; }
+    public DashboardViewModel Live { get; } = new();
+
+    /// <summary>The window is minimised: live sampling pauses.</summary>
+    public bool WindowHidden
+    {
+        set => Live.Active = !value && SelectedTab == HomeTab;
+    }
 
     public GameWorkspace Dota { get; }
     public GameWorkspace Cs2 { get; }
@@ -344,6 +353,7 @@ public sealed class MainViewModel : ObservableObject
             if (Set(ref _selectedTab, value))
             {
                 ActivatePage(value);
+                Live.Active = value == HomeTab;
             }
         }
     }
@@ -357,6 +367,7 @@ public sealed class MainViewModel : ObservableObject
     public BenchmarkViewModel Benchmark { get; }
     public RollbackViewModel Rollback { get; }
     public AboutViewModel About { get; }
+    public SettingsViewModel Settings { get; }
 
     private void Select(GameWorkspace ws)
     {
@@ -411,6 +422,23 @@ public sealed class MainViewModel : ObservableObject
         RaiseSection();
     }
 
+    /// <summary>Re-applies the current section's colours (performance mode removes or brings back the glow).</summary>
+    private void ReapplyTheme()
+    {
+        switch (_section)
+        {
+            case Section.Gta:
+                GameTheme.ApplyGta();
+                break;
+            case Section.Pc:
+                GameTheme.ApplyPc();
+                break;
+            default:
+                GameTheme.Apply(Current.Game.Id);
+                break;
+        }
+    }
+
     /// <summary>Pages of the Windows section load on first open, so start-up stays fast.</summary>
     private void ActivatePage(int tab)
     {
@@ -428,6 +456,7 @@ public sealed class MainViewModel : ObservableObject
     /// <summary>Puts back what the real-time game mode paused, before the window closes.</summary>
     public void Shutdown()
     {
+        Live.Dispose();
         GameMode.Shutdown();
         Home.Shutdown();
     }

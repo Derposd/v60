@@ -195,6 +195,56 @@
                         </StackPanel>
                     </Border>
 
+                    <!-- Live load: rings ease to each new sample; sampling runs only while this page is open. -->
+                    <Border Style="{StaticResource Card}" DataContext="{Binding DataContext.Live, ElementName=Nav}" v:Fx.Appear="True">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="1.6*" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel HorizontalAlignment="Center">
+                                <Grid Width="92" Height="92">
+                                    <v:RingGauge Value="{Binding Cpu}" Thickness="8" Stroke="{DynamicResource AccentGradient}" />
+                                    <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="20" FontWeight="SemiBold" Text="—" v:Fx.Format="0'%'" v:Fx.Number="{Binding Cpu}" />
+                                </Grid>
+                                <TextBlock Text="Процессор" HorizontalAlignment="Center" FontWeight="SemiBold" Margin="0,8,0,0" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="1" HorizontalAlignment="Center">
+                                <Grid Width="92" Height="92">
+                                    <v:RingGauge Value="{Binding Gpu}" Thickness="8" Stroke="{DynamicResource AccentGradient}" />
+                                    <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="20" FontWeight="SemiBold" Text="—" v:Fx.Format="0'%'" v:Fx.Number="{Binding Gpu}" />
+                                </Grid>
+                                <TextBlock Text="Видеокарта" HorizontalAlignment="Center" FontWeight="SemiBold" Margin="0,8,0,0" />
+                                <TextBlock Text="{Binding GpuText}" Style="{StaticResource Caption}" HorizontalAlignment="Center" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="2" HorizontalAlignment="Center">
+                                <Grid Width="92" Height="92">
+                                    <v:RingGauge Value="{Binding Ram}" Thickness="8" Stroke="{DynamicResource AccentGradient}" />
+                                    <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="20" FontWeight="SemiBold" Text="—" v:Fx.Format="0'%'" v:Fx.Number="{Binding Ram}" />
+                                </Grid>
+                                <TextBlock Text="Память" HorizontalAlignment="Center" FontWeight="SemiBold" Margin="0,8,0,0" />
+                                <TextBlock Text="{Binding RamText}" Style="{StaticResource Caption}" HorizontalAlignment="Center" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="3" HorizontalAlignment="Center">
+                                <Grid Width="92" Height="92">
+                                    <v:RingGauge Value="{Binding Temp}" Maximum="100" Thickness="8" Stroke="{StaticResource Warn}" />
+                                    <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="20" FontWeight="SemiBold" Text="—" v:Fx.Format="0'°'" v:Fx.Number="{Binding Temp}" />
+                                </Grid>
+                                <TextBlock Text="Температура" HorizontalAlignment="Center" FontWeight="SemiBold" Margin="0,8,0,0" />
+                                <TextBlock Text="{Binding TempText}" Style="{StaticResource Caption}" HorizontalAlignment="Center" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="4" Margin="18,0,0,0" VerticalAlignment="Center">
+                                <TextBlock Text="Загрузка процессора, 2 мин" Style="{StaticResource Caption}" Margin="0,0,0,6" />
+                                <Border Style="{StaticResource Inset}" Padding="8" Height="92">
+                                    <v:Sparkline Values="{Binding CpuHistory}" Stroke="{DynamicResource Accent}" Minimum="0" />
+                                </Border>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
                     <Grid Margin="0,0,0,16">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
@@ -2044,6 +2094,10 @@
                     </Border>
                 </StackPanel>
             </ScrollViewer>
+        </TabItem>
+
+        <TabItem Header="Настройки" Tag="{StaticResource IconGear}" DataContext="{Binding Settings}">
+            <v:SettingsPage />
         </TabItem>
 
         <!-- ===================== ABOUT ===================== -->
