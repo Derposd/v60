@@ -1,5 +1,18 @@
 # FrameLab
 
+[![Скачать](https://img.shields.io/github/v/release/Derposd/v60?label=%D1%81%D0%BA%D0%B0%D1%87%D0%B0%D1%82%D1%8C&color=ff5a2c)](https://github.com/Derposd/v60/releases/latest)
+[![Загрузки](https://img.shields.io/github/downloads/Derposd/v60/total?label=%D0%B7%D0%B0%D0%B3%D1%80%D1%83%D0%B7%D0%BA%D0%B8&color=7c6cff)](https://github.com/Derposd/v60/releases)
+![Windows 10/11](https://img.shields.io/badge/Windows-10%20%7C%2011-3b82f6)
+![Бесплатно](https://img.shields.io/badge/%D1%86%D0%B5%D0%BD%D0%B0-%D0%B1%D0%B5%D1%81%D0%BF%D0%BB%D0%B0%D1%82%D0%BD%D0%BE-3ddc97)
+
+[![FrameLab — найдите, что съедает FPS в CS2, Dota 2 и GTA RP](site/img/og.jpg)](https://derposd.github.io/v60/)
+
+| ![Режимы графики GTA V](site/img/gta-modes.jpg) | ![Проверка редукса](site/img/gta-redux.jpg) | ![План оптимизации CS2](site/img/cs2-plan.jpg) |
+|---|---|---|
+| Режимы графики GTA 5 RP | Менеджер редуксов | План для CS2 |
+
+**Гайды:** [FPS в GTA 5 RP на слабом ПК](https://derposd.github.io/v60/gta-5-rp/) · [как установить редукс](https://derposd.github.io/v60/reduksy-gta-5-rp/) · [задержка ввода в CS2](https://derposd.github.io/v60/cs2-input-lag/) · [FPS в Dota 2](https://derposd.github.io/v60/dota-2-fps/)
+
 Оффлайн-утилита для Windows 10/11. Диагностирует и настраивает игры под видеокарты NVIDIA, AMD и Intel: **Dota 2**, **Counter-Strike 2** и **GTA V для RP-проектов** (GTA5RP, Majestic RP и другие). Игра выбирается слева; у Dota 2 и CS2 — свой мастер оптимизации, база проблем, монитор матча и диагностика вылетов, у GTA RP — режимы графики, менеджер редуксов и диагностика. Сеть, откат и логи общие.
 
 Раньше программа называлась Dota 2 Optimizer. Новая версия ставится поверх старой, бэкапы и история сохраняются.
