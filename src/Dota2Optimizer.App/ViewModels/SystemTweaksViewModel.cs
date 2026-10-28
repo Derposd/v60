@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
 using Dota2Optimizer.App.Views;
+using Dota2Optimizer.Core.Network;
 using Dota2Optimizer.Core.Tweaks;
 
 namespace Dota2Optimizer.App.ViewModels;
@@ -83,13 +84,16 @@ public sealed class TweakRowVm : ObservableObject
         _ => "Ok",
     }];
 
+    /// <summary>Doesn't apply to this PC (another GPU vendor, Windows version, missing hardware).</summary>
+    public bool IsUnsupported => _state?.Plan.Status == TweakStatus.NotApplicable;
+
     public bool Matches(string query) =>
         query.Length == 0 || Title.Contains(query, StringComparison.CurrentCultureIgnoreCase) || Explanation.Contains(query, StringComparison.CurrentCultureIgnoreCase);
 
     public void Update(TweakToggle state)
     {
         _state = state;
-        foreach (var p in new[] { nameof(State), nameof(IsOn), nameof(CanToggle), nameof(Note), nameof(NoteBrush), nameof(RequiresAdmin), nameof(ManualSteps) })
+        foreach (var p in new[] { nameof(State), nameof(IsOn), nameof(CanToggle), nameof(Note), nameof(NoteBrush), nameof(RequiresAdmin), nameof(ManualSteps), nameof(IsUnsupported) })
         {
             OnPropertyChanged(p);
         }
@@ -121,10 +125,10 @@ public sealed class TweakGroupVm : ObservableObject
         private set => Set(ref _visible, value);
     }
 
-    public void Filter(string query, TweakCategory? only)
+    public void Filter(string query, TweakCategory? only, bool showUnsupported)
     {
         Visible.Clear();
-        foreach (var r in Rows.Where(r => r.Matches(query) && (only is null || only == Category)))
+        foreach (var r in Rows.Where(r => r.Matches(query) && (only is null || only == Category) && (showUnsupported || !r.IsUnsupported)))
         {
             Visible.Add(r);
         }
@@ -133,19 +137,30 @@ public sealed class TweakGroupVm : ObservableObject
     }
 
     public void RaiseCounter() => OnPropertyChanged(nameof(Counter));
+
+    /// <summary>Replaces the rows (network tweaks depend on the adapters found at load time).</summary>
+    public void SetRows(IEnumerable<TweakRowVm> rows)
+    {
+        Rows.Clear();
+        foreach (var r in rows)
+        {
+            Rows.Add(r);
+        }
+    }
 }
 
 /// <summary>«Твики Windows»: system, interface, privacy and service tweaks as switches, grouped by category.</summary>
 public sealed class SystemTweaksViewModel : ObservableObject
 {
-    private static readonly TweakCategory[] Order = { TweakCategory.Windows, TweakCategory.Gpu, TweakCategory.Interface, TweakCategory.Privacy, TweakCategory.Services };
+    private static readonly TweakCategory[] Order = { TweakCategory.Windows, TweakCategory.Gpu, TweakCategory.Interface, TweakCategory.Privacy, TweakCategory.Services, TweakCategory.Network };
 
     private readonly AppServices _s;
     private bool _loading;
     private bool _loaded;
     private string _search = string.Empty;
     private TweakCategory? _only;
-    private string _status = string.Empty;
+    private string? _status;
+    private bool _showUnsupported;
 
     public SystemTweaksViewModel(AppServices services)
     {
@@ -170,7 +185,7 @@ public sealed class SystemTweaksViewModel : ObservableObject
         private set => Set(ref _loading, value);
     }
 
-    public string Status
+    public string? Status
     {
         get => _status;
         private set => Set(ref _status, value);
@@ -203,11 +218,33 @@ public sealed class SystemTweaksViewModel : ObservableObject
 
     public bool IsAll => Only is null;
 
+    /// <summary>Also show tweaks that don't apply to this PC (they are hidden by default: only what fits the hardware is shown).</summary>
+    public bool ShowUnsupported
+    {
+        get => _showUnsupported;
+        set
+        {
+            if (Set(ref _showUnsupported, value))
+            {
+                ApplyFilter();
+            }
+        }
+    }
+
+    public string UnsupportedText
+    {
+        get
+        {
+            var n = Groups.SelectMany(g => g.Rows).Count(r => r.IsUnsupported);
+            return n == 0 ? "Все пункты подходят этому ПК" : $"Показать неподходящие этому ПК ({n})";
+        }
+    }
+
     public string Summary
     {
         get
         {
-            var rows = Groups.SelectMany(g => g.Rows).ToList();
+            var rows = Groups.SelectMany(g => g.Rows).Where(r => !r.IsUnsupported).ToList();
             return $"Включено {rows.Count(r => r.IsOn)} из {rows.Count}; программой — {rows.Count(r => r.State?.CanTurnOff == true)}";
         }
     }
@@ -226,6 +263,13 @@ public sealed class SystemTweaksViewModel : ObservableObject
         {
             var snapshot = await _s.EnsureSnapshotAsync();
             var ctx = _s.Context(snapshot);
+            var network = await Task.Run(() => NetworkTweakCatalog.For(_s.Registry, GamesForQos(snapshot)));
+            var netGroup = Groups.First(g => g.Category == TweakCategory.Network);
+            if (!netGroup.Rows.Select(r => r.Tweak.Id).SequenceEqual(network.Select(t => t.Id)))
+            {
+                netGroup.SetRows(network.Select(t => new TweakRowVm(t, ToggleAsync)));
+            }
+
             var rows = Groups.SelectMany(g => g.Rows).ToList();
             var states = await Task.Run(() => rows.Select(r => TweakEngine.Evaluate(r.Tweak, ctx, _s.Store)).ToList());
             for (var i = 0; i < rows.Count; i++)
@@ -234,6 +278,7 @@ public sealed class SystemTweaksViewModel : ObservableObject
             }
 
             _loaded = true;
+            ApplyFilter();
             Raise();
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException)
@@ -243,6 +288,24 @@ public sealed class SystemTweaksViewModel : ObservableObject
         finally
         {
             IsLoading = false;
+        }
+    }
+
+    /// <summary>Games that get a DSCP policy offer: the Steam games found, GTA V and the games added to the game mode.</summary>
+    private IEnumerable<(string Exe, string Name)> GamesForQos(Core.SystemInfo.SystemSnapshot snapshot)
+    {
+        foreach (var (id, info) in snapshot.Games)
+        {
+            if (info.GameExe is { } exe)
+            {
+                yield return (Path.GetFileName(exe), Core.Game.Games.All.First(g => g.Id == id).ShortName);
+            }
+        }
+
+        yield return ("GTA5.exe", "GTA V");
+        foreach (var g in Core.Session.GameModeConfigStore.Load(_s.Fs, Core.Infrastructure.AppPaths.GameModeConfig).Games.Where(g => g.Path is not null))
+        {
+            yield return (Path.GetFileName(g.Path!), g.Name);
         }
     }
 
@@ -349,7 +412,7 @@ public sealed class SystemTweaksViewModel : ObservableObject
     {
         foreach (var g in Groups)
         {
-            g.Filter(Search.Trim(), Only);
+            g.Filter(Search.Trim(), Only, ShowUnsupported);
         }
     }
 
@@ -361,6 +424,7 @@ public sealed class SystemTweaksViewModel : ObservableObject
         }
 
         OnPropertyChanged(nameof(Summary));
+        OnPropertyChanged(nameof(UnsupportedText));
         CommandManager.InvalidateRequerySuggested();
     }
 }

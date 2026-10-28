@@ -6,6 +6,7 @@
     <v:RiskBrushConverter x:Key="RiskBrush" />
     <v:CategoryIconConverter x:Key="CategoryIcon" />
     <v:ZeroToCollapsedConverter x:Key="ZeroToCollapsed" />
+    <v:FractionWidthConverter x:Key="FractionWidth" />
 
     <!-- On/off switch whose state comes from IsOn; the thumb slides and the track fades to the accent colour. -->
     <Style TargetType="v:SwitchButton">

@@ -24,9 +24,11 @@ public sealed class ChangeExecutor
     private readonly ICommandRunner _cmd;
     private readonly BackupStore _store;
     private readonly IServiceControl _services;
+    private readonly Gpu.INvidiaDrs _nvidia;
 
-    public ChangeExecutor(IFileSystem fs, IRegistry reg, ICommandRunner cmd, BackupStore store, IServiceControl? services = null)
+    public ChangeExecutor(IFileSystem fs, IRegistry reg, ICommandRunner cmd, BackupStore store, IServiceControl? services = null, Gpu.INvidiaDrs? nvidia = null)
     {
+        _nvidia = nvidia ?? new Gpu.NvidiaDrs();
         _fs = fs;
         _reg = reg;
         _cmd = cmd;
@@ -45,6 +47,7 @@ public sealed class ChangeExecutor
             ActionKind.WriteFile => new PreviewLine(a.Target, _fs.FileExists(a.Path!) ? "файл (будет сохранена копия)" : "(нет файла)", "изменённый файл", a.Description, a.RequiresAdmin),
             ActionKind.DeleteFile => new PreviewLine(a.Target, _fs.FileExists(a.Path!) ? "файл (будет сохранена копия)" : "(нет файла)", "(удалить)", a.Description, a.RequiresAdmin),
             ActionKind.CopyFile => new PreviewLine(a.Target, _fs.FileExists(a.Path!) ? "файл (будет сохранена копия)" : "(нет файла)", $"копия {PathEx.FileName(a.SourcePath ?? string.Empty)}", a.Description, a.RequiresAdmin),
+            ActionKind.SetNvidiaSetting => new PreviewLine(a.Target, ShowNv(_nvidia.Available ? _nvidia.Get(a.NvSettingId) : null), ShowNv(a.NvValue), a.Description, a.RequiresAdmin),
             ActionKind.SetService => new PreviewLine(a.Target, ShowService(_services.Query(a.ServiceName!)), ServiceStart.Ru(a.ServiceStartType!) + (a.StopService ? ", остановить" : string.Empty), a.Description, a.RequiresAdmin),
             _ => new PreviewLine(a.Target, "—", "выполнить команду", a.Description, a.RequiresAdmin),
         }).ToList();
@@ -143,6 +146,14 @@ public sealed class ChangeExecutor
         },
         ActionKind.WriteFile or ActionKind.DeleteFile or ActionKind.CopyFile => _store.BackupFile(set, action.Path!, action.Description, action.RequiresAdmin),
         ActionKind.SetService => BackupService(action),
+        ActionKind.SetNvidiaSetting => new BackupRecord
+        {
+            Kind = BackupKind.NvidiaSetting,
+            NvSettingId = action.NvSettingId,
+            NvPrevious = _nvidia.Get(action.NvSettingId),
+            Description = action.Description,
+            RequiresAdmin = true,
+        },
         _ => new BackupRecord
         {
             Kind = BackupKind.Command,
@@ -171,6 +182,9 @@ public sealed class ChangeExecutor
                 break;
             case ActionKind.CopyFile:
                 _fs.WriteAllBytes(action.Path!, _fs.ReadAllBytes(action.SourcePath!));
+                break;
+            case ActionKind.SetNvidiaSetting:
+                _nvidia.Set(action.NvSettingId, action.NvValue);
                 break;
             case ActionKind.SetService:
                 _services.SetStart(action.ServiceName!, action.ServiceStartType!);
@@ -221,6 +235,14 @@ public sealed class ChangeExecutor
                         _fs.DeleteFile(r.Path!);
                         messages.Add($"Удалён созданный файл {r.Path}");
                         break;
+                    case BackupKind.NvidiaSetting when r.NvPrevious is { } prev:
+                        _nvidia.Set(r.NvSettingId, prev);
+                        messages.Add($"Восстановлено {r.Target} = {prev}");
+                        break;
+                    case BackupKind.NvidiaSetting:
+                        _nvidia.Reset(r.NvSettingId);
+                        messages.Add($"{r.Target}: снова по умолчанию драйвера");
+                        break;
                     case BackupKind.Service:
                         _services.SetStart(r.ServiceName!, r.PreviousStartType!);
                         var started = !r.WasRunning || _services.Start(r.ServiceName!);
@@ -258,6 +280,8 @@ public sealed class ChangeExecutor
             RequiresAdmin = true,
         };
     }
+
+    private static string ShowNv(uint? v) => v is null ? "по умолчанию драйвера" : v.Value.ToString(System.Globalization.CultureInfo.InvariantCulture);
 
     private static string ShowService(ServiceState? s) =>
         s is null ? "(нет службы)" : ServiceStart.Ru(s.Start) + (s.Running ? ", работает" : ", остановлена");

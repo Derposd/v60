@@ -7,6 +7,13 @@ using Dota2Optimizer.Core.Network;
 
 namespace Dota2Optimizer.App.ViewModels;
 
+/// <summary>One DNS server in the benchmark: median reply time as a number and a bar.</summary>
+public sealed record DnsRowVm(string Name, string Server, double? Ms, double Bar, bool IsBest, bool IsCurrent, string Note)
+{
+    public double MsValue => Ms ?? double.NaN;
+    public string Label => IsCurrent ? $"{Name} — сейчас" : Name;
+}
+
 public sealed class NetworkViewModel : ObservableObject
 {
     private readonly AppServices _s;
@@ -17,6 +24,8 @@ public sealed class NetworkViewModel : ObservableObject
     private bool _busy;
     private string _dnsChoice = "cloudflare";
     private CancellationTokenSource? _cts;
+    private DnsResult? _before;
+    private string? _dnsVerdict;
 
     public NetworkViewModel(AppServices services)
     {
@@ -29,6 +38,7 @@ public sealed class NetworkViewModel : ObservableObject
             Ui.Info(r.Success ? "Кеш DNS очищен." : $"Не удалось: {r.StdErr}");
         });
         ChangeDnsCommand = new AsyncCommand(ChangeDnsAsync, () => !_busy);
+        BenchmarkDnsCommand = new AsyncCommand(BenchmarkDnsAsync, () => !_busy);
         ResetStackCommand = new RelayCommand(ResetStack, () => !_busy);
         CopyCommand = new RelayCommand(() => System.Windows.Clipboard.SetText(ResultsText()));
         UndoDnsCommand = new AsyncCommand(async () =>
@@ -46,6 +56,14 @@ public sealed class NetworkViewModel : ObservableObject
     }
 
     public ICommand UndoDnsCommand { get; }
+    public ICommand BenchmarkDnsCommand { get; }
+    public ObservableCollection<DnsRowVm> DnsResults { get; } = new();
+
+    public string? DnsVerdict
+    {
+        get => _dnsVerdict;
+        private set => Set(ref _dnsVerdict, value);
+    }
 
     /// <summary>The DNS change made by the app that is still in effect, if any.</summary>
     public ChangeSet? ActiveDnsChange => _s.ActiveChangeFor("net.dns");
@@ -123,10 +141,84 @@ public sealed class NetworkViewModel : ObservableObject
         }
     }
 
+    /// <summary>
+    /// Measures the current DNS and the three presets. The first result for the current server is kept as «до»,
+    /// so running it again after a DNS change shows before/after.
+    /// </summary>
+    private async Task BenchmarkDnsAsync()
+    {
+        _busy = true;
+        _cts = new CancellationTokenSource();
+        DnsVerdict = "Измеряю: по 12 запросов к каждому серверу…";
+        try
+        {
+            var adapter = NetworkDiagnostics.ActiveAdapter();
+            var current = adapter?.Dns.FirstOrDefault()?.ToString();
+            var servers = DnsBenchmark.Presets.ToList();
+            if (current is not null && servers.All(p => p.Server != current))
+            {
+                servers.Insert(0, ("Ваш DNS", current));
+            }
+
+            var results = new List<DnsResult>();
+            foreach (var (name, server) in servers)
+            {
+                results.Add(await DnsBenchmark.MeasureAsync(name, server, _cts.Token));
+            }
+
+            var max = results.Where(r => r.Works).Select(r => r.MedianMs!.Value).DefaultIfEmpty(1).Max();
+            var best = results.Where(r => r.Works).OrderBy(r => r.MedianMs).FirstOrDefault();
+            DnsResults.Clear();
+            foreach (var r in results)
+            {
+                var note = r.Works ? (r.Failed > 0 ? $"без ответа: {r.Failed} из {r.Total}" : string.Empty) : "не отвечает (блокирует провайдер или файрвол)";
+                DnsResults.Add(new DnsRowVm(r.Name, r.Server, r.MedianMs, r.Works ? Math.Max(0.04, r.MedianMs!.Value / max) : 0, r == best, r.Server == current, note));
+            }
+
+            var now = results.FirstOrDefault(r => r.Server == current);
+            if (_before is null && now is not null)
+            {
+                _before = now;
+            }
+
+            DnsVerdict = Verdict(now, best);
+            _s.History.Add(new Core.Benchmark.HistoryEntry(DateTime.Now, "Тест DNS", string.Join(", ", results.Select(r => $"{r.Name} {r.MedianMs:0} мс")), string.Empty));
+        }
+        catch (OperationCanceledException)
+        {
+            DnsVerdict = "Тест остановлен.";
+        }
+        finally
+        {
+            _busy = false;
+            CommandManager.InvalidateRequerySuggested();
+        }
+    }
+
+    private string Verdict(DnsResult? now, DnsResult? best)
+    {
+        if (best is null)
+        {
+            return "Ни один DNS-сервер не ответил — проверьте подключение.";
+        }
+
+        var text = now is { Works: true }
+            ? best.Server == now.Server
+                ? $"Ваш DNS ({now.Server}) уже самый быстрый: {now.MedianMs:0} мс. Менять не нужно."
+                : $"Быстрее всего {best.Name}: {best.MedianMs:0} мс против {now.MedianMs:0} мс у текущего. Разница заметна только при открытии сайтов и запуске лаунчеров, на пинг в матче DNS не влияет."
+            : $"Быстрее всего {best.Name}: {best.MedianMs:0} мс.";
+        if (_before is { Works: true } before && now is { Works: true } && before.Server != now.Server)
+        {
+            text += $" До смены: {before.Name} {before.MedianMs:0} мс → после: {now.MedianMs:0} мс.";
+        }
+
+        return text;
+    }
+
     public string MythsText =>
-        "Чего здесь намеренно нет: отключение алгоритма Нейгла (TCPNoDelay/TcpAckFrequency), смена MTU «для пинга», «ускорители интернета», " +
-        "NetworkThrottlingIndex и прочие правки реестра TCP. Dota 2 работает по UDP через сеть релеев Valve (SDR), и эти настройки на игровой трафик не влияют " +
-        "или их эффект не подтверждён тестами. Реально помогают: кабель вместо Wi-Fi, ближайший регион поиска, отсутствие фоновых загрузок, нормальный провайдер.";
+        "Чего здесь намеренно нет: отключение алгоритма Нейгла (TCPNoDelay/TcpAckFrequency), смена MTU «для пинга», «ускорители интернета» и NetworkThrottlingIndex. " +
+        "Dota 2 и CS2 работают по UDP через сеть релеев Valve (SDR), и эти настройки на игровой трафик не влияют или их эффект не подтверждён тестами. " +
+        "Настройки сетевой карты, TCP и DSCP есть на странице «Твики Windows» → «Сеть», с честной пометкой эффекта. Реально помогают: кабель вместо Wi-Fi, ближайший регион поиска, отсутствие фоновых загрузок, нормальный провайдер.";
 
     private async Task RunAsync()
     {

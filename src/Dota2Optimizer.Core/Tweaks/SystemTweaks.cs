@@ -128,8 +128,13 @@ public static class SystemTweakCatalog
     private static RegSetting Lm(string key, string name, int value, string text, int? def = null) =>
         new(RegHive.LocalMachine, key, name, RegValue.Dword(value), text, def is null ? null : RegValue.Dword(def.Value));
 
-    private static IReadOnlyList<Tweak> Create() => new Tweak[]
+    private static IReadOnlyList<Tweak> Create() => Base().Concat(Gpu.GpuTweakCatalog.All).ToList();
+
+    private static Tweak[] Base() => new Tweak[]
     {
+        // ---------- A5: video card (only the vendor's own items show) ----------
+        new HagsSwitchTweak(),
+        new MultiplaneOverlayTweak(),
         // ---------- A1: system ----------
         new GameModeTweak(),
         new GameDvrTweak(),
@@ -148,7 +153,6 @@ public static class SystemTweakCatalog
                 Cu(@"System\GameConfigStore", "GameDVR_Enabled", 0, "Game DVR: выкл.", def: 1),
             },
         },
-        new HagsSwitchTweak(),
         new PowerPlanTweak(),
         new UltimatePlanTweak(),
         new PowerThrottlingTweak(),
@@ -168,7 +172,6 @@ public static class SystemTweakCatalog
         new AccessibilityHotkeysTweak(),
         new UsbSelectiveSuspendTweak(),
         new GlobalTimerResolutionTweak(),
-        new MultiplaneOverlayTweak(),
         new DeliveryOptimizationTweak(),
         new MemoryIntegrityTweak(),
 

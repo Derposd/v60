@@ -48,3 +48,12 @@ public sealed class ZeroToCollapsedConverter : IValueConverter
 
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => Binding.DoNothing;
 }
+
+/// <summary>Fraction (0..1) × available width → bar width.</summary>
+public sealed class FractionWidthConverter : IMultiValueConverter
+{
+    public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture) =>
+        values.Length == 2 && values[0] is double f && values[1] is double w && !double.IsNaN(w) ? Math.Max(0, f * w) : 0d;
+
+    public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture) => throw new NotSupportedException();
+}

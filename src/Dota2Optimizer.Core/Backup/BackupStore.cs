@@ -10,6 +10,7 @@ public enum BackupKind
     Registry,
     Command,
     Service,
+    NvidiaSetting,
 }
 
 /// <summary>What was there before one action ran, and how to put it back.</summary>
@@ -35,6 +36,11 @@ public sealed class BackupRecord
     public string? PreviousStartType { get; set; }
     public bool WasRunning { get; set; }
 
+    public uint NvSettingId { get; set; }
+
+    /// <summary>Null = the setting was at the driver default (not stored in the profile).</summary>
+    public uint? NvPrevious { get; set; }
+
     public string? UndoCommand { get; set; }
     public string? UndoArguments { get; set; }
 
@@ -44,6 +50,7 @@ public sealed class BackupRecord
         BackupKind.Registry => $"{Hive.ShortName()}\\{Key}\\{ValueName}",
         BackupKind.File => Path ?? string.Empty,
         BackupKind.Service => $"служба {ServiceName}",
+        BackupKind.NvidiaSetting => $"драйвер NVIDIA: 0x{NvSettingId:X8}",
         _ => $"{UndoCommand} {UndoArguments}",
     };
 }

@@ -15,6 +15,9 @@ public enum ActionKind
 
     /// <summary>Copies a binary file over a target (a DLL into a game folder); the target is backed up first.</summary>
     CopyFile,
+
+    /// <summary>Sets a DWORD in the NVIDIA driver's global profile; the previous value (or "driver default") is restored.</summary>
+    SetNvidiaSetting,
 }
 
 /// <summary>
@@ -50,6 +53,10 @@ public sealed record PlannedAction
 
     // Copy
     public string? SourcePath { get; init; }
+
+    // NVIDIA driver setting
+    public uint NvSettingId { get; init; }
+    public uint NvValue { get; init; }
 
     public static PlannedAction SetReg(RegHive hive, string key, string name, RegValue value, string description) => new()
     {
@@ -120,11 +127,21 @@ public sealed record PlannedAction
         RequiresAdmin = requiresAdmin,
     };
 
+    public static PlannedAction SetNvidia(uint settingId, uint value, string description) => new()
+    {
+        Kind = ActionKind.SetNvidiaSetting,
+        NvSettingId = settingId,
+        NvValue = value,
+        Description = description,
+        RequiresAdmin = true,
+    };
+
     public string Target => Kind switch
     {
         ActionKind.SetRegistry or ActionKind.DeleteRegistry => $"{Hive.ShortName()}\\{Key}\\{ValueName}",
         ActionKind.WriteFile or ActionKind.DeleteFile or ActionKind.CopyFile => Path ?? string.Empty,
         ActionKind.SetService => $"служба {ServiceName}",
+        ActionKind.SetNvidiaSetting => $"драйвер NVIDIA: 0x{NvSettingId:X8}",
         _ => $"{Command} {Arguments}",
     };
 }
