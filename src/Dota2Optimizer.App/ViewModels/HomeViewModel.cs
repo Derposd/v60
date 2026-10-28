@@ -56,7 +56,7 @@ public sealed class HomeViewModel : ObservableObject
     private TempSummary? _temp;
     private string _gtaState = "Режимы графики, редуксы, диагностика";
 
-    public HomeViewModel(AppServices services, GameWorkspace dota, GameWorkspace cs2, Action<GameWorkspace, int> open, Action openGta)
+    public HomeViewModel(AppServices services, GameWorkspace dota, GameWorkspace cs2, Action<GameWorkspace, int> open, Action openGta, Action openPc)
     {
         _s = services;
         _open = open;
@@ -74,6 +74,7 @@ public sealed class HomeViewModel : ObservableObject
         });
         OpenRollbackCommand = new RelayCommand(() => _open(dota, MainViewModel.RollbackTab));
         OpenGtaCommand = new RelayCommand(openGta);
+        OpenPcCommand = new RelayCommand(openPc);
         RefreshBackgroundCommand = new AsyncCommand(RefreshBackgroundAsync);
         CleanTempCommand = new AsyncCommand(CleanTempAsync, () => _temp is { Files: > 0 });
 
@@ -106,6 +107,7 @@ public sealed class HomeViewModel : ObservableObject
     public ICommand OpenGameCommand { get; }
     public ICommand OpenRollbackCommand { get; }
     public ICommand OpenGtaCommand { get; }
+    public ICommand OpenPcCommand { get; }
     public ICommand RefreshBackgroundCommand { get; }
     public ICommand CleanTempCommand { get; }
 

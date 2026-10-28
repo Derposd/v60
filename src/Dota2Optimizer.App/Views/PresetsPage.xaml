@@ -4,7 +4,7 @@
              xmlns:v="clr-namespace:Dota2Optimizer.App.Views">
     <ScrollViewer>
         <StackPanel Margin="{StaticResource Margin.Page}">
-            <TextBlock Text="ИГРЫ" Style="{StaticResource Kicker}" />
+            <TextBlock Text="ДРУГИЕ ИГРЫ" Style="{StaticResource Kicker}" />
             <TextBlock Text="Пресеты игр" Style="{StaticResource PageTitle}" />
             <TextBlock Style="{StaticResource PageSub}" Margin="0,4,0,18"
                        Text="Готовые настройки графики через файл настроек игры — то же, что выставить в меню. Меняются только уже существующие ключи, копия файла сохраняется, выключение возвращает её. Память и файлы игры не трогаются, античит не обходится. Dota 2, CS2 и GTA RP — на своих страницах слева." />

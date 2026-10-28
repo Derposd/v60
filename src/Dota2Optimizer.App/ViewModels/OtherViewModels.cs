@@ -200,8 +200,8 @@ public sealed class AboutViewModel : ObservableObject
 
 public sealed class MainViewModel : ObservableObject
 {
-    // Tab order in MainWindow.xaml: home, a section header, the Dota 2 / CS2 pages, the GTA RP pages (only one group is visible),
-    // a section header, then shared pages.
+    // Tab order in MainWindow.xaml: home, a section header, the Dota 2 / CS2 pages, the GTA RP pages, the «ПК» pages (Windows and
+    // other games) — only one group is visible — then a section header and the shared pages.
     public const int HomeTab = 0;
     public const int OptimizeTab = 2;
     public const int IssuesTab = 3;
@@ -210,18 +210,25 @@ public sealed class MainViewModel : ObservableObject
     public const int GtaModesTab = 6;
     public const int GtaReduxTab = 7;
     public const int GtaDiagnosisTab = 8;
-    public const int NetworkTab = 10;
-    public const int RollbackTab = 11;
-    public const int SystemTweaksTab = 13;
-    public const int GameModeTab = 14;
-    public const int StartupTab = 15;
-    public const int BoostTab = 16;
-    public const int PresetsTab = 17;
-    public const int BenchmarkTab = 18;
+    public const int SystemTweaksTab = 9;
+    public const int GameModeTab = 10;
+    public const int StartupTab = 11;
+    public const int BoostTab = 12;
+    public const int PresetsTab = 13;
+    public const int BenchmarkTab = 14;
+    public const int NetworkTab = 16;
+    public const int RollbackTab = 17;
+
+    private enum Section
+    {
+        Game,
+        Gta,
+        Pc,
+    }
 
     private int _selectedTab;
     private GameWorkspace _current;
-    private bool _isGta;
+    private Section _section;
 
     public MainViewModel()
     {
@@ -245,6 +252,10 @@ public sealed class MainViewModel : ObservableObject
         {
             SelectGta();
             SelectedTab = GtaModesTab;
+        }, () =>
+        {
+            SelectPc();
+            SelectedTab = SystemTweaksTab;
         });
         GameMode = new GameModeViewModel(services, Home);
         SystemTweaks.GameMode = GameMode;
@@ -252,6 +263,10 @@ public sealed class MainViewModel : ObservableObject
         if (UiState.LastWasGta())
         {
             SelectGta();
+        }
+        else if (UiState.LastWasPc())
+        {
+            SelectPc();
         }
         else
         {
@@ -275,7 +290,7 @@ public sealed class MainViewModel : ObservableObject
     /// <summary>True while the GTA RP section is open: its pages replace the Dota 2 / CS2 ones.</summary>
     public bool IsGta
     {
-        get => _isGta;
+        get => _section == Section.Gta;
         set
         {
             if (value)
@@ -285,13 +300,31 @@ public sealed class MainViewModel : ObservableObject
         }
     }
 
-    public bool IsGamePages => !IsGta;
+    /// <summary>True while the «ПК» section is open: Windows tweaks, the game mode, presets for other games, tools.</summary>
+    public bool IsPc
+    {
+        get => _section == Section.Pc;
+        set
+        {
+            if (value)
+            {
+                SelectPc();
+            }
+        }
+    }
 
-    public string SectionTitle => IsGta ? "GTA RP" : Current.SectionTitle;
+    public bool IsGamePages => _section == Section.Game;
+
+    public string SectionTitle => _section switch
+    {
+        Section.Gta => "GTA RP",
+        Section.Pc => "WINDOWS И ДРУГИЕ ИГРЫ",
+        _ => Current.SectionTitle,
+    };
 
     public bool IsDota
     {
-        get => !IsGta && Current == Dota;
+        get => IsGamePages && Current == Dota;
         set
         {
             if (value)
@@ -303,7 +336,7 @@ public sealed class MainViewModel : ObservableObject
 
     public bool IsCs2
     {
-        get => !IsGta && Current == Cs2;
+        get => IsGamePages && Current == Cs2;
         set
         {
             if (value)
@@ -343,8 +376,8 @@ public sealed class MainViewModel : ObservableObject
         // Theme first: converters read the accent brushes while the new page's bindings are evaluated.
         GameTheme.Apply(ws.Game.Id);
         Current = ws;
-        _isGta = false;
-        if (SelectedTab is >= GtaModesTab and <= GtaDiagnosisTab)
+        _section = Section.Game;
+        if (SelectedTab is >= GtaModesTab and <= BenchmarkTab)
         {
             SelectedTab = OptimizeTab;
         }
@@ -359,8 +392,8 @@ public sealed class MainViewModel : ObservableObject
         Dota.Wizard.IsActive = false;
         Cs2.Wizard.IsActive = false;
         GameTheme.ApplyGta();
-        _isGta = true;
-        if (SelectedTab is >= OptimizeTab and <= CrashTab)
+        _section = Section.Gta;
+        if (SelectedTab is (>= OptimizeTab and <= CrashTab) or (>= SystemTweaksTab and <= BenchmarkTab))
         {
             SelectedTab = GtaModesTab;
         }
@@ -368,6 +401,26 @@ public sealed class MainViewModel : ObservableObject
         UiState.SaveGta();
         RaiseSection();
         _ = Gta.ActivateAsync();
+    }
+
+    private void SelectPc()
+    {
+        Dota.Wizard.IsActive = false;
+        Cs2.Wizard.IsActive = false;
+        Gta.IsActive = false;
+        GameTheme.ApplyPc();
+        _section = Section.Pc;
+        if (SelectedTab is >= OptimizeTab and <= GtaDiagnosisTab)
+        {
+            SelectedTab = SystemTweaksTab;
+        }
+        else
+        {
+            ActivatePage(SelectedTab);
+        }
+
+        UiState.SavePc();
+        RaiseSection();
     }
 
     /// <summary>Pages of the Windows section load on first open, so start-up stays fast.</summary>
@@ -394,6 +447,7 @@ public sealed class MainViewModel : ObservableObject
     private void RaiseSection()
     {
         OnPropertyChanged(nameof(IsGta));
+        OnPropertyChanged(nameof(IsPc));
         OnPropertyChanged(nameof(IsGamePages));
         OnPropertyChanged(nameof(IsDota));
         OnPropertyChanged(nameof(IsCs2));

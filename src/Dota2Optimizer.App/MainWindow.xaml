@@ -142,7 +142,7 @@
                 <StackPanel Margin="40,6,36,26">
                     <TextBlock Text="FrameLab" Style="{StaticResource Kicker}" />
                     <TextBlock Text="Главная" Style="{StaticResource PageTitle}" />
-                    <TextBlock Style="{StaticResource PageSub}" Margin="0,4,0,20" Text="Состояние ПК и оптимизация в один клик для Dota 2 и CS2. Тонкая настройка и раздел GTA RP (режимы графики, редуксы) — на страницах игр." />
+                    <TextBlock Style="{StaticResource PageSub}" Margin="0,4,0,20" Text="Состояние ПК и оптимизация в один клик для Dota 2 и CS2. Тонкая настройка — на страницах игр, а твики Windows и пресеты других игр — в разделе «ПК»." />
 
                     <!-- One-click optimisation -->
                     <Border Style="{StaticResource Hero}" Padding="28,26">
@@ -280,6 +280,19 @@
                                         <StackPanel VerticalAlignment="Center">
                                             <TextBlock Text="GTA V · RP" FontWeight="SemiBold" />
                                             <TextBlock Text="{Binding GtaState}" Style="{StaticResource Caption}" TextTrimming="CharacterEllipsis" />
+                                        </StackPanel>
+                                    </DockPanel>
+                                </Border>
+                                <Border BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0" Padding="0,10">
+                                    <DockPanel>
+                                        <Button DockPanel.Dock="Right" Content="Открыть" Tag="{StaticResource IconChevron}" Style="{StaticResource GhostIcon}" VerticalAlignment="Center"
+                                                Command="{Binding OpenPcCommand}" />
+                                        <Border Width="40" Height="40" CornerRadius="11" Margin="0,0,14,0" Background="{StaticResource PcTile}">
+                                            <TextBlock Text="ПК" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="Bold" FontSize="12" Foreground="#04201C" />
+                                        </Border>
+                                        <StackPanel VerticalAlignment="Center">
+                                            <TextBlock Text="Windows и другие игры" FontWeight="SemiBold" />
+                                            <TextBlock Text="Твики системы, игровой режим, Fortnite, Valorant, Minecraft, Apex, бенчмарк" Style="{StaticResource Caption}" TextTrimming="CharacterEllipsis" />
                                         </StackPanel>
                                     </DockPanel>
                                 </Border>
@@ -1739,6 +1752,31 @@
             </ScrollViewer>
         </TabItem>
 
+        <!-- ===================== ПК: WINDOWS И ДРУГИЕ ИГРЫ ===================== -->
+        <TabItem Header="Твики Windows" Tag="{StaticResource IconSliders}" DataContext="{Binding SystemTweaks}" Visibility="{Binding DataContext.IsPc, ElementName=Nav, Converter={StaticResource BoolToVis}}">
+            <v:SystemTweaksPage />
+        </TabItem>
+
+        <TabItem Header="Игровой режим" Tag="{StaticResource IconGamepad}" DataContext="{Binding GameMode}" Visibility="{Binding DataContext.IsPc, ElementName=Nav, Converter={StaticResource BoolToVis}}">
+            <v:GameModePage />
+        </TabItem>
+
+        <TabItem Header="Автозагрузка" Tag="{StaticResource IconPower}" DataContext="{Binding Startup}" Visibility="{Binding DataContext.IsPc, ElementName=Nav, Converter={StaticResource BoolToVis}}">
+            <v:StartupPage />
+        </TabItem>
+
+        <TabItem Header="Ускорения" Tag="{StaticResource IconRocket}" DataContext="{Binding Boost}" Visibility="{Binding DataContext.IsPc, ElementName=Nav, Converter={StaticResource BoolToVis}}">
+            <v:BoostPage />
+        </TabItem>
+
+        <TabItem Header="Пресеты игр" Tag="{StaticResource IconLayers}" DataContext="{Binding Presets}" Visibility="{Binding DataContext.IsPc, ElementName=Nav, Converter={StaticResource BoolToVis}}">
+            <v:PresetsPage />
+        </TabItem>
+
+        <TabItem Header="Бенчмарк" Tag="{StaticResource IconGauge}" DataContext="{Binding Benchmark}" Visibility="{Binding DataContext.IsPc, ElementName=Nav, Converter={StaticResource BoolToVis}}">
+            <v:BenchmarkPage />
+        </TabItem>
+
         <!-- ===================== NETWORK ===================== -->
         <TabItem Header="ОБЩЕЕ ДЛЯ ВСЕХ ИГР" Style="{StaticResource NavSection}" />
 
@@ -2006,33 +2044,6 @@
                     </Border>
                 </StackPanel>
             </ScrollViewer>
-        </TabItem>
-
-        <!-- ===================== WINDOWS ===================== -->
-        <TabItem Header="WINDOWS" Style="{StaticResource NavSection}" />
-
-        <TabItem Header="Твики Windows" Tag="{StaticResource IconSliders}" DataContext="{Binding SystemTweaks}">
-            <v:SystemTweaksPage />
-        </TabItem>
-
-        <TabItem Header="Игровой режим" Tag="{StaticResource IconGamepad}" DataContext="{Binding GameMode}">
-            <v:GameModePage />
-        </TabItem>
-
-        <TabItem Header="Автозагрузка" Tag="{StaticResource IconPower}" DataContext="{Binding Startup}">
-            <v:StartupPage />
-        </TabItem>
-
-        <TabItem Header="Ускорения" Tag="{StaticResource IconRocket}" DataContext="{Binding Boost}">
-            <v:BoostPage />
-        </TabItem>
-
-        <TabItem Header="Пресеты игр" Tag="{StaticResource IconLayers}" DataContext="{Binding Presets}">
-            <v:PresetsPage />
-        </TabItem>
-
-        <TabItem Header="Бенчмарк" Tag="{StaticResource IconGauge}" DataContext="{Binding Benchmark}">
-            <v:BenchmarkPage />
         </TabItem>
 
         <!-- ===================== ABOUT ===================== -->

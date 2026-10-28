@@ -49,6 +49,10 @@ public static class GameTheme
         Apply(accent, hover, pressed, onAccent);
     }
 
+    /// <summary>«ПК» section (Windows and other games): teal.</summary>
+    public static void ApplyPc() =>
+        Apply(Color.FromRgb(0x2E, 0xC4, 0xB6), Color.FromRgb(0x5A, 0xD6, 0xCA), Color.FromRgb(0x1F, 0xA5, 0x98), Color.FromRgb(0x04, 0x1E, 0x1B));
+
     public static void ApplyGta() =>
         Apply(Color.FromRgb(0x7C, 0x6C, 0xFF), Color.FromRgb(0x95, 0x88, 0xFF), Color.FromRgb(0x5F, 0x4D, 0xE8), Colors.White);
 
@@ -91,6 +95,7 @@ internal static class UiState
 {
     /// <summary>Written instead of a <see cref="GameId"/> when the GTA RP section was open; older versions read it as Dota 2.</summary>
     private const string GtaSection = "GtaRp";
+    private const string PcSection = "Pc";
 
     private static string File => Path.Combine(AppPaths.Root, "last-game.txt");
 
@@ -107,6 +112,20 @@ internal static class UiState
     }
 
     public static void SaveGta() => Save(GtaSection);
+
+    public static bool LastWasPc()
+    {
+        try
+        {
+            return System.IO.File.Exists(File) && System.IO.File.ReadAllText(File).Trim() == PcSection;
+        }
+        catch (IOException)
+        {
+            return false;
+        }
+    }
+
+    public static void SavePc() => Save(PcSection);
 
     public static GameId LastGame()
     {

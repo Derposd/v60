@@ -63,6 +63,10 @@
         <GradientStop Color="#FAC25E" Offset="0" />
         <GradientStop Color="#D67F0C" Offset="1" />
     </LinearGradientBrush>
+    <LinearGradientBrush x:Key="PcTile" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#6EE7DA" Offset="0" />
+        <GradientStop Color="#139488" Offset="1" />
+    </LinearGradientBrush>
     <LinearGradientBrush x:Key="GtaTile" StartPoint="0,0" EndPoint="1,1">
         <GradientStop Color="#A08CFF" Offset="0" />
         <GradientStop Color="#4C3BD9" Offset="1" />
@@ -811,13 +815,15 @@
                                 <!-- Game switcher -->
                                 <Border DockPanel.Dock="Top" Margin="14,0,14,8" Padding="5" CornerRadius="18" Background="{StaticResource CardBg}"
                                         BorderBrush="{StaticResource CardRim}" BorderThickness="1">
-                                    <UniformGrid Columns="3">
+                                    <UniformGrid Columns="4">
                                         <RadioButton Style="{StaticResource GameChip}" Content="D2" Tag="Dota 2" Background="{StaticResource DotaTile}"
                                                      IsChecked="{Binding IsDota}" GroupName="game" ToolTip="Dota 2" />
                                         <RadioButton Style="{StaticResource GameChip}" Content="CS2" Tag="CS2" Background="{StaticResource Cs2Tile}" Foreground="#2A1A04"
                                                      IsChecked="{Binding IsCs2}" GroupName="game" ToolTip="Counter-Strike 2" />
                                         <RadioButton Style="{StaticResource GameChip}" Content="RP" Tag="GTA RP" Background="{StaticResource GtaTile}"
                                                      IsChecked="{Binding IsGta}" GroupName="game" ToolTip="GTA V: GTA5RP, Majestic RP и другие RP-проекты" />
+                                        <RadioButton Style="{StaticResource GameChip}" Content="ПК" Tag="Windows" Background="{StaticResource PcTile}" Foreground="#04201C"
+                                                     IsChecked="{Binding IsPc}" GroupName="game" ToolTip="Windows и другие игры: твики системы, игровой режим, пресеты Fortnite, Valorant, Minecraft, Apex, бенчмарк" />
                                     </UniformGrid>
                                 </Border>
                                 <!-- PC card -->
