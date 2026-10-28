@@ -1823,6 +1823,10 @@
             <v:PresetsPage />
         </TabItem>
 
+        <TabItem Header="Апскейл и кадры" Tag="{StaticResource IconSparkle}" DataContext="{Binding Upscale}" Visibility="{Binding DataContext.IsPc, ElementName=Nav, Converter={StaticResource BoolToVis}}">
+            <v:UpscalePage />
+        </TabItem>
+
         <TabItem Header="Бенчмарк" Tag="{StaticResource IconGauge}" DataContext="{Binding Benchmark}" Visibility="{Binding DataContext.IsPc, ElementName=Nav, Converter={StaticResource BoolToVis}}">
             <v:BenchmarkPage />
         </TabItem>

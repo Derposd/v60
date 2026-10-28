@@ -215,9 +215,10 @@ public sealed class MainViewModel : ObservableObject
     public const int StartupTab = 11;
     public const int BoostTab = 12;
     public const int PresetsTab = 13;
-    public const int BenchmarkTab = 14;
-    public const int NetworkTab = 16;
-    public const int RollbackTab = 17;
+    public const int UpscaleTab = 14;
+    public const int BenchmarkTab = 15;
+    public const int NetworkTab = 17;
+    public const int RollbackTab = 18;
 
     private enum Section
     {
@@ -243,6 +244,7 @@ public sealed class MainViewModel : ObservableObject
         Boost = new BoostViewModel(services);
         Presets = new PresetsViewModel(services);
         Benchmark = new BenchmarkViewModel(services);
+        Upscale = new UpscaleViewModel(services);
         About = new AboutViewModel();
         Settings = new SettingsViewModel(ReapplyTheme);
         Home = new HomeViewModel(services, Dota, Cs2, (ws, tab) =>
@@ -365,6 +367,7 @@ public sealed class MainViewModel : ObservableObject
     public BoostViewModel Boost { get; }
     public PresetsViewModel Presets { get; }
     public BenchmarkViewModel Benchmark { get; }
+    public UpscaleViewModel Upscale { get; }
     public RollbackViewModel Rollback { get; }
     public AboutViewModel About { get; }
     public SettingsViewModel Settings { get; }
@@ -449,6 +452,7 @@ public sealed class MainViewModel : ObservableObject
             StartupTab => Startup.ActivateAsync(),
             PresetsTab => Presets.ActivateAsync(),
             BenchmarkTab => Benchmark.ActivateAsync(),
+            UpscaleTab => Upscale.ActivateAsync(),
             _ => Task.CompletedTask,
         };
     }

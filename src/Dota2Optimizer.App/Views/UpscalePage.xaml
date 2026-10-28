@@ -1,0 +1,147 @@
+<UserControl x:Class="Dota2Optimizer.App.Views.UpscalePage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:v="clr-namespace:Dota2Optimizer.App.Views">
+    <ScrollViewer>
+        <StackPanel Margin="{StaticResource Margin.Page}">
+            <TextBlock Text="WINDOWS И ДРУГИЕ ИГРЫ" Style="{StaticResource Kicker}" />
+            <TextBlock Text="Апскейл и кадры" Style="{StaticResource PageTitle}" />
+            <TextBlock Style="{StaticResource PageSub}" Margin="0,4,0,18"
+                       Text="DLSS, FSR и генерацию кадров FrameLab в игру не встраивает — он показывает, что работает на вашей карте, и помогает с внешними инструментами. Всё с честными ограничениями." />
+
+            <!-- B3: the honest warning, always on top -->
+            <Border Style="{StaticResource Card}" Background="{StaticResource WarnSoft}" BorderBrush="Transparent">
+                <DockPanel>
+                    <ContentControl Style="{StaticResource IconBadge}" Tag="{StaticResource IconAlert}" Background="#22FBBF24" Foreground="{StaticResource Warn}" Margin="0,0,14,0" VerticalAlignment="Top" />
+                    <StackPanel>
+                        <TextBlock Text="Генерация кадров — не бесплатные FPS" Style="{StaticResource CardTitle}" />
+                        <TextBlock Style="{StaticResource MutedText}" Margin="0,6,0,0" TextWrapping="Wrap"
+                                   Text="• Добавляет задержку ввода (обычно на один-два исходных кадра): картинка плавнее, а управление — нет. В соревновательных играх (CS2, Valorant, Dota 2) не включайте.&#10;• Нужен запас по видеокарте: если без генерации меньше 40–50 FPS, будут артефакты и рывки.&#10;• Моды, которые внедряются в процесс игры (OptiScaler, ReShade и т.п.), в онлайн-играх с античитом = риск бана. FrameLab ставит OptiScaler только в одиночные игры без античита." />
+                    </StackPanel>
+                </DockPanel>
+            </Border>
+
+            <TextBlock Text="Что доступно на вашей карте" Style="{StaticResource H2}" />
+            <StackPanel Visibility="{Binding IsLoading, Converter={StaticResource BoolToVis}}">
+                <Border Style="{StaticResource Skeleton}" Height="120" />
+            </StackPanel>
+            <ItemsControl ItemsSource="{Binding Gpus}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Border Style="{StaticResource Card}" Padding="0">
+                            <StackPanel>
+                                <DockPanel Margin="22,18,22,12">
+                                    <ContentControl Style="{StaticResource IconBadge}" Tag="{StaticResource IconChip}" Margin="0,0,14,0" />
+                                    <StackPanel VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding Name}" Style="{StaticResource CardTitle}" />
+                                        <TextBlock Text="{Binding Details}" Style="{StaticResource Caption}" />
+                                    </StackPanel>
+                                </DockPanel>
+                                <ItemsControl ItemsSource="{Binding Rows}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0" Padding="22,11" v:Fx.Appear="True">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <StackPanel>
+                                                        <WrapPanel>
+                                                            <TextBlock Text="{Binding Name}" FontWeight="SemiBold" Margin="0,0,10,0" />
+                                                            <Border Style="{StaticResource Tag}"><TextBlock Text="{Binding KindText}" Style="{StaticResource TagText}" /></Border>
+                                                            <Border Style="{StaticResource Tag}" Background="{DynamicResource AccentSoft}" Visibility="{Binding FrameGeneration, Converter={StaticResource BoolToVis}}">
+                                                                <TextBlock Text="генерация кадров" Style="{StaticResource TagText}" Foreground="{DynamicResource Accent}" />
+                                                            </Border>
+                                                        </WrapPanel>
+                                                        <TextBlock Text="{Binding Why}" Style="{StaticResource Caption}" Margin="0,3,0,0" />
+                                                    </StackPanel>
+                                                    <Border Grid.Column="1" Style="{StaticResource Tag}" Background="{Binding StatusSoft}" VerticalAlignment="Top" Margin="14,0,0,0">
+                                                        <TextBlock Text="{Binding StatusText}" Style="{StaticResource TagText}" Foreground="{Binding StatusBrush}" />
+                                                    </Border>
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <TextBlock Text="Генерация кадров для любых игр" Style="{StaticResource H2}" />
+            <Border Style="{StaticResource Card}">
+                <StackPanel>
+                    <DockPanel>
+                        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Top">
+                            <Button Content="В Steam" Tag="{StaticResource IconExternal}" Style="{StaticResource GhostIcon}" Command="{Binding LosslessStoreCommand}" />
+                            <Button Content="Запустить" Tag="{StaticResource IconPlay}" Style="{StaticResource PrimaryIcon}" Command="{Binding LaunchLosslessCommand}" Margin="0" />
+                        </StackPanel>
+                        <ContentControl Style="{StaticResource IconBadge}" Tag="{StaticResource IconSparkle}" Margin="0,0,14,0" />
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock Text="Lossless Scaling" Style="{StaticResource CardTitle}" />
+                            <TextBlock Text="{Binding LosslessText}" Style="{StaticResource Caption}" />
+                        </StackPanel>
+                    </DockPanel>
+                    <TextBlock Text="Как настроить под ваш ПК" FontWeight="SemiBold" Margin="0,14,0,6" />
+                    <ItemsControl ItemsSource="{Binding LosslessTips}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <DockPanel Margin="0,3">
+                                    <ContentControl Style="{StaticResource Icon}" Tag="{StaticResource IconCheck}" Foreground="{DynamicResource Accent}" Margin="0,2,10,0" VerticalAlignment="Top" />
+                                    <TextBlock Text="{Binding}" Style="{StaticResource MutedText}" />
+                                </DockPanel>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+
+            <Border Style="{StaticResource Card}" Visibility="{Binding HasAmd, Converter={StaticResource BoolToVis}}">
+                <DockPanel>
+                    <ContentControl Style="{StaticResource IconBadge}" Tag="{StaticResource IconSparkle}" Margin="0,0,14,0" VerticalAlignment="Top" />
+                    <StackPanel>
+                        <TextBlock Text="AMD Fluid Motion Frames 2 — бесплатно, в драйвере" Style="{StaticResource CardTitle}" />
+                        <TextBlock Style="{StaticResource MutedText}" Margin="0,6,0,0"
+                                   Text="AMD Software: Adrenalin Edition → Игры → Графика → AMD Fluid Motion Frames: вкл. Работает в DX11, DX12, Vulkan и OpenGL-играх в полноэкранном режиме на Radeon RX 6000 и новее. Счётчик FPS AMD показывает реальные и сгенерированные кадры отдельно. Статус для вашей карты — в таблице выше." />
+                    </StackPanel>
+                </DockPanel>
+            </Border>
+
+            <Border Style="{StaticResource Card}">
+                <DockPanel>
+                    <ContentControl Style="{StaticResource IconBadge}" Tag="{StaticResource IconGamepad}" Margin="0,0,14,0" VerticalAlignment="Top" />
+                    <StackPanel>
+                        <TextBlock Text="Сначала — то, что есть в самой игре" Style="{StaticResource CardTitle}" />
+                        <TextBlock Style="{StaticResource MutedText}" Margin="0,6,0,0"
+                                   Text="Встроенные DLSS Frame Generation и FSR 3 Frame Generation работают лучше любых внешних: у них есть векторы движения и данные игры. Ищите их в настройках графики (раздел «Апскейлинг» / «Генерация кадров»). Внешние инструменты — для игр, где этого нет." />
+                    </StackPanel>
+                </DockPanel>
+            </Border>
+
+            <TextBlock Text="OptiScaler — экспериментально" Style="{StaticResource H2}" />
+            <Border Style="{StaticResource Card}">
+                <StackPanel>
+                    <DockPanel>
+                        <Button DockPanel.Dock="Right" Content="Страница проекта" Tag="{StaticResource IconExternal}" Style="{StaticResource GhostIcon}" Command="{Binding OpenOptiPageCommand}" VerticalAlignment="Top" Margin="0" />
+                        <ContentControl Style="{StaticResource IconBadge}" Tag="{StaticResource IconLayers}" Margin="0,0,14,0" VerticalAlignment="Top" />
+                        <StackPanel>
+                            <TextBlock Text="FSR / XeSS вместо DLSS и генерация кадров OptiFG" Style="{StaticResource CardTitle}" />
+                            <TextBlock Style="{StaticResource MutedText}" Margin="0,6,0,0"
+                                       Text="Для одиночных игр, где есть DLSS 2+, FSR 2+ или XeSS: позволяет владельцам AMD/Intel/старых NVIDIA включить другой апскейлер, а в DirectX 12 — генерацию кадров. Сторонний проект под GPLv3: FrameLab его не встраивает, а скачивает официальный релиз с GitHub по вашей кнопке." />
+                        </StackPanel>
+                    </DockPanel>
+                    <WrapPanel Margin="0,14,0,0">
+                        <Button Content="Выбрать игру (exe)…" Tag="{StaticResource IconFolder}" Style="{StaticResource SecondaryIcon}" Command="{Binding PickGameCommand}" />
+                        <Button Content="Скачать и установить" Tag="{StaticResource IconPlay}" Style="{StaticResource PrimaryIcon}" Command="{Binding InstallOptiCommand}" />
+                        <Button Content="Удалить из игры" Tag="{StaticResource IconUndo}" Style="{StaticResource UndoIcon}" Command="{Binding RemoveOptiCommand}" />
+                    </WrapPanel>
+                    <TextBlock Text="{Binding GameExe}" Style="{StaticResource Caption}" FontFamily="{StaticResource MonoFont}" Margin="0,10,0,0" Visibility="{Binding GameExe, Converter={StaticResource NullToCollapsed}}" />
+                    <TextBlock Text="{Binding OptiStatus}" Style="{StaticResource MutedText}" Margin="0,6,0,0" Visibility="{Binding OptiStatus, Converter={StaticResource NullToCollapsed}}" />
+                    <ProgressBar Style="{StaticResource Progress}" Maximum="1" Value="{Binding Progress, Mode=OneWay}" Margin="0,8,0,0" Visibility="{Binding Busy, Converter={StaticResource BoolToVis}}" />
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>
