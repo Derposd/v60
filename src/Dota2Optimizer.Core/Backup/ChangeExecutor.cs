@@ -23,13 +23,15 @@ public sealed class ChangeExecutor
     private readonly IRegistry _reg;
     private readonly ICommandRunner _cmd;
     private readonly BackupStore _store;
+    private readonly IServiceControl _services;
 
-    public ChangeExecutor(IFileSystem fs, IRegistry reg, ICommandRunner cmd, BackupStore store)
+    public ChangeExecutor(IFileSystem fs, IRegistry reg, ICommandRunner cmd, BackupStore store, IServiceControl? services = null)
     {
         _fs = fs;
         _reg = reg;
         _cmd = cmd;
         _store = store;
+        _services = services ?? new ServiceControl(reg, cmd);
     }
 
     public BackupStore Store => _store;
@@ -42,6 +44,8 @@ public sealed class ChangeExecutor
             ActionKind.DeleteRegistry => new PreviewLine(a.Target, Show(_reg.GetValue(a.Hive, a.Key!, a.ValueName!)), "(удалить)", a.Description, a.RequiresAdmin),
             ActionKind.WriteFile => new PreviewLine(a.Target, _fs.FileExists(a.Path!) ? "файл (будет сохранена копия)" : "(нет файла)", "изменённый файл", a.Description, a.RequiresAdmin),
             ActionKind.DeleteFile => new PreviewLine(a.Target, _fs.FileExists(a.Path!) ? "файл (будет сохранена копия)" : "(нет файла)", "(удалить)", a.Description, a.RequiresAdmin),
+            ActionKind.CopyFile => new PreviewLine(a.Target, _fs.FileExists(a.Path!) ? "файл (будет сохранена копия)" : "(нет файла)", $"копия {PathEx.FileName(a.SourcePath ?? string.Empty)}", a.Description, a.RequiresAdmin),
+            ActionKind.SetService => new PreviewLine(a.Target, ShowService(_services.Query(a.ServiceName!)), ServiceStart.Ru(a.ServiceStartType!) + (a.StopService ? ", остановить" : string.Empty), a.Description, a.RequiresAdmin),
             _ => new PreviewLine(a.Target, "—", "выполнить команду", a.Description, a.RequiresAdmin),
         }).ToList();
 
@@ -133,10 +137,12 @@ public sealed class ChangeExecutor
             Key = action.Key,
             ValueName = action.ValueName,
             Previous = _reg.GetValue(action.Hive, action.Key!, action.ValueName!),
+            KeyExisted = _reg.KeyExists(action.Hive, action.Key!),
             Description = action.Description,
             RequiresAdmin = action.RequiresAdmin,
         },
-        ActionKind.WriteFile or ActionKind.DeleteFile => _store.BackupFile(set, action.Path!, action.Description, action.RequiresAdmin),
+        ActionKind.WriteFile or ActionKind.DeleteFile or ActionKind.CopyFile => _store.BackupFile(set, action.Path!, action.Description, action.RequiresAdmin),
+        ActionKind.SetService => BackupService(action),
         _ => new BackupRecord
         {
             Kind = BackupKind.Command,
@@ -163,6 +169,17 @@ public sealed class ChangeExecutor
             case ActionKind.DeleteFile:
                 _fs.DeleteFile(action.Path!);
                 break;
+            case ActionKind.CopyFile:
+                _fs.WriteAllBytes(action.Path!, _fs.ReadAllBytes(action.SourcePath!));
+                break;
+            case ActionKind.SetService:
+                _services.SetStart(action.ServiceName!, action.ServiceStartType!);
+                if (action.StopService && !_services.Stop(action.ServiceName!))
+                {
+                    Log.Warn($"Служба {action.ServiceName} не остановилась сразу; тип запуска изменён");
+                }
+
+                break;
             case ActionKind.RunCommand:
                 var result = _cmd.Run(action.Command!, action.Arguments ?? string.Empty);
                 if (!result.Success)
@@ -185,6 +202,11 @@ public sealed class ChangeExecutor
                 {
                     case BackupKind.Registry when r.Previous is null:
                         _reg.DeleteValue(r.Hive, r.Key!, r.ValueName!);
+                        if (r.KeyExisted == false)
+                        {
+                            _reg.DeleteKeyIfEmpty(r.Hive, r.Key!);
+                        }
+
                         messages.Add($"Удалено значение {r.Target} (его не было до изменения)");
                         break;
                     case BackupKind.Registry:
@@ -198,6 +220,13 @@ public sealed class ChangeExecutor
                     case BackupKind.File:
                         _fs.DeleteFile(r.Path!);
                         messages.Add($"Удалён созданный файл {r.Path}");
+                        break;
+                    case BackupKind.Service:
+                        _services.SetStart(r.ServiceName!, r.PreviousStartType!);
+                        var started = !r.WasRunning || _services.Start(r.ServiceName!);
+                        messages.Add(started
+                            ? $"Служба {r.ServiceName}: тип запуска «{ServiceStart.Ru(r.PreviousStartType!)}»" + (r.WasRunning ? ", запущена" : string.Empty)
+                            : $"Ошибка: служба {r.ServiceName} не запустилась (тип запуска восстановлен)");
                         break;
                     case BackupKind.Command when !string.IsNullOrEmpty(r.UndoCommand):
                         var res = _cmd.Run(r.UndoCommand!, r.UndoArguments ?? string.Empty);
@@ -214,6 +243,24 @@ public sealed class ChangeExecutor
 
         return messages;
     }
+
+    private BackupRecord BackupService(PlannedAction action)
+    {
+        var state = _services.Query(action.ServiceName!)
+                    ?? throw new InvalidOperationException($"Служба {action.ServiceName} не найдена");
+        return new BackupRecord
+        {
+            Kind = BackupKind.Service,
+            ServiceName = state.Name,
+            PreviousStartType = state.Start,
+            WasRunning = state.Running,
+            Description = action.Description,
+            RequiresAdmin = true,
+        };
+    }
+
+    private static string ShowService(ServiceState? s) =>
+        s is null ? "(нет службы)" : ServiceStart.Ru(s.Start) + (s.Running ? ", работает" : ", остановлена");
 
     private static string Show(RegValue? v)
     {

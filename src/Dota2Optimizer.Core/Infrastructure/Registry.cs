@@ -43,6 +43,10 @@ public interface IRegistry
     void DeleteValue(RegHive hive, string key, string name);
     IReadOnlyList<string> GetValueNames(RegHive hive, string key);
     IReadOnlyList<string> GetSubKeyNames(RegHive hive, string key);
+    bool KeyExists(RegHive hive, string key);
+
+    /// <summary>Removes a key that has no values and no subkeys left; used to undo a key a tweak created.</summary>
+    void DeleteKeyIfEmpty(RegHive hive, string key);
 }
 
 public static class RegHiveExtensions
@@ -130,19 +134,65 @@ public sealed class WindowsRegistry : IRegistry
         using var k = root.OpenSubKey(key, writable: false);
         return k?.GetSubKeyNames() ?? Array.Empty<string>();
     }
+
+    public bool KeyExists(RegHive hive, string key)
+    {
+        using var root = Base(hive);
+        using var k = root.OpenSubKey(key, writable: false);
+        return k is not null;
+    }
+
+    public void DeleteKeyIfEmpty(RegHive hive, string key)
+    {
+        using var root = Base(hive);
+        using (var k = root.OpenSubKey(key, writable: false))
+        {
+            if (k is null || k.ValueCount > 0 || k.SubKeyCount > 0)
+            {
+                return;
+            }
+        }
+
+        root.DeleteSubKey(key, throwOnMissingSubKey: false);
+    }
 }
 
 /// <summary>In-memory registry used by tests and by dry-run previews.</summary>
 public sealed class InMemoryRegistry : IRegistry
 {
     private readonly Dictionary<string, RegValue> _values = new(StringComparer.OrdinalIgnoreCase);
+    private readonly HashSet<string> _keys = new(StringComparer.OrdinalIgnoreCase);
+
+    private static string KeyId(RegHive hive, string key) => $"{hive}\\{key.TrimEnd('\\')}";
 
     private static string Id(RegHive hive, string key, string name) => $"{hive}\\{key.TrimEnd('\\')}\\\u0001{name}";
 
     public RegValue? GetValue(RegHive hive, string key, string name) =>
         _values.TryGetValue(Id(hive, key, name), out var v) ? v : null;
 
-    public void SetValue(RegHive hive, string key, string name, RegValue value) => _values[Id(hive, key, name)] = value;
+    public void SetValue(RegHive hive, string key, string name, RegValue value)
+    {
+        _values[Id(hive, key, name)] = value;
+        _keys.Add(KeyId(hive, key));
+    }
+
+    /// <summary>Creates an empty key (tests use it to model a key that already existed).</summary>
+    public void CreateKey(RegHive hive, string key) => _keys.Add(KeyId(hive, key));
+
+    public bool KeyExists(RegHive hive, string key)
+    {
+        var id = KeyId(hive, key);
+        return _keys.Contains(id) || _keys.Any(k => k.StartsWith(id + "\\", StringComparison.OrdinalIgnoreCase));
+    }
+
+    public void DeleteKeyIfEmpty(RegHive hive, string key)
+    {
+        var id = KeyId(hive, key);
+        if (GetValueNames(hive, key).Count == 0 && !_keys.Any(k => k.StartsWith(id + "\\", StringComparison.OrdinalIgnoreCase)))
+        {
+            _keys.Remove(id);
+        }
+    }
 
     public void DeleteValue(RegHive hive, string key, string name) => _values.Remove(Id(hive, key, name));
 

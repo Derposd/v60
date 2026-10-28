@@ -258,6 +258,7 @@ public sealed class CpuPriorityTweak : GameTweak
     public override Effectiveness Effectiveness => Effectiveness.Low;
     public override bool Recommended => false;
     public override bool Disputed => true;
+    public override TweakRisk RiskLevel => TweakRisk.Medium;
     public override string Risk => "Низкий, но при нехватке ядер может «душить» звук, Discord и стрим; нужны права администратора";
 
     public override string Explanation =>

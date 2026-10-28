@@ -121,6 +121,34 @@ public sealed class AppServices
         return lines;
     }
 
+    /// <summary>
+    /// Shows the preview of every change (and the restore point offer before the first apply), then applies.
+    /// Returns null when the user cancelled.
+    /// </summary>
+    public async Task<IReadOnlyList<ApplyLine>?> ConfirmAndApplyAsync(IReadOnlyList<TweakPlan> plans, string title)
+    {
+        if (plans.Count == 0)
+        {
+            return Array.Empty<ApplyLine>();
+        }
+
+        var preview = await Task.Run(() => plans.SelectMany(p => Executor.Preview(p.Actions)).ToList());
+        var firstApply = !RestorePoint.CreatedBefore && Store.Load().Count == 0;
+        var dialog = new Views.PreviewDialog(title, preview, firstApply, plans.Any(p => p.RequiresAdmin));
+        if (dialog.ShowDialog() != true)
+        {
+            return null;
+        }
+
+        var lines = await ApplyPlansAsync(plans, dialog.CreateRestorePoint);
+        NotifyChangesApplied();
+        return lines;
+    }
+
+    /// <summary>Switches a tweak off: rolls back every change this app made for it, newest first.</summary>
+    public Task<IReadOnlyList<string>?> RevertTweakAsync(string tweakId, string title) =>
+        UndoManyAsync(TweakEngine.OwnChanges(tweakId, Store).Select(c => c.Id).ToList(), title);
+
     /// <summary>Undoes several change sets, newest first, after one confirmation. Returns null when cancelled or blocked.</summary>
     public async Task<IReadOnlyList<string>?> UndoManyAsync(IReadOnlyList<string> changeSetIds, string title)
     {

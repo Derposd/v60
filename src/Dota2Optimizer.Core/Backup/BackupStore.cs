@@ -9,6 +9,7 @@ public enum BackupKind
     File,
     Registry,
     Command,
+    Service,
 }
 
 /// <summary>What was there before one action ran, and how to put it back.</summary>
@@ -27,6 +28,13 @@ public sealed class BackupRecord
     public string? ValueName { get; set; }
     public RegValue? Previous { get; set; }
 
+    /// <summary>False when the tweak created the key: undo removes it again if nothing else was put there. Null in journals from older versions.</summary>
+    public bool? KeyExisted { get; set; }
+
+    public string? ServiceName { get; set; }
+    public string? PreviousStartType { get; set; }
+    public bool WasRunning { get; set; }
+
     public string? UndoCommand { get; set; }
     public string? UndoArguments { get; set; }
 
@@ -35,6 +43,7 @@ public sealed class BackupRecord
     {
         BackupKind.Registry => $"{Hive.ShortName()}\\{Key}\\{ValueName}",
         BackupKind.File => Path ?? string.Empty,
+        BackupKind.Service => $"служба {ServiceName}",
         _ => $"{UndoCommand} {UndoArguments}",
     };
 }

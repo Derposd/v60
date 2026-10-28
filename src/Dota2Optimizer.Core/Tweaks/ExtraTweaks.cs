@@ -222,6 +222,7 @@ public sealed class MemoryIntegrityTweak : Tweak
     public override Effectiveness Effectiveness => Effectiveness.HardwareDependent;
     public override bool Recommended => false;
     public override bool Disputed => true;
+    public override TweakRisk RiskLevel => TweakRisk.High;
     public override string Risk => "Отключение снижает защиту Windows. Программа сама этого не делает";
 
     public override string Explanation =>
