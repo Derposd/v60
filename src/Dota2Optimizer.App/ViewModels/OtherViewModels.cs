@@ -259,19 +259,9 @@ public sealed class MainViewModel : ObservableObject
         });
         GameMode = new GameModeViewModel(services, Home);
         SystemTweaks.GameMode = GameMode;
+        // The app always opens on the «ПК» section; the Dota 2 / CS2 chip returns to the game opened last time.
         _current = UiState.LastGame() == Core.Game.GameId.Cs2 ? Cs2 : Dota;
-        if (UiState.LastWasGta())
-        {
-            SelectGta();
-        }
-        else if (UiState.LastWasPc())
-        {
-            SelectPc();
-        }
-        else
-        {
-            Select(_current);
-        }
+        SelectPc();
     }
 
     public HomeViewModel Home { get; }
@@ -398,7 +388,6 @@ public sealed class MainViewModel : ObservableObject
             SelectedTab = GtaModesTab;
         }
 
-        UiState.SaveGta();
         RaiseSection();
         _ = Gta.ActivateAsync();
     }
@@ -419,7 +408,6 @@ public sealed class MainViewModel : ObservableObject
             ActivatePage(SelectedTab);
         }
 
-        UiState.SavePc();
         RaiseSection();
     }
 

@@ -230,6 +230,19 @@
                         <Border Grid.Column="2" Style="{StaticResource Card}">
                             <StackPanel>
                                 <TextBlock Text="Игры" Style="{StaticResource Section}" Margin="0,0,0,8" />
+                                <Border BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0" Padding="0,10">
+                                    <DockPanel>
+                                        <Button DockPanel.Dock="Right" Content="Открыть" Tag="{StaticResource IconChevron}" Style="{StaticResource GhostIcon}" VerticalAlignment="Center"
+                                                Command="{Binding OpenPcCommand}" />
+                                        <Border Width="40" Height="40" CornerRadius="11" Margin="0,0,14,0" Background="{StaticResource PcTile}">
+                                            <TextBlock Text="ПК" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="Bold" FontSize="12" Foreground="#04201C" />
+                                        </Border>
+                                        <StackPanel VerticalAlignment="Center">
+                                            <TextBlock Text="Windows и другие игры" FontWeight="SemiBold" />
+                                            <TextBlock Text="Твики системы, игровой режим, Fortnite, Valorant, Minecraft, Apex, бенчмарк" Style="{StaticResource Caption}" TextTrimming="CharacterEllipsis" />
+                                        </StackPanel>
+                                    </DockPanel>
+                                </Border>
                                 <ItemsControl ItemsSource="{Binding Games}">
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
@@ -280,19 +293,6 @@
                                         <StackPanel VerticalAlignment="Center">
                                             <TextBlock Text="GTA V · RP" FontWeight="SemiBold" />
                                             <TextBlock Text="{Binding GtaState}" Style="{StaticResource Caption}" TextTrimming="CharacterEllipsis" />
-                                        </StackPanel>
-                                    </DockPanel>
-                                </Border>
-                                <Border BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0" Padding="0,10">
-                                    <DockPanel>
-                                        <Button DockPanel.Dock="Right" Content="Открыть" Tag="{StaticResource IconChevron}" Style="{StaticResource GhostIcon}" VerticalAlignment="Center"
-                                                Command="{Binding OpenPcCommand}" />
-                                        <Border Width="40" Height="40" CornerRadius="11" Margin="0,0,14,0" Background="{StaticResource PcTile}">
-                                            <TextBlock Text="ПК" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="Bold" FontSize="12" Foreground="#04201C" />
-                                        </Border>
-                                        <StackPanel VerticalAlignment="Center">
-                                            <TextBlock Text="Windows и другие игры" FontWeight="SemiBold" />
-                                            <TextBlock Text="Твики системы, игровой режим, Fortnite, Valorant, Minecraft, Apex, бенчмарк" Style="{StaticResource Caption}" TextTrimming="CharacterEllipsis" />
                                         </StackPanel>
                                     </DockPanel>
                                 </Border>

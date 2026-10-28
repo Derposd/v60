@@ -90,42 +90,10 @@ public static class GameTheme
     }
 }
 
-/// <summary>Remembers the last opened section between launches. A plain text file in the app's data folder.</summary>
+/// <summary>Remembers the last opened Steam game (Dota 2 or CS2) between launches. A plain text file in the app's data folder.</summary>
 internal static class UiState
 {
-    /// <summary>Written instead of a <see cref="GameId"/> when the GTA RP section was open; older versions read it as Dota 2.</summary>
-    private const string GtaSection = "GtaRp";
-    private const string PcSection = "Pc";
-
     private static string File => Path.Combine(AppPaths.Root, "last-game.txt");
-
-    public static bool LastWasGta()
-    {
-        try
-        {
-            return System.IO.File.Exists(File) && System.IO.File.ReadAllText(File).Trim() == GtaSection;
-        }
-        catch (IOException)
-        {
-            return false;
-        }
-    }
-
-    public static void SaveGta() => Save(GtaSection);
-
-    public static bool LastWasPc()
-    {
-        try
-        {
-            return System.IO.File.Exists(File) && System.IO.File.ReadAllText(File).Trim() == PcSection;
-        }
-        catch (IOException)
-        {
-            return false;
-        }
-    }
-
-    public static void SavePc() => Save(PcSection);
 
     public static GameId LastGame()
     {
