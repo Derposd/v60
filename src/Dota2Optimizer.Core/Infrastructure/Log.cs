@@ -16,6 +16,8 @@ public static class AppPaths
     public static string ScanCache => Path.Combine(Root, "last-scan.json");
     public static string SessionBoost => Path.Combine(Root, "session-power.txt");
     public static string SessionBoostOff => Path.Combine(Root, "session-boost-off");
+    public static string GameSession => Path.Combine(Root, "game-session.json");
+    public static string GameModeConfig => Path.Combine(Root, "game-mode.json");
     public static string RestorePointMarker => Path.Combine(Root, "restore-point-created.txt");
 
     public static void OverrideRoot(string root) => _rootOverride = root;

@@ -38,6 +38,8 @@ public partial class App : Application
         DispatcherUnhandledException += OnUnhandled;
         Log.Info($"Запуск FrameLab {typeof(App).Assembly.GetName().Version}, Windows {Environment.OSVersion.Version}");
         base.OnStartup(e);
+        // Motion tokens must be set before the first window creates its styles.
+        Views.Motion.Apply(Views.AppSettings.Load());
         new MainWindow().Show();
     }
 

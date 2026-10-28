@@ -71,7 +71,7 @@ public static class GameTheme
             new(Color.FromArgb(0x00, accent.R, accent.G, accent.B), 1),
         }, new Point(0, 0), new Point(1, 1)));
         r["HeroBorder"] = Frozen(new SolidColorBrush(Color.FromArgb(0x40, accent.R, accent.G, accent.B)));
-        r["Glow"] = Frozen(new RadialGradientBrush(new GradientStopCollection
+        r["Glow"] = Views.Motion.Performance ? Brushes.Transparent : Frozen(new RadialGradientBrush(new GradientStopCollection
         {
             new(Color.FromArgb(0x2C, accent.R, accent.G, accent.B), 0),
             new(Color.FromArgb(0x00, accent.R, accent.G, accent.B), 1),

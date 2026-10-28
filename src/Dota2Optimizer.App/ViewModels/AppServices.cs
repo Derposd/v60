@@ -277,6 +277,21 @@ public sealed class AppServices
         return null;
     }
 
+    /// <summary>The current snapshot, or the saved one re-read, or a full scan — whichever is available first.</summary>
+    public async Task<SystemSnapshot> EnsureSnapshotAsync()
+    {
+        if (Snapshot is { } s)
+        {
+            return s;
+        }
+
+        var snap = await Task.Run(() => QuickScan() ?? Scan());
+        Snapshot = snap;
+        return snap;
+    }
+
+    public TweakContext Context(SystemSnapshot snapshot) => new() { Snapshot = snapshot, Registry = Registry, FileSystem = Fs, Commands = Commands };
+
     public SystemSnapshot Scan() => new SystemScanner(Registry, Fs, Commands).Scan();
 
     /// <summary>The saved scan with games and Windows settings re-read, or null when a full scan is needed.</summary>

@@ -1,0 +1,26 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:vm="clr-namespace:Dota2Optimizer.App.ViewModels">
+    <!-- Value converters, merged before the theme so every dictionary and window can use them. -->
+    <BooleanToVisibilityConverter x:Key="BoolToVis" />
+    <vm:SeverityBrushConverter x:Key="SeverityBrush" />
+    <vm:SeverityTextConverter x:Key="SeverityText" />
+    <vm:BoolBrushConverter x:Key="BoolBrush" />
+    <vm:NullToCollapsedConverter x:Key="NullToCollapsed" />
+    <vm:InverseBoolConverter x:Key="Not" />
+    <vm:InverseBoolToVisibilityConverter x:Key="NotVis" />
+    <vm:EqualsToVisibleConverter x:Key="EqualsToVisible" />
+    <vm:StepFillConverter x:Key="StepFill" />
+    <vm:StepGlyphConverter x:Key="StepGlyph" />
+    <vm:StepLineConverter x:Key="StepLine" />
+    <vm:EffectBrushConverter x:Key="EffectBrush" />
+    <vm:StatusBrushConverter x:Key="StatusBrush" />
+    <vm:CountToVisibleConverter x:Key="CountToVisible" />
+    <vm:SizeTextConverter x:Key="SizeText" />
+    <vm:SeveritySoftConverter x:Key="SeveritySoft" />
+    <vm:SeverityIconConverter x:Key="SeverityIcon" />
+    <vm:EffectSoftConverter x:Key="EffectSoft" />
+    <vm:StatusSoftConverter x:Key="StatusSoft" />
+    <vm:StepTextConverter x:Key="StepText" />
+    <vm:StepLabelConverter x:Key="StepLabel" />
+</ResourceDictionary>

@@ -212,6 +212,9 @@ public sealed class MainViewModel : ObservableObject
     public const int GtaDiagnosisTab = 8;
     public const int NetworkTab = 10;
     public const int RollbackTab = 11;
+    public const int SystemTweaksTab = 13;
+    public const int GameModeTab = 14;
+    public const int StartupTab = 15;
 
     private int _selectedTab;
     private GameWorkspace _current;
@@ -225,6 +228,8 @@ public sealed class MainViewModel : ObservableObject
         Gta = new GtaViewModel(services);
         Network = new NetworkViewModel(services);
         Rollback = new RollbackViewModel(services);
+        SystemTweaks = new SystemTweaksViewModel(services);
+        Startup = new StartupViewModel(services);
         About = new AboutViewModel();
         Home = new HomeViewModel(services, Dota, Cs2, (ws, tab) =>
         {
@@ -235,6 +240,7 @@ public sealed class MainViewModel : ObservableObject
             SelectGta();
             SelectedTab = GtaModesTab;
         });
+        GameMode = new GameModeViewModel(services, Home);
         _current = UiState.LastGame() == Core.Game.GameId.Cs2 ? Cs2 : Dota;
         if (UiState.LastWasGta())
         {
@@ -303,10 +309,19 @@ public sealed class MainViewModel : ObservableObject
     public int SelectedTab
     {
         get => _selectedTab;
-        set => Set(ref _selectedTab, value);
+        set
+        {
+            if (Set(ref _selectedTab, value))
+            {
+                ActivatePage(value);
+            }
+        }
     }
 
     public NetworkViewModel Network { get; }
+    public SystemTweaksViewModel SystemTweaks { get; }
+    public GameModeViewModel GameMode { get; }
+    public StartupViewModel Startup { get; }
     public RollbackViewModel Rollback { get; }
     public AboutViewModel About { get; }
 
@@ -343,6 +358,25 @@ public sealed class MainViewModel : ObservableObject
         UiState.SaveGta();
         RaiseSection();
         _ = Gta.ActivateAsync();
+    }
+
+    /// <summary>Pages of the Windows section load on first open, so start-up stays fast.</summary>
+    private void ActivatePage(int tab)
+    {
+        _ = tab switch
+        {
+            SystemTweaksTab => SystemTweaks.ActivateAsync(),
+            GameModeTab => GameMode.ActivateAsync(),
+            StartupTab => Startup.ActivateAsync(),
+            _ => Task.CompletedTask,
+        };
+    }
+
+    /// <summary>Puts back what the real-time game mode paused, before the window closes.</summary>
+    public void Shutdown()
+    {
+        GameMode.Shutdown();
+        Home.Shutdown();
     }
 
     private void RaiseSection()

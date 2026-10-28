@@ -1,0 +1,165 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:v="clr-namespace:Dota2Optimizer.App.Views">
+    <!-- Base components built on the tokens: the animated switch, the tweak row, skeleton placeholders. -->
+
+    <v:RiskBrushConverter x:Key="RiskBrush" />
+    <v:CategoryIconConverter x:Key="CategoryIcon" />
+    <v:ZeroToCollapsedConverter x:Key="ZeroToCollapsed" />
+
+    <!-- On/off switch whose state comes from IsOn; the thumb slides and the track fades to the accent colour. -->
+    <Style TargetType="v:SwitchButton">
+        <Setter Property="FocusVisualStyle" Value="{StaticResource FocusRing}" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="v:SwitchButton">
+                    <Grid Width="44" Height="24" Background="Transparent">
+                        <Border x:Name="off" CornerRadius="12" Background="#2A2C35" BorderBrush="#474B57" BorderThickness="1" />
+                        <Border x:Name="on" CornerRadius="12" Background="{DynamicResource AccentGradient}" Opacity="0" />
+                        <Ellipse x:Name="thumb" Width="16" Height="16" Fill="White" Opacity="0.65" HorizontalAlignment="Left" Margin="4,0,0,0">
+                            <Ellipse.RenderTransform>
+                                <TranslateTransform x:Name="shift" />
+                            </Ellipse.RenderTransform>
+                        </Ellipse>
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsOn" Value="True">
+                            <Trigger.EnterActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="shift" Storyboard.TargetProperty="X" To="20" Duration="{StaticResource Dur.Base}" EasingFunction="{StaticResource Ease.Out}" />
+                                        <DoubleAnimation Storyboard.TargetName="on" Storyboard.TargetProperty="Opacity" To="1" Duration="{StaticResource Dur.Base}" />
+                                        <DoubleAnimation Storyboard.TargetName="thumb" Storyboard.TargetProperty="Opacity" To="1" Duration="{StaticResource Dur.Base}" />
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.EnterActions>
+                            <Trigger.ExitActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="shift" Storyboard.TargetProperty="X" To="0" Duration="{StaticResource Dur.Base}" EasingFunction="{StaticResource Ease.Out}" />
+                                        <DoubleAnimation Storyboard.TargetName="on" Storyboard.TargetProperty="Opacity" To="0" Duration="{StaticResource Dur.Base}" />
+                                        <DoubleAnimation Storyboard.TargetName="thumb" Storyboard.TargetProperty="Opacity" To="0.65" Duration="{StaticResource Dur.Base}" />
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.ExitActions>
+                        </Trigger>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="off" Property="BorderBrush" Value="{DynamicResource AccentHover}" />
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="thumb" Property="Width" Value="19" />
+                        </Trigger>
+                        <Trigger Property="IsBusy" Value="True">
+                            <Setter Property="Opacity" Value="0.55" />
+                            <Setter Property="Cursor" Value="Wait" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.35" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Card row that lifts slightly under the mouse. -->
+    <Style TargetType="Border" x:Key="RowCard">
+        <Setter Property="Background" Value="{StaticResource CardBg}" />
+        <Setter Property="BorderBrush" Value="{StaticResource CardRim}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="{StaticResource Radius.L}" />
+        <Setter Property="Padding" Value="{StaticResource Pad.Row}" />
+        <Setter Property="Margin" Value="0,0,0,10" />
+        <Setter Property="v:Fx.Appear" Value="True" />
+        <Setter Property="v:Fx.Lift" Value="True" />
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="BorderBrush" Value="{StaticResource CardRimHover}" />
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- A tweak as a switch: category icon, title, honest tags, what it changes and for which games, state and the switch. -->
+    <DataTemplate x:Key="TweakRowTemplate">
+        <Border Style="{StaticResource RowCard}">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <ContentControl Style="{StaticResource IconBadge}" Tag="{Binding Category, Converter={StaticResource CategoryIcon}}" VerticalAlignment="Top" Margin="0,2,14,0" />
+                <StackPanel Grid.Column="1">
+                    <TextBlock Text="{Binding Title}" Style="{StaticResource CardTitle}" />
+                    <WrapPanel Margin="0,7,0,0">
+                        <Border Style="{StaticResource Tag}" Background="{Binding EffectValue, Converter={StaticResource EffectSoft}}">
+                            <TextBlock Text="{Binding Effect}" Style="{StaticResource TagText}" Foreground="{Binding EffectValue, Converter={StaticResource EffectBrush}}" />
+                        </Border>
+                        <Border Style="{StaticResource Tag}" Background="{Binding RiskValue, Converter={StaticResource RiskBrush}, ConverterParameter=soft}">
+                            <TextBlock Text="{Binding RiskLabel}" Style="{StaticResource TagText}" Foreground="{Binding RiskValue, Converter={StaticResource RiskBrush}}" />
+                        </Border>
+                        <Border Style="{StaticResource Tag}" Background="{DynamicResource AccentSoft}" Visibility="{Binding IsRecommended, Converter={StaticResource BoolToVis}}">
+                            <TextBlock Text="рекомендуется" Style="{StaticResource TagText}" Foreground="{DynamicResource Accent}" />
+                        </Border>
+                        <Border Style="{StaticResource Tag}" Background="{StaticResource WarnSoft}" Visibility="{Binding IsDisputed, Converter={StaticResource BoolToVis}}">
+                            <TextBlock Text="спорно" Style="{StaticResource TagText}" Foreground="{StaticResource Warn}" />
+                        </Border>
+                        <Border Style="{StaticResource Tag}" Visibility="{Binding RequiresAdmin, Converter={StaticResource BoolToVis}}">
+                            <TextBlock Text="админ" Style="{StaticResource TagText}" />
+                        </Border>
+                        <Border Style="{StaticResource Tag}" Visibility="{Binding RequiresRestart, Converter={StaticResource BoolToVis}}">
+                            <TextBlock Text="перезагрузка" Style="{StaticResource TagText}" />
+                        </Border>
+                    </WrapPanel>
+                    <TextBlock Text="{Binding Explanation}" Style="{StaticResource MutedText}" Margin="0,6,0,0" />
+                    <DockPanel Margin="0,6,0,0" Visibility="{Binding AppliesTo, Converter={StaticResource NullToCollapsed}}">
+                        <ContentControl Style="{StaticResource Icon}" Tag="{StaticResource IconGamepad}" Width="14" Height="14" Margin="0,2,8,0" VerticalAlignment="Top" />
+                        <TextBlock Text="{Binding AppliesTo}" Style="{StaticResource Caption}" />
+                    </DockPanel>
+                    <TextBlock Text="{Binding Note}" Style="{StaticResource Caption}" Margin="0,6,0,0" Foreground="{Binding NoteBrush}" />
+                    <TextBlock Text="{Binding ManualSteps}" Style="{StaticResource Caption}" Margin="0,4,0,0" Visibility="{Binding ManualSteps, Converter={StaticResource NullToCollapsed}}" />
+                </StackPanel>
+                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Top" Margin="16,2,0,0">
+                    <v:StatusMark Width="20" Height="20" Margin="0,0,10,0" State="{Binding Mark}" Brush="{Binding MarkBrush}" />
+                    <v:SwitchButton IsOn="{Binding IsOn}" IsBusy="{Binding IsBusy}" IsEnabled="{Binding CanToggle}" Command="{Binding ToggleCommand}"
+                                    ToolTip="{Binding SwitchTip}" />
+                </StackPanel>
+            </Grid>
+        </Border>
+    </DataTemplate>
+
+    <!-- Skeleton placeholder shown while a page loads; the shimmer runs only while it is visible. -->
+    <Style TargetType="Border" x:Key="Skeleton">
+        <Setter Property="CornerRadius" Value="{StaticResource Radius.M}" />
+        <Setter Property="Height" Value="72" />
+        <Setter Property="Margin" Value="0,0,0,10" />
+        <Setter Property="Background">
+            <Setter.Value>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0" MappingMode="RelativeToBoundingBox">
+                    <LinearGradientBrush.RelativeTransform>
+                        <TranslateTransform X="-1" />
+                    </LinearGradientBrush.RelativeTransform>
+                    <GradientStop Color="#15161D" Offset="0" />
+                    <GradientStop Color="#20222B" Offset="0.5" />
+                    <GradientStop Color="#15161D" Offset="1" />
+                </LinearGradientBrush>
+            </Setter.Value>
+        </Setter>
+        <Style.Triggers>
+            <Trigger Property="IsVisible" Value="True">
+                <Trigger.EnterActions>
+                    <BeginStoryboard x:Name="shimmer">
+                        <Storyboard RepeatBehavior="Forever">
+                            <DoubleAnimation Storyboard.TargetProperty="Background.RelativeTransform.X" From="-1" To="1" Duration="0:0:1.2" />
+                        </Storyboard>
+                    </BeginStoryboard>
+                </Trigger.EnterActions>
+                <Trigger.ExitActions>
+                    <StopStoryboard BeginStoryboardName="shimmer" />
+                </Trigger.ExitActions>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+</ResourceDictionary>

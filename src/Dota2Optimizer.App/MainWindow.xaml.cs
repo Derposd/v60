@@ -17,7 +17,7 @@ public partial class MainWindow : Window
         DataContext = vm;
         SourceInitialized += (_, _) => UseRoundCorners();
         Loaded += async (_, _) => await vm.Home.LoadAsync();
-        Closed += (_, _) => vm.Home.Shutdown();
+        Closed += (_, _) => vm.Shutdown();
         StateChanged += (_, _) => OnStateChanged();
     }
 
