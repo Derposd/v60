@@ -54,6 +54,7 @@ public sealed class UpscaleViewModel : ObservableObject
     public UpscaleViewModel(AppServices services)
     {
         _s = services;
+        Magpie = new MagpieViewModel(services);
         LaunchLosslessCommand = new RelayCommand(() => Core.Crash.CrashTools.OpenUri($"steam://rungameid/{LosslessScaling.AppId}"), () => LosslessFound);
         LosslessStoreCommand = new RelayCommand(() => Ui.OpenUrl(LosslessScaling.StoreUrl));
         PickGameCommand = new RelayCommand(PickGame, () => !Busy);
@@ -63,6 +64,7 @@ public sealed class UpscaleViewModel : ObservableObject
     }
 
     public ObservableCollection<GpuCapsVm> Gpus { get; } = new();
+    public MagpieViewModel Magpie { get; }
     public ObservableCollection<string> LosslessTips { get; } = new();
     public ICommand LaunchLosslessCommand { get; }
     public ICommand LosslessStoreCommand { get; }
@@ -129,6 +131,7 @@ public sealed class UpscaleViewModel : ObservableObject
             var snapshot = await _s.EnsureSnapshotAsync();
             var gpus = snapshot.RealGpus.ToList();
             var caps = await Task.Run(() => GpuProbe.Probe(gpus));
+            Magpie.SetGpus(caps);
             var build = snapshot.Windows?.Build ?? 0;
             Gpus.Clear();
             foreach (var g in gpus.OrderBy(g => g.IsIntegrated))

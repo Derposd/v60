@@ -70,6 +70,98 @@
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
 
+            <TextBlock Text="Оконный апскейлер" Style="{StaticResource H2}" />
+            <Border Style="{StaticResource Card}" DataContext="{Binding Magpie}">
+                <StackPanel>
+                    <DockPanel>
+                        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Top">
+                            <Button Content="Страница Magpie" Tag="{StaticResource IconExternal}" Style="{StaticResource GhostIcon}" Command="{Binding OpenProjectCommand}" />
+                            <Button Content="Скачать Magpie" Tag="{StaticResource IconPlay}" Style="{StaticResource PrimaryIcon}" Command="{Binding InstallCommand}" Margin="0"
+                                    Visibility="{Binding Installed, Converter={StaticResource NotVis}}" />
+                        </StackPanel>
+                        <ContentControl Style="{StaticResource IconBadge}" Tag="{StaticResource IconMonitor}" Margin="0,0,14,0" VerticalAlignment="Top" />
+                        <StackPanel>
+                            <TextBlock Text="Magpie: игра в окне — картинка на весь экран" Style="{StaticResource CardTitle}" />
+                            <TextBlock Style="{StaticResource MutedText}" Margin="0,4,0,0"
+                                       Text="Игра рисует кадр в меньшем разрешении (FPS выше), Magpie растягивает окно на весь экран своим алгоритмом. Работает с любой игрой в оконном режиме или «окне без рамки», в эксклюзивном полноэкранном — нет. Задержка — около одного кадра." />
+                            <TextBlock Text="{Binding InstallText}" Style="{StaticResource Caption}" Margin="0,6,0,0" />
+                        </StackPanel>
+                    </DockPanel>
+
+                    <StackPanel Visibility="{Binding Installed, Converter={StaticResource BoolToVis}}" Margin="0,16,0,0">
+                        <TextBlock Text="Алгоритм" Style="{StaticResource Overline}" Margin="0,0,0,8" />
+                        <ItemsControl ItemsSource="{Binding AlgorithmChoices}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <UniformGrid Columns="3" />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <RadioButton Style="{StaticResource ChoiceCard}" GroupName="upscaleAlgo" IsChecked="{Binding IsSelected}" Margin="0,0,8,8">
+                                        <StackPanel>
+                                            <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
+                                            <TextBlock Text="{Binding Description}" Style="{StaticResource Caption}" Margin="0,3,0,0" />
+                                        </StackPanel>
+                                    </RadioButton>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <TextBlock Text="Пресет" Style="{StaticResource Overline}" Margin="0,8,0,8" />
+                        <Border Style="{StaticResource SegmentHost}">
+                            <StackPanel Orientation="Horizontal">
+                                <RadioButton Style="{StaticResource Segment}" GroupName="upscalePreset" Content="Качество" IsChecked="{Binding IsQuality}" ToolTip="Игра в 77% разрешения экрана" />
+                                <RadioButton Style="{StaticResource Segment}" GroupName="upscalePreset" Content="Баланс" IsChecked="{Binding IsBalance}" ToolTip="Игра в 67% разрешения экрана" />
+                                <RadioButton Style="{StaticResource Segment}" GroupName="upscalePreset" Content="Производительность" IsChecked="{Binding IsPerformance}" ToolTip="Игра в 50% разрешения экрана" />
+                            </StackPanel>
+                        </Border>
+                        <Border Style="{StaticResource Inset}" Margin="0,10,0,0">
+                            <DockPanel>
+                                <ContentControl Style="{StaticResource Icon}" Tag="{StaticResource IconInfo}" Foreground="{DynamicResource Accent}" Margin="0,2,10,0" VerticalAlignment="Top" />
+                                <TextBlock Text="{Binding ResolutionText}" Style="{StaticResource MutedText}" />
+                            </DockPanel>
+                        </Border>
+
+                        <StackPanel Margin="0,12,0,0" Visibility="{Binding ManyGpus, Converter={StaticResource BoolToVis}}">
+                            <TextBlock Text="Видеокарта для масштабирования (ноутбук с двумя GPU)" Style="{StaticResource Overline}" Margin="0,0,0,6" />
+                            <ComboBox ItemsSource="{Binding Gpus}" SelectedItem="{Binding Gpu}" MaxWidth="460" HorizontalAlignment="Left" MinWidth="320" />
+                            <TextBlock Style="{StaticResource Caption}" Margin="0,4,0,0" Text="Обычно лучше та же карта, на которой идёт игра (мощная). Применяется к играм, добавленным ниже." />
+                        </StackPanel>
+
+                        <TextBlock Text="Игры" Style="{StaticResource Overline}" Margin="0,14,0,6" />
+                        <ItemsControl ItemsSource="{Binding Games}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Style="{StaticResource Inset}" Margin="0,0,0,6" Padding="12,8">
+                                        <DockPanel>
+                                            <Button DockPanel.Dock="Right" Content="Убрать" Style="{StaticResource Ghost}" Margin="0" CommandParameter="{Binding}"
+                                                    Command="{Binding DataContext.RemoveGameCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}" />
+                                            <StackPanel>
+                                                <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
+                                                <TextBlock Text="{Binding Summary}" Style="{StaticResource Caption}" />
+                                            </StackPanel>
+                                        </DockPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <CheckBox Style="{StaticResource Switch}" IsChecked="{Binding AutoScale}" Content="Включать масштабирование само, когда игра на переднем плане" />
+
+                        <WrapPanel Margin="0,10,0,0">
+                            <Button Content="Применить" Tag="{StaticResource IconCheck}" Style="{StaticResource PrimaryIcon}" Command="{Binding ApplyCommand}" />
+                            <Button Content="Запомнить запущенную игру" Tag="{StaticResource IconGamepad}" Style="{StaticResource SecondaryIcon}" Command="{Binding AddRunningGameCommand}" />
+                            <Button Content="Запустить" Tag="{StaticResource IconPlay}" Style="{StaticResource GhostIcon}" Command="{Binding StartCommand}" />
+                            <Button Content="Остановить" Tag="{StaticResource IconStop}" Style="{StaticResource GhostIcon}" Command="{Binding StopCommand}" />
+                            <Button Content="Удалить Magpie" Tag="{StaticResource IconTrash}" Style="{StaticResource GhostIcon}" Command="{Binding UninstallCommand}" />
+                        </WrapPanel>
+                    </StackPanel>
+
+                    <TextBlock Text="{Binding Status}" Style="{StaticResource MutedText}" Margin="0,10,0,0" Visibility="{Binding Status, Converter={StaticResource NullToCollapsed}}" />
+                    <ProgressBar Style="{StaticResource Progress}" Maximum="1" Value="{Binding Progress, Mode=OneWay}" Margin="0,8,0,0" Visibility="{Binding Busy, Converter={StaticResource BoolToVis}}" />
+                </StackPanel>
+            </Border>
+
             <TextBlock Text="Генерация кадров для любых игр" Style="{StaticResource H2}" />
             <Border Style="{StaticResource Card}">
                 <StackPanel>

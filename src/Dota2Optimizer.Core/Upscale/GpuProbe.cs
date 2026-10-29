@@ -5,7 +5,7 @@ using Dota2Optimizer.Core.SystemInfo;
 namespace Dota2Optimizer.Core.Upscale;
 
 /// <summary>What Direct3D reports for one adapter. FeatureLevel is 0xMm00 (0xB000 = 11_0, 0xC100 = 12_1), 0 when unknown.</summary>
-public sealed record GpuCaps(string Name, int FeatureLevel, bool Dx12)
+public sealed record GpuCaps(string Name, int FeatureLevel, bool Dx12, int Index = -1, uint VendorId = 0, uint DeviceId = 0)
 {
     public string FeatureLevelText => FeatureLevel == 0 ? "не определён" : $"{FeatureLevel >> 12}_{(FeatureLevel >> 8) & 0xF}";
     public bool Fl11 => FeatureLevel >= 0xB000;
@@ -62,7 +62,7 @@ public static class GpuProbe
                     var ptr = Marshal.GetComInterfaceForObject(adapter, typeof(Native.IDXGIAdapter1));
                     try
                     {
-                        result.Add(new GpuCaps(desc.Description.Trim(), FeatureLevel(ptr), Dx12(ptr)));
+                        result.Add(new GpuCaps(desc.Description.Trim(), FeatureLevel(ptr), Dx12(ptr), (int)i, desc.VendorId, desc.DeviceId));
                     }
                     finally
                     {
