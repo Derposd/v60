@@ -12,7 +12,7 @@
             <!-- B3: the honest warning, always on top -->
             <Border Style="{StaticResource Card}" Background="{StaticResource WarnSoft}" BorderBrush="Transparent">
                 <DockPanel>
-                    <ContentControl Style="{StaticResource IconBadge}" Tag="{StaticResource IconAlert}" Background="#22FBBF24" Foreground="{StaticResource Warn}" Margin="0,0,14,0" VerticalAlignment="Top" />
+                    <ContentControl Style="{StaticResource IconBadge}" Tag="{StaticResource IconAlert}" Background="#1A8A5A00" Foreground="{StaticResource Warn}" Margin="0,0,14,0" VerticalAlignment="Top" />
                     <StackPanel>
                         <TextBlock Text="Генерация кадров — не бесплатные FPS" Style="{StaticResource CardTitle}" />
                         <TextBlock Style="{StaticResource MutedText}" Margin="0,6,0,0" TextWrapping="Wrap"

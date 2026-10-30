@@ -30,6 +30,8 @@
   <ItemGroup>
     <Resource Include="Assets\app.ico" />
     <Resource Include="Assets\logo.png" />
+    <!-- Inter Tight and IBM Plex Mono (SIL OFL 1.1), embedded: the app never loads fonts from the network. -->
+    <Resource Include="Assets\Fonts\*.ttf" />
   </ItemGroup>
 
 </Project>

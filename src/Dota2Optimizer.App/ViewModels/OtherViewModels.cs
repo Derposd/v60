@@ -247,6 +247,7 @@ public sealed class MainViewModel : ObservableObject
         Upscale = new UpscaleViewModel(services);
         About = new AboutViewModel();
         Settings = new SettingsViewModel(ReapplyTheme);
+        Spec = new SpecViewModel(services);
         Home = new HomeViewModel(services, Dota, Cs2, (ws, tab) =>
         {
             Select(ws);
@@ -265,7 +266,26 @@ public sealed class MainViewModel : ObservableObject
         // The app always opens on the «ПК» section; the Dota 2 / CS2 chip returns to the game opened last time.
         _current = UiState.LastGame() == Core.Game.GameId.Cs2 ? Cs2 : Dota;
         SelectPc();
-        Live.Active = true; // the app opens on the home page
+        // The app opens on the main screen «Спецификация изменений»; live sampling runs only on the home page of «Все разделы».
+        Live.Active = false;
+    }
+
+    /// <summary>The main screen (design B).</summary>
+    public SpecViewModel Spec { get; }
+
+    private bool _showSpec = true;
+
+    /// <summary>«Изменения» (the main screen) or «Все разделы» (every other page) in the title bar.</summary>
+    public bool ShowSpec
+    {
+        get => _showSpec;
+        set
+        {
+            if (Set(ref _showSpec, value))
+            {
+                Live.Active = !value && SelectedTab == HomeTab;
+            }
+        }
     }
 
     public HomeViewModel Home { get; }
@@ -274,7 +294,7 @@ public sealed class MainViewModel : ObservableObject
     /// <summary>The window is minimised: live sampling pauses.</summary>
     public bool WindowHidden
     {
-        set => Live.Active = !value && SelectedTab == HomeTab;
+        set => Live.Active = !value && !ShowSpec && SelectedTab == HomeTab;
     }
 
     public GameWorkspace Dota { get; }
@@ -355,7 +375,7 @@ public sealed class MainViewModel : ObservableObject
             if (Set(ref _selectedTab, value))
             {
                 ActivatePage(value);
-                Live.Active = value == HomeTab;
+                Live.Active = value == HomeTab && !ShowSpec;
             }
         }
     }

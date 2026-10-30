@@ -92,13 +92,35 @@ public class ExtraTweaksTests
     }
 
     [Fact]
-    public void Memory_integrity_is_only_ever_manual()
+    public void Memory_integrity_is_switched_off_only_with_consent_and_never_preselected()
     {
-        Assert.Equal(TweakStatus.NotApplicable, new MemoryIntegrityTweak().Plan(Ctx()).Status);
-        _reg.SetValue(RegHive.LocalMachine, @"SYSTEM\CurrentControlSet\Control\DeviceGuard\Scenarios\HypervisorEnforcedCodeIntegrity", "Enabled", RegValue.Dword(1));
-        var plan = new MemoryIntegrityTweak().Plan(Ctx());
-        Assert.Equal(TweakStatus.ManualOnly, plan.Status);
-        Assert.Empty(plan.Actions);
+        var tweak = new MemoryIntegrityTweak();
+        Assert.Equal(TweakStatus.AlreadyOptimal, tweak.Plan(Ctx()).Status);
+
+        _reg.SetValue(RegHive.LocalMachine, MemoryIntegrityTweak.Key, "Enabled", RegValue.Dword(1));
+        var plan = tweak.Plan(Ctx());
+        Assert.Equal(TweakStatus.CanApply, plan.Status);
+        Assert.True(tweak.RequiresConsent);
+        Assert.True(tweak.RequiresRestart);
+        Assert.False(plan.DefaultSelected);
+        Assert.True(plan.RequiresAdmin);
+        Assert.Equal("0", Assert.Single(plan.Actions).Value!.Data);
+    }
+
+    [Fact]
+    public void Memory_integrity_locked_by_uefi_or_policy_is_left_alone()
+    {
+        _reg.SetValue(RegHive.LocalMachine, MemoryIntegrityTweak.Key, "Enabled", RegValue.Dword(1));
+        _reg.SetValue(RegHive.LocalMachine, MemoryIntegrityTweak.Key, "Locked", RegValue.Dword(1));
+        var locked = new MemoryIntegrityTweak().Plan(Ctx());
+        Assert.Equal(TweakStatus.ManualOnly, locked.Status);
+        Assert.Empty(locked.Actions);
+
+        _reg.SetValue(RegHive.LocalMachine, MemoryIntegrityTweak.Key, "Locked", RegValue.Dword(0));
+        _reg.SetValue(RegHive.LocalMachine, MemoryIntegrityTweak.PolicyKey, "HypervisorEnforcedCodeIntegrity", RegValue.Dword(1));
+        var policy = new MemoryIntegrityTweak().Plan(Ctx());
+        Assert.Equal(TweakStatus.ManualOnly, policy.Status);
+        Assert.Empty(policy.Actions);
     }
 
     [Fact]

@@ -76,7 +76,7 @@ public static class ElevatedHost
         return result;
     }
 
-    /// <summary>Entry point in the elevated process.</summary>
+    /// <summary>Entry point in the elevated process (one request from a file).</summary>
     public static int Run(string requestPath)
     {
         var request = JsonSerializer.Deserialize<ElevatedRequest>(File.ReadAllText(requestPath), Json)
@@ -84,9 +84,20 @@ public static class ElevatedHost
         TryDelete(requestPath);
 
         // Only accept result paths inside our own data folder.
-        var root = Path.GetFullPath(AppPaths.Root);
-        if (!Path.GetFullPath(request.ResultPath).StartsWith(root, StringComparison.OrdinalIgnoreCase) ||
-            !Path.GetFullPath(request.BackupDir).StartsWith(root, StringComparison.OrdinalIgnoreCase))
+        if (!InsideRoot(request.ResultPath))
+        {
+            throw new InvalidOperationException("Недопустимый путь в запросе");
+        }
+
+        var result = Execute(request);
+        File.WriteAllText(request.ResultPath, JsonSerializer.Serialize(result, Json));
+        return 0;
+    }
+
+    /// <summary>Runs one request with backups. Used by the one-shot helper and by the session helper (<see cref="ElevatedServer"/>).</summary>
+    public static ElevatedResult Execute(ElevatedRequest request)
+    {
+        if (!InsideRoot(request.BackupDir))
         {
             throw new InvalidOperationException("Недопустимый путь в запросе");
         }
@@ -127,9 +138,17 @@ public static class ElevatedHost
                 break;
         }
 
-        File.WriteAllText(request.ResultPath, JsonSerializer.Serialize(result, Json));
-        return 0;
+        return result;
     }
+
+    public static string Serialize<T>(T value) => JsonSerializer.Serialize(value, Line);
+
+    public static T? Deserialize<T>(string json) => JsonSerializer.Deserialize<T>(json, Line);
+
+    private static readonly JsonSerializerOptions Line = new() { Converters = { new JsonStringEnumConverter() } };
+
+    private static bool InsideRoot(string path) =>
+        !string.IsNullOrEmpty(path) && Path.GetFullPath(path).StartsWith(Path.GetFullPath(AppPaths.Root), StringComparison.OrdinalIgnoreCase);
 
     /// <summary>One-off admin actions; only the known ids are accepted.</summary>
     private static Boost.BoostResult RunBoost(string? id) => id switch

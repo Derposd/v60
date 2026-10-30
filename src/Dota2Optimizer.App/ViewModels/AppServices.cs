@@ -6,8 +6,11 @@ using Dota2Optimizer.Core.Tweaks;
 
 namespace Dota2Optimizer.App.ViewModels;
 
-/// <summary>One line of an apply report; lines for applied changes carry the change set id for undo.</summary>
-public sealed record ApplyLine(string Text, string? ChangeSetId = null);
+/// <summary>
+/// One line of an apply report; lines for applied changes carry the change set id for undo. Lines about one tweak carry its id,
+/// whether it worked and the error, so a page can mark that row.
+/// </summary>
+public sealed record ApplyLine(string Text, string? ChangeSetId = null, string? TweakId = null, bool? Ok = null, string? Error = null);
 
 /// <summary>Shared services and the latest system snapshot for all tabs.</summary>
 public sealed class AppServices
@@ -85,7 +88,7 @@ public sealed class AppServices
                 lines.Add(new ApplyLine("Запрос прав администратора отклонён."));
                 if (admin.Count > 0)
                 {
-                    lines.Add(new ApplyLine("Пропущено (нужны права администратора): " + string.Join(", ", admin.Select(a => a.Tweak.Title))));
+                    lines.AddRange(admin.Select(a => new ApplyLine($"✗ {a.Tweak.Title}: пропущено, права администратора не выданы", TweakId: a.Tweak.Id, Ok: false, Error: "права администратора не выданы")));
                 }
 
                 if (user.Count > 0 && createRestorePoint &&
@@ -105,7 +108,7 @@ public sealed class AppServices
                 foreach (var r in result.Items)
                 {
                     var title = admin.FirstOrDefault(a => a.Tweak.Id == r.TweakId)?.Tweak.Title ?? r.TweakId;
-                    lines.Add(new ApplyLine(r.Success ? $"✓ {title}" : $"✗ {title}: {r.Error} (изменения этого пункта откачены)", r.Success ? r.ChangeSetId : null));
+                    lines.Add(new ApplyLine(r.Success ? $"✓ {title}" : $"✗ {title}: {r.Error} (изменения этого пункта откачены)", r.Success ? r.ChangeSetId : null, r.TweakId, r.Success, r.Error));
                     History.Add(new HistoryEntry(DateTime.Now, r.Success ? "Применено" : "Ошибка", title, r.Error ?? string.Empty));
                 }
             }
@@ -114,7 +117,7 @@ public sealed class AppServices
         foreach (var p in user)
         {
             var r = await Task.Run(() => Executor.Apply(p.Tweak.Id, p.Tweak.Title, p.Actions, dryRun: false));
-            lines.Add(new ApplyLine(r.Success ? $"✓ {p.Tweak.Title}" : $"✗ {p.Tweak.Title}: {r.Error} (изменения этого пункта откачены)", r.Success ? r.ChangeSetId : null));
+            lines.Add(new ApplyLine(r.Success ? $"✓ {p.Tweak.Title}" : $"✗ {p.Tweak.Title}: {r.Error} (изменения этого пункта откачены)", r.Success ? r.ChangeSetId : null, p.Tweak.Id, r.Success, r.Error));
             History.Add(new HistoryEntry(DateTime.Now, r.Success ? "Применено" : "Ошибка", p.Tweak.Title, string.Join("; ", p.Actions.Select(a => a.Description))));
         }
 
@@ -301,28 +304,9 @@ public sealed class AppServices
     /// <summary>Re-reads the PC after changes: the quick path when the saved scan still matches, a full scan otherwise.</summary>
     public SystemSnapshot Rescan() => QuickScan() ?? Scan();
 
-    /// <summary>
-    /// Runs a request in an elevated copy of this exe (one UAC prompt). Returns null if the user declined.
-    /// </summary>
-    public static ElevatedResult? RunElevated(ElevatedRequest request)
-    {
-        request.BackupDir = AppPaths.Backups;
-        var path = ElevatedHost.WriteRequest(request);
-        var exe = Environment.ProcessPath ?? throw new InvalidOperationException("Не удалось определить путь к программе");
-        var code = ElevatedProcess.RunAs(exe, $"{ElevatedHost.Argument} \"{path}\" --root \"{AppPaths.Root}\"", TimeSpan.FromMinutes(5));
-        if (code == -1)
-        {
-            try
-            {
-                File.Delete(path);
-            }
-            catch (IOException)
-            {
-            }
+    /// <summary>The elevated helper of this session: one UAC prompt, then reused until the window closes.</summary>
+    public static ElevatedSession Elevated { get; } = new();
 
-            return null;
-        }
-
-        return ElevatedHost.ReadResult(request);
-    }
+    /// <summary>Runs a request with administrator rights (asks once per session). Returns null if the user declined.</summary>
+    public static ElevatedResult? RunElevated(ElevatedRequest request) => Elevated.Send(request);
 }

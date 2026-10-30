@@ -85,7 +85,8 @@ public sealed class LowLatencyModeTweak : GameTweak
 
 /// <summary>
 /// Windows 10 (2004) and Windows 11 make a program's high-resolution timer request (many games ask for 1 ms) apply only to that program,
-/// and ignore it when the window is hidden. This value restores the old, system-wide behaviour.
+/// and Windows 11 ignores it when the window is hidden. This value restores the old, system-wide behaviour. It exists only in
+/// Windows 11 and Windows Server 2022 (build 20348) and newer; it does not set any resolution by itself.
 /// </summary>
 public sealed class GlobalTimerResolutionTweak : Tweak
 {
@@ -93,7 +94,7 @@ public sealed class GlobalTimerResolutionTweak : Tweak
     public const string Name = "GlobalTimerResolutionRequests";
 
     public override string Id => "win.timerres";
-    public override string Title => "Глобальное разрешение таймера Windows (1 мс для игр)";
+    public override string Title => "Глобальные запросы точного таймера (Windows 11)";
     public override TweakCategory Category => TweakCategory.Windows;
     public override Effectiveness Effectiveness => Effectiveness.HardwareDependent;
     public override bool Recommended => false;
@@ -103,14 +104,19 @@ public sealed class GlobalTimerResolutionTweak : Tweak
 
     public override string Explanation =>
         "Начиная с Windows 10 (2004) запрос высокой точности таймера действует только на запросившую программу, а в Windows 11 игнорируется у свёрнутых окон. " +
-        "Значение возвращает старое поведение: точный таймер для всей системы. Иногда выравнивает время кадра и звук в игре, иногда ничего не меняет; сторонние тесты расходятся. " +
-        "Включайте только если проверили замером.";
+        "Значение возвращает старое поведение: запрос любой программы действует на всю систему. Само оно точность не задаёт — 0,5 или 1 мс включает игра или другая программа. " +
+        "Работает только в Windows 11. Иногда выравнивает время кадра, иногда ничего не меняет; сторонние тесты расходятся. Включайте, только если проверили замером.";
 
     public override TweakPlan Plan(TweakContext ctx)
     {
         if (ctx.Snapshot.Windows is { Build: < 19041 })
         {
             return Result(TweakStatus.NotApplicable, "Нужна Windows 10 версии 2004 или новее: в более ранних версиях таймер и так общий.", recommendedHere: false);
+        }
+
+        if (ctx.Snapshot.Windows is { Build: < 20348 })
+        {
+            return Result(TweakStatus.NotApplicable, "Только Windows 11: в Windows 10 этого значения нет, Windows его не читает.", recommendedHere: false);
         }
 
         if (ctx.Registry.GetValue(RegHive.LocalMachine, Key, Name)?.AsInt() == 1)
@@ -154,7 +160,9 @@ public sealed class MultiplaneOverlayTweak : Tweak
             return Result(TweakStatus.AlreadyOptimal, "Уже отключён.", recommendedHere: false);
         }
 
-        return Result(TweakStatus.CanApply, "Включён (по умолчанию Windows).", new[]
+        // Windows 11 24H2 (build 26100) is reported to ignore the value on part of the systems; Microsoft doesn't document it.
+        var note = ctx.Snapshot.Windows is { Build: >= 26100 } ? " В Windows 11 24H2 и новее, по отчётам пользователей, Windows может его не учитывать." : string.Empty;
+        return Result(TweakStatus.CanApply, "Включён (по умолчанию Windows)." + note, new[]
         {
             PlannedAction.SetReg(RegHive.LocalMachine, Key, Name, RegValue.Dword(5), "Отключить Multiplane Overlay (после перезагрузки)"),
         }, recommendedHere: false);

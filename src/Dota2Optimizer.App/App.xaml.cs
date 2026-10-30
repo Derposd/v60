@@ -17,6 +17,24 @@ public partial class App : Application
             AppPaths.OverrideRoot(args[rootIdx + 1]);
         }
 
+        var serveIdx = Array.IndexOf(args, ElevatedServer.Argument);
+        if (serveIdx >= 0 && serveIdx + 2 < args.Length && int.TryParse(args[serveIdx + 2], out var parentPid))
+        {
+            var code = 1;
+            try
+            {
+                Log.Info("Запущен помощник с правами администратора на время сеанса");
+                code = ElevatedServer.Serve(args[serveIdx + 1], parentPid);
+            }
+            catch (Exception ex)
+            {
+                Log.Error("Ошибка помощника с правами администратора", ex);
+            }
+
+            Shutdown(code);
+            return;
+        }
+
         var elevatedIdx = Array.IndexOf(args, ElevatedHost.Argument);
         if (elevatedIdx >= 0 && elevatedIdx + 1 < args.Length)
         {

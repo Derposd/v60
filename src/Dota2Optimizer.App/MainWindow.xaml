@@ -2,7 +2,7 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:v="clr-namespace:Dota2Optimizer.App.Views"
-        Title="FrameLab" Width="1320" Height="880" MinWidth="1080" MinHeight="660"
+        Title="FrameLab" Width="1280" Height="800" MinWidth="1100" MinHeight="720"
         WindowStartupLocation="CenterScreen" Style="{StaticResource DarkWindow}" Icon="Assets/app.ico">
 
     <WindowChrome.WindowChrome>
@@ -83,7 +83,7 @@
                                 CommandParameter="{Binding CopyText}" />
                         <TextBox Text="{Binding CopyText, Mode=OneWay}" IsReadOnly="True" FontFamily="{StaticResource MonoFont}" FontSize="12.5" />
                     </DockPanel>
-                    <Border Margin="28,12,0,0" Padding="12,8" CornerRadius="10" Background="{StaticResource OkSoft}"
+                    <Border Margin="28,12,0,0" Padding="12,8" CornerRadius="0" Background="{StaticResource OkSoft}"
                             Visibility="{Binding CanUndo, Converter={StaticResource BoolToVis}}">
                         <DockPanel>
                             <Button DockPanel.Dock="Right" Content="Отменить это изменение" Tag="{StaticResource IconUndo}" Style="{StaticResource UndoIcon}" Margin="8,0,0,0"
@@ -132,9 +132,45 @@
         </Style>
     </Window.Resources>
 
-    <Border x:Name="Root" BorderBrush="#1E2029" BorderThickness="1" Background="{StaticResource Bg}">
+    <Border x:Name="Root" BorderBrush="{StaticResource P.Ink}" BorderThickness="1" Background="{StaticResource P.Paper}">
     <Grid>
-    <TabControl x:Name="Nav" Style="{StaticResource SideNav}" SelectedIndex="{Binding SelectedTab}" v:Fx.PageTransition="True">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="40" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- Title bar (design B): brand, section switch, window buttons; the rest of the strip drags the window. -->
+        <Border Background="{StaticResource P.Paper}" BorderBrush="{StaticResource P.Ink}" BorderThickness="0,0,0,2" TextElement.FontFamily="{StaticResource P.Sans}">
+            <Border.Resources>
+                <Style TargetType="TextBlock" BasedOn="{StaticResource P.Text}" />
+            </Border.Resources>
+            <DockPanel>
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                    <Button Style="{StaticResource P.Caption}" Tag="M 0,5.5 L 10,5.5" Click="OnMinimize" AutomationProperties.Name="Свернуть" />
+                    <Button x:Name="MaxButton" Style="{StaticResource P.Caption}" Tag="M 0.5,0.5 L 9.5,0.5 L 9.5,9.5 L 0.5,9.5 Z" Click="OnMaximize" AutomationProperties.Name="Развернуть" />
+                    <Button Style="{StaticResource P.CaptionClose}" Tag="M 0,0 L 10,10 M 10,0 L 0,10" Click="OnClose" AutomationProperties.Name="Закрыть" />
+                </StackPanel>
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Margin="0,0,8,0">
+                    <RadioButton Style="{StaticResource P.ModeTab}" GroupName="Mode" IsChecked="{Binding ShowSpec}">
+                        <v:SpacedText Text="ИЗМЕНЕНИЯ" FontFamily="{StaticResource P.Mono}" FontSize="11" Tracking="0.14"
+                                      Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}" />
+                    </RadioButton>
+                    <RadioButton Style="{StaticResource P.ModeTab}" GroupName="Mode" IsChecked="{Binding ShowSpec, Converter={StaticResource Not}}">
+                        <v:SpacedText Text="ВСЕ РАЗДЕЛЫ" FontFamily="{StaticResource P.Mono}" FontSize="11" Tracking="0.14"
+                                      Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}" />
+                    </RadioButton>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="20,0,0,0" VerticalAlignment="Center">
+                    <v:SpacedText Text="FRAMELAB" FontFamily="{StaticResource P.Sans}" FontSize="14" FontWeight="ExtraBold" Tracking="0.18" Foreground="{StaticResource P.Ink}" VerticalAlignment="Center" />
+                    <TextBlock Style="{StaticResource P.Text}" Text="оптимизация для игр" FontFamily="{StaticResource P.Mono}" FontSize="11" Foreground="{StaticResource P.Muted}" Margin="12,0,0,0" VerticalAlignment="Center" />
+                </StackPanel>
+            </DockPanel>
+        </Border>
+
+        <v:SpecView Grid.Row="1" DataContext="{Binding Spec}" Visibility="{Binding DataContext.ShowSpec, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource BoolToVis}}" />
+
+    <TabControl x:Name="Nav" Grid.Row="1" Style="{StaticResource SideNav}" SelectedIndex="{Binding SelectedTab}" v:Fx.PageTransition="True"
+                Background="{StaticResource Bg}" Visibility="{Binding ShowSpec, Converter={StaticResource NotVis}}">
 
         <!-- ===================== HOME (main menu) ===================== -->
         <TabItem Header="Главная" Tag="{StaticResource IconStar}" DataContext="{Binding Home}">
@@ -284,8 +320,8 @@
                                     <DockPanel>
                                         <Button DockPanel.Dock="Right" Content="Открыть" Tag="{StaticResource IconChevron}" Style="{StaticResource GhostIcon}" VerticalAlignment="Center"
                                                 Command="{Binding OpenPcCommand}" />
-                                        <Border Width="40" Height="40" CornerRadius="11" Margin="0,0,14,0" Background="{StaticResource PcTile}">
-                                            <TextBlock Text="ПК" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="Bold" FontSize="12" Foreground="#04201C" />
+                                        <Border Width="40" Height="40" CornerRadius="0" Margin="0,0,14,0" Background="{StaticResource PcTile}">
+                                            <TextBlock Text="ПК" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="Bold" FontSize="12" Foreground="#141414" />
                                         </Border>
                                         <StackPanel VerticalAlignment="Center">
                                             <TextBlock Text="Windows и другие игры" FontWeight="SemiBold" />
@@ -300,7 +336,7 @@
                                                 <DockPanel>
                                                     <Button DockPanel.Dock="Right" Content="Открыть" Tag="{StaticResource IconChevron}" Style="{StaticResource GhostIcon}" VerticalAlignment="Center"
                                                             Command="{Binding DataContext.OpenGameCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}" CommandParameter="{Binding}" />
-                                                    <Border Width="40" Height="40" CornerRadius="11" Margin="0,0,14,0">
+                                                    <Border Width="40" Height="40" CornerRadius="0" Margin="0,0,14,0">
                                                         <Border.Style>
                                                             <Style TargetType="Border">
                                                                 <Setter Property="Background" Value="{StaticResource DotaTile}" />
@@ -317,7 +353,7 @@
                                                                     <Setter Property="Foreground" Value="White" />
                                                                     <Style.Triggers>
                                                                         <DataTrigger Binding="{Binding IsCs2}" Value="True">
-                                                                            <Setter Property="Foreground" Value="#2A1A04" />
+                                                                            <Setter Property="Foreground" Value="#141414" />
                                                                         </DataTrigger>
                                                                     </Style.Triggers>
                                                                 </Style>
@@ -337,7 +373,7 @@
                                     <DockPanel>
                                         <Button DockPanel.Dock="Right" Content="Открыть" Tag="{StaticResource IconChevron}" Style="{StaticResource GhostIcon}" VerticalAlignment="Center"
                                                 Command="{Binding OpenGtaCommand}" />
-                                        <Border Width="40" Height="40" CornerRadius="11" Margin="0,0,14,0" Background="{StaticResource GtaTile}">
+                                        <Border Width="40" Height="40" CornerRadius="0" Margin="0,0,14,0" Background="{StaticResource GtaTile}">
                                             <TextBlock Text="RP" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="Bold" FontSize="12" Foreground="White" />
                                         </Border>
                                         <StackPanel VerticalAlignment="Center">
@@ -448,7 +484,7 @@
                         </Grid.ColumnDefinitions>
                         <Button Grid.Column="0" Style="{StaticResource StepButton}" Tag="0">
                             <StackPanel Orientation="Horizontal">
-                                <Border Width="32" Height="32" CornerRadius="16" Background="{Binding Step, Converter={StaticResource StepFill}, ConverterParameter=0}">
+                                <Border Width="32" Height="32" CornerRadius="0" Background="{Binding Step, Converter={StaticResource StepFill}, ConverterParameter=0}">
                                     <TextBlock Text="{Binding Step, Converter={StaticResource StepGlyph}, ConverterParameter=0}" Foreground="{Binding Step, Converter={StaticResource StepText}, ConverterParameter=0}"
                                                HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="Bold" />
                                 </Border>
@@ -461,7 +497,7 @@
                         <Rectangle Grid.Column="1" Height="2" RadiusX="1" RadiusY="1" Margin="16,0" Fill="{Binding Step, Converter={StaticResource StepLine}, ConverterParameter=0}" />
                         <Button Grid.Column="2" Style="{StaticResource StepButton}" Tag="1">
                             <StackPanel Orientation="Horizontal">
-                                <Border Width="32" Height="32" CornerRadius="16" Background="{Binding Step, Converter={StaticResource StepFill}, ConverterParameter=1}">
+                                <Border Width="32" Height="32" CornerRadius="0" Background="{Binding Step, Converter={StaticResource StepFill}, ConverterParameter=1}">
                                     <TextBlock Text="{Binding Step, Converter={StaticResource StepGlyph}, ConverterParameter=1}" Foreground="{Binding Step, Converter={StaticResource StepText}, ConverterParameter=1}"
                                                HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="Bold" />
                                 </Border>
@@ -474,7 +510,7 @@
                         <Rectangle Grid.Column="3" Height="2" RadiusX="1" RadiusY="1" Margin="16,0" Fill="{Binding Step, Converter={StaticResource StepLine}, ConverterParameter=1}" />
                         <Button Grid.Column="4" Style="{StaticResource StepButton}" Tag="2">
                             <StackPanel Orientation="Horizontal">
-                                <Border Width="32" Height="32" CornerRadius="16" Background="{Binding Step, Converter={StaticResource StepFill}, ConverterParameter=2}">
+                                <Border Width="32" Height="32" CornerRadius="0" Background="{Binding Step, Converter={StaticResource StepFill}, ConverterParameter=2}">
                                     <TextBlock Text="{Binding Step, Converter={StaticResource StepGlyph}, ConverterParameter=2}" Foreground="{Binding Step, Converter={StaticResource StepText}, ConverterParameter=2}"
                                                HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="Bold" />
                                 </Border>
@@ -487,7 +523,7 @@
                         <Rectangle Grid.Column="5" Height="2" RadiusX="1" RadiusY="1" Margin="16,0" Fill="{Binding Step, Converter={StaticResource StepLine}, ConverterParameter=2}" />
                         <Button Grid.Column="6" Style="{StaticResource StepButton}" Tag="3">
                             <StackPanel Orientation="Horizontal">
-                                <Border Width="32" Height="32" CornerRadius="16" Background="{Binding Step, Converter={StaticResource StepFill}, ConverterParameter=3}">
+                                <Border Width="32" Height="32" CornerRadius="0" Background="{Binding Step, Converter={StaticResource StepFill}, ConverterParameter=3}">
                                     <TextBlock Text="{Binding Step, Converter={StaticResource StepGlyph}, ConverterParameter=3}" Foreground="{Binding Step, Converter={StaticResource StepText}, ConverterParameter=3}"
                                                HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="Bold" />
                                 </Border>
@@ -972,7 +1008,7 @@
                                                             <ColumnDefinition Width="Auto" />
                                                             <ColumnDefinition Width="*" />
                                                         </Grid.ColumnDefinitions>
-                                                        <Border Width="24" Height="24" CornerRadius="12" Background="{StaticResource PanelAlt}" BorderBrush="{StaticResource BorderStrong}" BorderThickness="1" VerticalAlignment="Top">
+                                                        <Border Width="24" Height="24" CornerRadius="0" Background="{StaticResource PanelAlt}" BorderBrush="{StaticResource BorderStrong}" BorderThickness="1" VerticalAlignment="Top">
                                                             <TextBlock Text="{Binding Number}" FontSize="11.5" FontWeight="Bold" Foreground="{StaticResource Muted}" HorizontalAlignment="Center" VerticalAlignment="Center" LineHeight="14" />
                                                         </Border>
                                                         <TextBlock Grid.Column="1" Text="{Binding Text}" Margin="12,2,0,0" />
@@ -1162,7 +1198,7 @@
                                             <ItemsControl.ItemTemplate>
                                                 <DataTemplate>
                                                     <StackPanel Margin="0,0,4,0" Width="16" ToolTip="{Binding Tooltip}" VerticalAlignment="Bottom">
-                                                        <Border Height="{Binding Height}" CornerRadius="4,4,1,1" Background="{DynamicResource BarGradient}" VerticalAlignment="Bottom" />
+                                                        <Border Height="{Binding Height}" CornerRadius="0" Background="{DynamicResource BarGradient}" VerticalAlignment="Bottom" />
                                                         <TextBlock Text="{Binding Label}" Style="{StaticResource Caption}" FontSize="9.5" HorizontalAlignment="Center" TextWrapping="NoWrap" Margin="0,4,0,0" />
                                                     </StackPanel>
                                                 </DataTemplate>
@@ -1432,7 +1468,7 @@
                         </Grid>
                     </Border>
 
-                    <Border Padding="16,12" CornerRadius="12" Background="{StaticResource WarnSoft}" Margin="0,0,0,14"
+                    <Border Padding="16,12" CornerRadius="0" Background="{StaticResource WarnSoft}" Margin="0,0,0,14"
                             Visibility="{Binding GameRunning, Converter={StaticResource BoolToVis}}">
                         <DockPanel>
                             <ContentControl Style="{StaticResource Icon}" Tag="{StaticResource IconAlert}" Foreground="{StaticResource Warn}" Margin="0,1,10,0" VerticalAlignment="Top" />
@@ -1572,7 +1608,7 @@
                     <TextBlock Style="{StaticResource PageSub}" Margin="0,4,0,20"
                                Text="Установка графического пака в папку GTA V с резервной копией. Перед копированием пак проверяется: видно, что встанет, что заблокировано и почему. Удаление возвращает оригинальные файлы игры." />
 
-                    <Border Padding="18,14" CornerRadius="14" Background="{StaticResource CritSoft}" Margin="0,0,0,14">
+                    <Border Padding="18,14" CornerRadius="0" Background="{StaticResource CritSoft}" Margin="0,0,0,14">
                         <DockPanel>
                             <ContentControl Style="{StaticResource Icon}" Tag="{StaticResource IconShield}" Foreground="{StaticResource Crit}" Margin="0,1,12,0" VerticalAlignment="Top" />
                             <StackPanel>
@@ -1583,7 +1619,7 @@
                         </DockPanel>
                     </Border>
 
-                    <Border Padding="18,12" CornerRadius="14" Background="{StaticResource WarnSoft}" Margin="0,0,0,14"
+                    <Border Padding="18,12" CornerRadius="0" Background="{StaticResource WarnSoft}" Margin="0,0,0,14"
                             Visibility="{Binding HasUnfinished, Converter={StaticResource BoolToVis}}">
                         <DockPanel>
                             <ContentControl Style="{StaticResource Icon}" Tag="{StaticResource IconAlert}" Foreground="{StaticResource Warn}" Margin="0,1,10,0" VerticalAlignment="Top" />
@@ -1751,7 +1787,7 @@
                     <ItemsControl ItemsSource="{Binding Installed}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <Border Padding="18,14" CornerRadius="14" BorderThickness="1" Margin="0,0,0,10">
+                                <Border Padding="18,14" CornerRadius="0" BorderThickness="1" Margin="0,0,0,10">
                                     <Border.Style>
                                         <Style TargetType="Border">
                                             <Setter Property="Background" Value="{StaticResource Panel}" />
@@ -1930,7 +1966,7 @@
                                 </Border>
                                 <Button Content="Сменить DNS" Command="{Binding ChangeDnsCommand}" Margin="0,0,0,6" VerticalAlignment="Center" />
                             </WrapPanel>
-                            <Border Padding="12,8" CornerRadius="10" Background="{StaticResource OkSoft}" Margin="0,8,0,0" Visibility="{Binding DnsChangedText, Converter={StaticResource NullToCollapsed}}">
+                            <Border Padding="12,8" CornerRadius="0" Background="{StaticResource OkSoft}" Margin="0,8,0,0" Visibility="{Binding DnsChangedText, Converter={StaticResource NullToCollapsed}}">
                                 <DockPanel>
                                     <Button DockPanel.Dock="Right" Content="Отменить смену DNS" Tag="{StaticResource IconUndo}" Style="{StaticResource UndoIcon}" Command="{Binding UndoDnsCommand}" Margin="8,0,0,0" />
                                     <ContentControl Style="{StaticResource Icon}" Tag="{StaticResource IconCheck}" Foreground="{StaticResource Ok}" Margin="0,0,8,0" />
@@ -1958,8 +1994,8 @@
                                                 <TextBlock Text="{Binding Label}" FontWeight="SemiBold" TextWrapping="NoWrap" />
                                                 <TextBlock Text="{Binding Server}" Style="{StaticResource Caption}" FontFamily="{StaticResource MonoFont}" />
                                             </StackPanel>
-                                            <Border Grid.Column="1" Height="8" CornerRadius="4" Background="{StaticResource NeutralSoft}" VerticalAlignment="Center">
-                                                <Border HorizontalAlignment="Left" CornerRadius="4" Background="{DynamicResource BarGradient}" v:Fx.Appear="True">
+                                            <Border Grid.Column="1" Height="8" CornerRadius="0" Background="{StaticResource NeutralSoft}" VerticalAlignment="Center">
+                                                <Border HorizontalAlignment="Left" CornerRadius="0" Background="{DynamicResource BarGradient}" v:Fx.Appear="True">
                                                     <Border.Width>
                                                         <MultiBinding Converter="{StaticResource FractionWidth}">
                                                             <Binding Path="Bar" />
@@ -2118,7 +2154,7 @@
                                 <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
-                            <Border Width="72" Height="72" CornerRadius="18">
+                            <Border Width="72" Height="72" CornerRadius="0">
                                 <Border.Background>
                                     <ImageBrush ImageSource="pack://application:,,,/Assets/logo.png" Stretch="UniformToFill" />
                                 </Border.Background>
@@ -2191,12 +2227,6 @@
         </TabItem>
     </TabControl>
 
-        <!-- Caption buttons over the top-right corner; the rest of the top strip drags the window. -->
-        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top">
-            <Button Style="{StaticResource CaptionButton}" Tag="M 0,0.5 L 10,0.5" Click="OnMinimize" ToolTip="Свернуть" />
-            <Button x:Name="MaxButton" Style="{StaticResource CaptionButton}" Tag="M 0.5,0.5 L 9.5,0.5 L 9.5,9.5 L 0.5,9.5 Z" Click="OnMaximize" ToolTip="Развернуть" />
-            <Button Style="{StaticResource CloseCaptionButton}" Tag="M 0,0 L 10,10 M 10,0 L 0,10" Click="OnClose" ToolTip="Закрыть" />
-        </StackPanel>
     </Grid>
     </Border>
 </Window>

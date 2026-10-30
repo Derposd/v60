@@ -1,0 +1,274 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="clr-namespace:System;assembly=mscorlib">
+    <!--
+        Design B «Спецификация»: paper, ink and one accent. Flat fills and 1–2 px lines only: no radii on large elements,
+        no shadows, gradients, blur or glow. The accent fills only the big counter, the checkbox and the arrow of the chosen game;
+        small text never uses it (contrast).
+    -->
+
+    <Color x:Key="P.PaperColor">#F3F0E8</Color>
+    <Color x:Key="P.InkColor">#141414</Color>
+    <SolidColorBrush x:Key="P.Paper" Color="#F3F0E8" />
+    <SolidColorBrush x:Key="P.Ink" Color="#141414" />
+    <SolidColorBrush x:Key="P.Muted" Color="#6B665B" />
+    <SolidColorBrush x:Key="P.Desc" Color="#4A463E" />
+    <SolidColorBrush x:Key="P.Rule" Color="#CFC9B8" />
+    <SolidColorBrush x:Key="P.Accent" Color="#E8380D" />
+    <SolidColorBrush x:Key="P.Safe" Color="#2F6B3C" />
+    <SolidColorBrush x:Key="P.Mid" Color="#8A5A00" />
+    <SolidColorBrush x:Key="P.Hard" Color="#B3261E" />
+    <!-- Hover: a flat tint of the ink, no glow. -->
+    <SolidColorBrush x:Key="P.Hover" Color="#14141414" />
+    <!-- The page behind a dialog: flat paper at 88%, no blur. -->
+    <SolidColorBrush x:Key="P.Scrim" Color="#E0F3F0E8" />
+
+    <FontFamily x:Key="P.Sans">pack://application:,,,/FrameLab;component/Assets/Fonts/#Inter Tight</FontFamily>
+    <FontFamily x:Key="P.Mono">pack://application:,,,/FrameLab;component/Assets/Fonts/#IBM Plex Mono</FontFamily>
+
+    <!-- Mono label: 11 px, caps, letter-spacing .14em (WPF has no tracking for TextBlock: the text is spaced in code, see Views.Tracking). -->
+    <Style x:Key="P.Label" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource P.Mono}" />
+        <Setter Property="FontSize" Value="11" />
+        <Setter Property="Foreground" Value="{StaticResource P.Muted}" />
+        <Setter Property="TextOptions.TextFormattingMode" Value="Ideal" />
+    </Style>
+
+    <!-- Plain, flat, no chrome; hover tints the background. -->
+    <Style x:Key="P.Flat" TargetType="Button">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Foreground" Value="{StaticResource P.Ink}" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Bd" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}"
+                            Padding="{TemplateBinding Padding}" SnapsToDevicePixels="True">
+                        <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsKeyboardFocused" Value="True">
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource P.Ink}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Black fill, paper text, 60 px. -->
+    <Style x:Key="P.Primary" TargetType="Button" BasedOn="{StaticResource P.Flat}">
+        <Setter Property="Background" Value="{StaticResource P.Ink}" />
+        <Setter Property="Foreground" Value="{StaticResource P.Paper}" />
+        <Setter Property="FontFamily" Value="{StaticResource P.Sans}" />
+        <Setter Property="FontSize" Value="17" />
+        <Setter Property="FontWeight" Value="Bold" />
+        <Setter Property="Height" Value="60" />
+        <Setter Property="HorizontalContentAlignment" Value="Center" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Grid SnapsToDevicePixels="True">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}" />
+                        <Border x:Name="Focus" BorderBrush="{StaticResource P.Paper}" BorderThickness="2" Margin="4" Visibility="Collapsed" />
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" TextElement.Foreground="{TemplateBinding Foreground}" />
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="#2A2A2A" />
+                        </Trigger>
+                        <Trigger Property="IsKeyboardFocused" Value="True">
+                            <Setter TargetName="Focus" Property="Visibility" Value="Visible" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="Bd" Property="Background" Value="#8C877C" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- 2 px ink outline, 52 px. -->
+    <Style x:Key="P.Outline" TargetType="Button" BasedOn="{StaticResource P.Flat}">
+        <Setter Property="BorderBrush" Value="{StaticResource P.Ink}" />
+        <Setter Property="BorderThickness" Value="2" />
+        <Setter Property="FontFamily" Value="{StaticResource P.Sans}" />
+        <Setter Property="FontSize" Value="16" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Height" Value="52" />
+        <Setter Property="HorizontalContentAlignment" Value="Center" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Bd" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="2" SnapsToDevicePixels="True">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource P.Hover}" />
+                        </Trigger>
+                        <Trigger Property="IsKeyboardFocused" Value="True">
+                            <Setter TargetName="Bd" Property="BorderThickness" Value="3" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.45" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Window caption buttons: 46×38, glyph 10×10 drawn as a 1 px path (Tag). -->
+    <Style x:Key="P.Caption" TargetType="Button" BasedOn="{StaticResource P.Flat}">
+        <Setter Property="Width" Value="46" />
+        <Setter Property="Height" Value="38" />
+        <Setter Property="WindowChrome.IsHitTestVisibleInChrome" Value="True" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Bd" Background="Transparent">
+                        <Path x:Name="Glyph" Data="{Binding Tag, RelativeSource={RelativeSource TemplatedParent}}" Stroke="{StaticResource P.Ink}" StrokeThickness="1"
+                              Width="10" Height="10" Stretch="None" HorizontalAlignment="Center" VerticalAlignment="Center" SnapsToDevicePixels="True" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource P.Hover}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+    <Style x:Key="P.CaptionClose" TargetType="Button" BasedOn="{StaticResource P.Caption}">
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Bd" Background="Transparent">
+                        <Path x:Name="Glyph" Data="{Binding Tag, RelativeSource={RelativeSource TemplatedParent}}" Stroke="{StaticResource P.Ink}" StrokeThickness="1"
+                              Width="10" Height="10" Stretch="None" HorizontalAlignment="Center" VerticalAlignment="Center" SnapsToDevicePixels="True" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource P.Hard}" />
+                            <Setter TargetName="Glyph" Property="Stroke" Value="{StaticResource P.Paper}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Section switch in the title bar: mono caps, the chosen one underlined with 2 px ink. -->
+    <Style x:Key="P.ModeTab" TargetType="RadioButton">
+        <Setter Property="FontFamily" Value="{StaticResource P.Mono}" />
+        <Setter Property="FontSize" Value="11" />
+        <Setter Property="Foreground" Value="{StaticResource P.Muted}" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="WindowChrome.IsHitTestVisibleInChrome" Value="True" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="RadioButton">
+                    <Grid Background="Transparent" Margin="0,0,22,0">
+                        <ContentPresenter VerticalAlignment="Center" Margin="0,0,0,2" />
+                        <Rectangle x:Name="Line" Height="2" VerticalAlignment="Bottom" Fill="{StaticResource P.Ink}" Visibility="Hidden" />
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter Property="Foreground" Value="{StaticResource P.Ink}" />
+                            <Setter TargetName="Line" Property="Visibility" Value="Visible" />
+                        </Trigger>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter Property="Foreground" Value="{StaticResource P.Ink}" />
+                        </Trigger>
+                        <Trigger Property="IsKeyboardFocused" Value="True">
+                            <Setter TargetName="Line" Property="Visibility" Value="Visible" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Thin vertical scroll bar: a 4 px ink thumb on the paper, no arrows. -->
+    <Style x:Key="P.ScrollThumb" TargetType="Thumb">
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Thumb">
+                    <Rectangle Fill="{StaticResource P.Rule}" Width="4" />
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+    <Style x:Key="P.ScrollBar" TargetType="ScrollBar">
+        <Setter Property="Width" Value="10" />
+        <Setter Property="MinWidth" Value="10" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ScrollBar">
+                    <Track x:Name="PART_Track" IsDirectionReversed="True">
+                        <Track.Thumb>
+                            <Thumb Style="{StaticResource P.ScrollThumb}" />
+                        </Track.Thumb>
+                    </Track>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+    <Style x:Key="P.Scroll" TargetType="ScrollViewer">
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ScrollViewer">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <ScrollContentPresenter CanContentScroll="{TemplateBinding CanContentScroll}" />
+                        <ScrollBar x:Name="PART_VerticalScrollBar" Grid.Column="1" Style="{StaticResource P.ScrollBar}" Value="{TemplateBinding VerticalOffset}"
+                                   Maximum="{TemplateBinding ScrollableHeight}" ViewportSize="{TemplateBinding ViewportHeight}"
+                                   Visibility="{TemplateBinding ComputedVerticalScrollBarVisibility}" Margin="6,0,-16,0" />
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Paper areas reset the dark theme's implicit TextBlock style (light text, fixed line height) to plain inherited text. -->
+    <Style x:Key="P.Text" TargetType="TextBlock">
+        <Setter Property="TextOptions.TextFormattingMode" Value="Ideal" />
+    </Style>
+    <Style x:Key="P.ToolTip" TargetType="ToolTip">
+        <Setter Property="Background" Value="{StaticResource P.Paper}" />
+        <Setter Property="Foreground" Value="{StaticResource P.Ink}" />
+        <Setter Property="BorderBrush" Value="{StaticResource P.Ink}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="FontFamily" Value="{StaticResource P.Sans}" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="MaxWidth" Value="420" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ToolTip">
+                    <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" Padding="12,9">
+                        <ContentPresenter>
+                            <ContentPresenter.Resources>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="TextWrapping" Value="Wrap" />
+                                    <Setter Property="Foreground" Value="{StaticResource P.Ink}" />
+                                </Style>
+                            </ContentPresenter.Resources>
+                        </ContentPresenter>
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <sys:Double x:Key="P.Counter">230</sys:Double>
+</ResourceDictionary>

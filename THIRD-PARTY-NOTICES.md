@@ -13,6 +13,14 @@ PresentMon читает системные события Windows (ETW) о вы�
 Приложение собрано как self-contained и включает среду выполнения .NET 8 (MIT, © .NET Foundation and Contributors).
 Пакеты System.Management, System.Diagnostics.EventLog и System.Diagnostics.PerformanceCounter распространяются под лицензией MIT.
 
+## Шрифты Inter Tight и IBM Plex Mono
+
+Шрифты вшиты в FrameLab.exe, программа не загружает шрифты из сети.
+
+- **Inter Tight** (начертания 400–800 получены из вариативного шрифта): © The Inter Project Authors, https://github.com/rsms/inter
+- **IBM Plex Mono** (400, 500): © IBM Corp., https://github.com/IBM/plex
+- Лицензия обоих — SIL Open Font License 1.1. Полные тексты лежат в исходниках: `src/Dota2Optimizer.App/Assets/Fonts/OFL-*.txt`.
+
 ## Magpie и OptiScaler — не входят в FrameLab
 
 Эти программы распространяются под лицензией **GNU GPL v3** и **не встроены** ни в FrameLab.exe, ни в установщик. FrameLab не содержит их кода.
