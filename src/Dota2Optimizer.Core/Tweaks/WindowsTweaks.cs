@@ -204,6 +204,7 @@ public sealed class HagsTweak : Tweak
     public override TweakCategory Category => TweakCategory.Gpu;
     public override Effectiveness Effectiveness => Effectiveness.HardwareDependent;
     public override bool Recommended => false;
+    public override TweakRisk RiskLevel => TweakRisk.Medium;
     public override bool RequiresRestart => true;
     public override string Risk => "Низкий; нужна перезагрузка. Откат тоже требует перезагрузки";
 

@@ -99,6 +99,7 @@ public sealed class GlobalTimerResolutionTweak : Tweak
     public override Effectiveness Effectiveness => Effectiveness.HardwareDependent;
     public override bool Recommended => false;
     public override bool Disputed => true;
+    public override TweakRisk RiskLevel => TweakRisk.Medium;
     public override bool RequiresRestart => true;
     public override string Risk => "Низкий: чуть выше энергопотребление и нагрев в простое. Нужны права администратора и перезагрузка";
 
@@ -146,6 +147,7 @@ public sealed class MultiplaneOverlayTweak : Tweak
     public override Effectiveness Effectiveness => Effectiveness.HardwareDependent;
     public override bool Recommended => false;
     public override bool Disputed => true;
+    public override TweakRisk RiskLevel => TweakRisk.Medium;
     public override bool RequiresRestart => true;
     public override string Risk => "Низкий, откатывается. Нужны права администратора и перезагрузка";
 
