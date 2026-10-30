@@ -1,0 +1,86 @@
+<UserControl x:Class="Dota2Optimizer.App.Views.SystemTweaksPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:t="clr-namespace:Dota2Optimizer.Core.Tweaks;assembly=Dota2Optimizer.Core"
+             xmlns:v="clr-namespace:Dota2Optimizer.App.Views">
+    <ScrollViewer>
+        <StackPanel Margin="{StaticResource Margin.Page}">
+            <TextBlock Text="WINDOWS" Style="{StaticResource Kicker}" />
+            <TextBlock Text="Твики Windows" Style="{StaticResource PageTitle}" />
+            <TextBlock Style="{StaticResource PageSub}" Margin="0,4,0,18"
+                       Text="Каждый пункт — отдельный переключатель. Перед включением показывается, что именно изменится, а копия прежних значений сохраняется: выключение возвращает их. Эффект и риск указаны честно; спорное выключено по умолчанию." />
+
+            <Border Style="{StaticResource Hero}" v:Fx.Appear="True">
+                <DockPanel>
+                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                        <Button Content="Обновить" Tag="{StaticResource IconRefresh}" Style="{StaticResource SecondaryIcon}" Command="{Binding RefreshCommand}" />
+                        <Button Content="Включить рекомендуемые" Tag="{StaticResource IconBolt}" Style="{StaticResource PrimaryIcon}" Command="{Binding ApplyRecommendedCommand}" Margin="0" />
+                    </StackPanel>
+                    <ContentControl Style="{StaticResource IconBadge}" Tag="{StaticResource IconSliders}" Margin="0,0,16,0" Width="44" Height="44" />
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="{Binding Summary}" Style="{StaticResource H1}" />
+                        <TextBlock Style="{StaticResource MutedText}" Margin="0,4,0,0"
+                                   Text="«Рекомендуемые» — только безопасные пункты без спорного эффекта. Всё отменяется здесь же или на вкладке «Откат»." />
+                    </StackPanel>
+                </DockPanel>
+            </Border>
+
+            <Border Style="{StaticResource Card}" v:Fx.Appear="True">
+                <DockPanel>
+                    <Border DockPanel.Dock="Right" Style="{StaticResource SegmentHost}" VerticalAlignment="Center" Margin="16,0,0,0">
+                        <StackPanel Orientation="Horizontal">
+                            <RadioButton Style="{StaticResource Segment}" GroupName="profile" Content="Игры" IsChecked="{Binding IsGamesProfile, Mode=OneWay}" Command="{Binding GamesProfileCommand}" />
+                            <RadioButton Style="{StaticResource Segment}" GroupName="profile" Content="Работа" IsChecked="{Binding IsWorkProfile, Mode=OneWay}" Command="{Binding WorkProfileCommand}" />
+                        </StackPanel>
+                    </Border>
+                    <ContentControl Style="{StaticResource IconBadge}" Tag="{StaticResource IconSwap}" Margin="0,0,14,0" />
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="Профиль одной кнопкой" Style="{StaticResource CardTitle}" />
+                        <TextBlock Text="{Binding ProfileText}" Style="{StaticResource Caption}" Margin="0,2,0,0" />
+                    </StackPanel>
+                </DockPanel>
+            </Border>
+
+            <DockPanel Margin="0,4,0,14">
+                <TextBox DockPanel.Dock="Right" Width="240" Style="{StaticResource SearchBox}" Text="{Binding Search, UpdateSourceTrigger=PropertyChanged}" Tag="Поиск по твикам" />
+                <Border Style="{StaticResource SegmentHost}">
+                    <StackPanel Orientation="Horizontal">
+                        <RadioButton Style="{StaticResource Segment}" GroupName="cat" Content="Все" IsChecked="True" Command="{Binding FilterCommand}" />
+                        <RadioButton Style="{StaticResource Segment}" GroupName="cat" Content="Система" Command="{Binding FilterCommand}" CommandParameter="{x:Static t:TweakCategory.Windows}" />
+                        <RadioButton Style="{StaticResource Segment}" GroupName="cat" Content="Видеокарта" Command="{Binding FilterCommand}" CommandParameter="{x:Static t:TweakCategory.Gpu}" />
+                        <RadioButton Style="{StaticResource Segment}" GroupName="cat" Content="Интерфейс" Command="{Binding FilterCommand}" CommandParameter="{x:Static t:TweakCategory.Interface}" />
+                        <RadioButton Style="{StaticResource Segment}" GroupName="cat" Content="Приватность" Command="{Binding FilterCommand}" CommandParameter="{x:Static t:TweakCategory.Privacy}" />
+                        <RadioButton Style="{StaticResource Segment}" GroupName="cat" Content="Службы" Command="{Binding FilterCommand}" CommandParameter="{x:Static t:TweakCategory.Services}" />
+                        <RadioButton Style="{StaticResource Segment}" GroupName="cat" Content="Сеть" Command="{Binding FilterCommand}" CommandParameter="{x:Static t:TweakCategory.Network}" />
+                    </StackPanel>
+                </Border>
+            </DockPanel>
+
+            <CheckBox Style="{StaticResource Switch}" IsChecked="{Binding ShowUnsupported}" Content="{Binding UnsupportedText}" Margin="2,0,0,12" />
+
+            <Border Style="{StaticResource Inset}" Margin="0,0,0,14" Visibility="{Binding Status, Converter={StaticResource NullToCollapsed}}">
+                <TextBlock Text="{Binding Status}" Style="{StaticResource Caption}" />
+            </Border>
+
+            <StackPanel Visibility="{Binding IsLoading, Converter={StaticResource BoolToVis}}">
+                <Border Style="{StaticResource Skeleton}" />
+                <Border Style="{StaticResource Skeleton}" />
+                <Border Style="{StaticResource Skeleton}" />
+            </StackPanel>
+
+            <ItemsControl ItemsSource="{Binding Groups}" Visibility="{Binding IsLoading, Converter={StaticResource NotVis}}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <StackPanel Visibility="{Binding IsVisible, Converter={StaticResource BoolToVis}}" Margin="0,0,0,10">
+                            <DockPanel Margin="2,8,4,10">
+                                <TextBlock DockPanel.Dock="Right" Text="{Binding Counter}" Style="{StaticResource Caption}" VerticalAlignment="Center" />
+                                <TextBlock Text="{Binding Title}" Style="{StaticResource Section}" />
+                            </DockPanel>
+                            <ItemsControl ItemsSource="{Binding Visible}" ItemTemplate="{StaticResource TweakRowTemplate}" />
+                        </StackPanel>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

@@ -1,0 +1,26 @@
+<UserControl x:Class="Dota2Optimizer.App.Views.SettingsPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:v="clr-namespace:Dota2Optimizer.App.Views">
+    <ScrollViewer>
+        <StackPanel Margin="{StaticResource Margin.Page}">
+            <TextBlock Text="FRAMELAB" Style="{StaticResource Kicker}" />
+            <TextBlock Text="Настройки" Style="{StaticResource PageTitle}" />
+            <TextBlock Style="{StaticResource PageSub}" Margin="0,4,0,18"
+                       Text="Интерфейс анимирует только прозрачность и сдвиг (это считает видеокарта), анимации короткие и не повторяются в простое. Если ПК совсем слабый или анимации мешают — выключите их здесь." />
+            <Border Style="{StaticResource Card}" v:Fx.Appear="True">
+                <StackPanel>
+                    <CheckBox Style="{StaticResource Switch}" IsChecked="{Binding ReduceMotion}" Content="Уменьшить анимации" FontWeight="SemiBold" />
+                    <TextBlock Style="{StaticResource Caption}" Margin="50,0,0,12" Text="Переходы между страницами, появление карточек, счётчики и кольца — без анимации, сразу в конечном состоянии." />
+                    <CheckBox Style="{StaticResource Switch}" IsChecked="{Binding PerformanceMode}" Content="Режим производительности" FontWeight="SemiBold" />
+                    <TextBlock Style="{StaticResource Caption}" Margin="50,0,0,12" Text="Всё из «Уменьшить анимации» плюс без цветного свечения и теней. Самый лёгкий для видеокарты вариант." />
+                    <Border Style="{StaticResource Inset}">
+                        <TextBlock Text="{Binding SystemText}" Style="{StaticResource Caption}" />
+                    </Border>
+                    <TextBlock Style="{StaticResource Caption}" Foreground="{StaticResource Warn}" Margin="0,10,0,0" Visibility="{Binding RestartNote, Converter={StaticResource BoolToVis}}"
+                               Text="Переходы и свечение уже изменились; анимация переключателей изменится после перезапуска FrameLab." />
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

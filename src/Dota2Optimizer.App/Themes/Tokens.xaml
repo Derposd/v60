@@ -1,0 +1,53 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="clr-namespace:System;assembly=mscorlib">
+    <!--
+        Design tokens. Every duration, easing, radius and spacing used by templates and code comes from here.
+        Motion.Apply() rewrites the durations at start-up when «Уменьшить анимации» (or the Windows setting) is on,
+        before any style that uses them is created.
+    -->
+
+    <!-- Motion: durations -->
+    <Duration x:Key="Dur.Instant">0:0:0.08</Duration>
+    <Duration x:Key="Dur.Fast">0:0:0.14</Duration>
+    <Duration x:Key="Dur.Base">0:0:0.2</Duration>
+    <Duration x:Key="Dur.Slow">0:0:0.32</Duration>
+    <sys:Double x:Key="Ms.Fast">140</sys:Double>
+    <sys:Double x:Key="Ms.Base">200</sys:Double>
+    <sys:Double x:Key="Ms.Slow">320</sys:Double>
+    <sys:Double x:Key="Ms.Stagger">35</sys:Double>
+
+    <!-- Motion: easing -->
+    <CubicEase x:Key="Ease.Out" EasingMode="EaseOut" />
+    <CubicEase x:Key="Ease.InOut" EasingMode="EaseInOut" />
+    <BackEase x:Key="Ease.Pop" EasingMode="EaseOut" Amplitude="0.35" />
+
+    <!-- Radii -->
+    <CornerRadius x:Key="Radius.S">8</CornerRadius>
+    <CornerRadius x:Key="Radius.M">12</CornerRadius>
+    <CornerRadius x:Key="Radius.L">18</CornerRadius>
+    <CornerRadius x:Key="Radius.XL">22</CornerRadius>
+    <CornerRadius x:Key="Radius.Pill">999</CornerRadius>
+
+    <!-- Spacing (4-pt scale) -->
+    <sys:Double x:Key="Space.1">4</sys:Double>
+    <sys:Double x:Key="Space.2">8</sys:Double>
+    <sys:Double x:Key="Space.3">12</sys:Double>
+    <sys:Double x:Key="Space.4">16</sys:Double>
+    <sys:Double x:Key="Space.6">24</sys:Double>
+    <sys:Double x:Key="Space.8">32</sys:Double>
+    <Thickness x:Key="Pad.Card">22,20,22,20</Thickness>
+    <Thickness x:Key="Pad.Row">18,14,18,14</Thickness>
+    <Thickness x:Key="Margin.Page">40,6,36,28</Thickness>
+
+    <!-- Type scale -->
+    <sys:Double x:Key="Font.Caption">12</sys:Double>
+    <sys:Double x:Key="Font.Body">13.5</sys:Double>
+    <sys:Double x:Key="Font.Title">15</sys:Double>
+    <sys:Double x:Key="Font.H1">21</sys:Double>
+    <sys:Double x:Key="Font.Display">32</sys:Double>
+
+    <!-- Elevation: one soft shadow for floating elements; removed in performance mode. -->
+    <DropShadowEffect x:Key="Glow.Button" Color="#F0453A" BlurRadius="22" ShadowDepth="3" Direction="270" Opacity="0.38" RenderingBias="Performance" />
+    <DropShadowEffect x:Key="Shadow.Float" BlurRadius="24" ShadowDepth="6" Direction="270" Opacity="0.35" Color="Black" RenderingBias="Performance" />
+</ResourceDictionary>

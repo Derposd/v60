@@ -1,0 +1,155 @@
+<UserControl x:Class="Dota2Optimizer.App.Views.BenchmarkPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:v="clr-namespace:Dota2Optimizer.App.Views">
+    <UserControl.Resources>
+        <!-- One run: big animated FPS number, lows, frame time chart. DataContext = BenchResult. -->
+        <DataTemplate x:Key="RunCard">
+            <StackPanel>
+                <TextBlock Style="{StaticResource StatNumber}" FontSize="40" LineHeight="46" v:Fx.Format="0' FPS'" v:Fx.Number="{Binding AvgFps}" />
+                <WrapPanel Margin="0,6,0,10">
+                    <TextBlock Style="{StaticResource Caption}" Margin="0,0,14,0"><Run Text="1% low " /><Run Text="{Binding Low1Fps, Mode=OneWay, StringFormat=0}" Foreground="{StaticResource Text}" /></TextBlock>
+                    <TextBlock Style="{StaticResource Caption}" Margin="0,0,14,0"><Run Text="0,1% low " /><Run Text="{Binding Low01Fps, Mode=OneWay, StringFormat=0}" Foreground="{StaticResource Text}" /></TextBlock>
+                    <TextBlock Style="{StaticResource Caption}" Margin="0,0,14,0"><Run Text="кадр " /><Run Text="{Binding MedianFrameMs, Mode=OneWay, StringFormat=0.0}" Foreground="{StaticResource Text}" /><Run Text=" мс" /></TextBlock>
+                    <TextBlock Style="{StaticResource Caption}" Margin="0,0,14,0"><Run Text="фризов " /><Run Text="{Binding Stutters, Mode=OneWay}" Foreground="{StaticResource Text}" /></TextBlock>
+                    <TextBlock Style="{StaticResource Caption}"><Run Text="пинг " /><Run Text="{Binding PingMs, Mode=OneWay, StringFormat=0, TargetNullValue='—'}" Foreground="{StaticResource Text}" /><Run Text=" мс" /></TextBlock>
+                </WrapPanel>
+                <TextBlock Text="Время кадра, мс (пики — подтормаживания)" Style="{StaticResource Caption}" Margin="0,0,0,4" />
+                <Border Style="{StaticResource Inset}" Padding="8" Height="96">
+                    <v:Sparkline Values="{Binding FrameTimes}" Stroke="{DynamicResource Accent}" Minimum="0" />
+                </Border>
+                <TextBlock Style="{StaticResource Caption}" Margin="0,6,0,0"><Run Text="{Binding Time, Mode=OneWay, StringFormat='dd.MM HH:mm'}" /><Run Text=" · " /><Run Text="{Binding DurationSec, Mode=OneWay, StringFormat=0}" /><Run Text=" с" /></TextBlock>
+            </StackPanel>
+        </DataTemplate>
+    </UserControl.Resources>
+    <ScrollViewer>
+        <StackPanel Margin="{StaticResource Margin.Page}">
+            <TextBlock Text="ИНСТРУМЕНТЫ" Style="{StaticResource Kicker}" />
+            <TextBlock Text="Бенчмарк до/после" Style="{StaticResource PageTitle}" />
+            <TextBlock Style="{StaticResource PageSub}" Margin="0,4,0,18"
+                       Text="Замер FPS и времени кадра через Intel PresentMon (MIT, встроен) и пинга до 1.1.1.1 одновременно. Сделайте замер «до», примените изменения, повторите «после» в той же сцене — программа сравнит и честно скажет, если разница в пределах погрешности." />
+
+            <Border Style="{StaticResource Hero}" v:Fx.Appear="True">
+                <StackPanel>
+                    <WrapPanel>
+                        <StackPanel Margin="0,0,24,10">
+                            <TextBlock Text="Игра" Style="{StaticResource Overline}" Margin="0,0,0,6" />
+                            <StackPanel Orientation="Horizontal">
+                                <ComboBox ItemsSource="{Binding Games}" SelectedItem="{Binding SelectedGame}" MinWidth="220" />
+                                <Button Content="Обновить" Tag="{StaticResource IconRefresh}" Style="{StaticResource GhostIcon}" Command="{Binding RefreshGamesCommand}" Margin="6,0,0,0" />
+                            </StackPanel>
+                        </StackPanel>
+                        <StackPanel Margin="0,0,24,10">
+                            <TextBlock Text="Длительность" Style="{StaticResource Overline}" Margin="0,0,0,6" />
+                            <Border Style="{StaticResource SegmentHost}">
+                                <StackPanel Orientation="Horizontal">
+                                    <RadioButton Style="{StaticResource Segment}" GroupName="dur" Content="30 с" IsChecked="{Binding Is30}" />
+                                    <RadioButton Style="{StaticResource Segment}" GroupName="dur" Content="60 с" IsChecked="{Binding Is60}" />
+                                    <RadioButton Style="{StaticResource Segment}" GroupName="dur" Content="120 с" IsChecked="{Binding Is120}" />
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                        <StackPanel Margin="0,0,24,10">
+                            <TextBlock Text="Замер" Style="{StaticResource Overline}" Margin="0,0,0,6" />
+                            <Border Style="{StaticResource SegmentHost}">
+                                <StackPanel Orientation="Horizontal">
+                                    <RadioButton Style="{StaticResource Segment}" GroupName="lbl" Content="До изменений" IsChecked="{Binding IsBefore}" />
+                                    <RadioButton Style="{StaticResource Segment}" GroupName="lbl" Content="После" IsChecked="{Binding IsAfter}" />
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </WrapPanel>
+                    <DockPanel Margin="0,6,0,0">
+                        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                            <Button Content="Стоп" Tag="{StaticResource IconStop}" Style="{StaticResource GhostIcon}" Command="{Binding CancelCommand}" />
+                            <Button Content="Начать замер" Tag="{StaticResource IconPlay}" Style="{StaticResource PrimaryIcon}" Command="{Binding StartCommand}" Margin="0" />
+                        </StackPanel>
+                        <StackPanel VerticalAlignment="Center" Margin="0,0,16,0">
+                            <TextBlock Text="{Binding Status}" Style="{StaticResource MutedText}" />
+                            <ProgressBar Style="{StaticResource Progress}" Maximum="1" Value="{Binding Progress, Mode=OneWay}" Margin="0,8,0,0" Visibility="{Binding IsRunning, Converter={StaticResource BoolToVis}}" />
+                        </StackPanel>
+                    </DockPanel>
+                </StackPanel>
+            </Border>
+
+            <Grid Margin="0,4,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="12" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Border Style="{StaticResource Card}" v:Fx.Appear="True">
+                    <StackPanel>
+                        <TextBlock Text="ДО" Style="{StaticResource Overline}" Margin="0,0,0,8" />
+                        <ContentControl Content="{Binding Before}" ContentTemplate="{StaticResource RunCard}" Visibility="{Binding HasBefore, Converter={StaticResource BoolToVis}}" />
+                        <TextBlock Text="Замера «до» для этой игры ещё нет." Style="{StaticResource Caption}" Visibility="{Binding HasBefore, Converter={StaticResource NotVis}}" />
+                    </StackPanel>
+                </Border>
+                <Border Grid.Column="2" Style="{StaticResource Card}" v:Fx.Appear="True" BorderBrush="{DynamicResource HeroBorder}">
+                    <StackPanel>
+                        <TextBlock Text="ПОСЛЕ" Style="{StaticResource Overline}" Foreground="{DynamicResource Accent}" Margin="0,0,0,8" />
+                        <ContentControl Content="{Binding After}" ContentTemplate="{StaticResource RunCard}" Visibility="{Binding HasAfter, Converter={StaticResource BoolToVis}}" />
+                        <TextBlock Text="Сделайте замер «после» в той же сцене — здесь появится результат и сравнение." Style="{StaticResource Caption}" Visibility="{Binding HasAfter, Converter={StaticResource NotVis}}" />
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <Border Style="{StaticResource Card}" Visibility="{Binding HasAfter, Converter={StaticResource BoolToVis}}" v:Fx.Appear="True">
+                <StackPanel>
+                    <TextBlock Text="Сравнение" Style="{StaticResource CardTitle}" Margin="0,0,0,10" />
+                    <ItemsControl ItemsSource="{Binding Deltas}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Margin="0,6" v:Fx.Appear="True">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="220" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="120" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="{Binding Metric}" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                        <Border Height="6" CornerRadius="3" Background="{StaticResource NeutralSoft}" Margin="0,0,0,4">
+                                            <Border HorizontalAlignment="Left" CornerRadius="3" Background="{StaticResource Subtle}" v:Fx.Appear="True">
+                                                <Border.Width>
+                                                    <MultiBinding Converter="{StaticResource FractionWidth}">
+                                                        <Binding Path="BeforeBar" />
+                                                        <Binding Path="ActualWidth" RelativeSource="{RelativeSource AncestorType=Border}" />
+                                                    </MultiBinding>
+                                                </Border.Width>
+                                            </Border>
+                                        </Border>
+                                        <Border Height="6" CornerRadius="3" Background="{StaticResource NeutralSoft}">
+                                            <Border HorizontalAlignment="Left" CornerRadius="3" Background="{DynamicResource BarGradient}" v:Fx.Appear="True">
+                                                <Border.Width>
+                                                    <MultiBinding Converter="{StaticResource FractionWidth}">
+                                                        <Binding Path="AfterBar" />
+                                                        <Binding Path="ActualWidth" RelativeSource="{RelativeSource AncestorType=Border}" />
+                                                    </MultiBinding>
+                                                </Border.Width>
+                                            </Border>
+                                        </Border>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="2" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                        <TextBlock HorizontalAlignment="Right" Style="{StaticResource Caption}"><Run Text="{Binding Before, Mode=OneWay, StringFormat=0.#}" /><Run Text=" → " /><Run Text="{Binding After, Mode=OneWay, StringFormat=0.#}" Foreground="{StaticResource Text}" /></TextBlock>
+                                        <TextBlock Text="{Binding Change}" HorizontalAlignment="Right" FontWeight="Bold">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Foreground" Value="{StaticResource Muted}" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding Better}" Value="True"><Setter Property="Foreground" Value="{StaticResource Ok}" /></DataTrigger>
+                                                        <DataTrigger Binding="{Binding Worse}" Value="True"><Setter Property="Foreground" Value="{StaticResource Crit}" /></DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </StackPanel>
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <TextBlock Text="{Binding Verdict}" Style="{StaticResource MutedText}" Margin="0,12,0,0" />
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

@@ -18,6 +18,30 @@ public enum TweakCategory
     Game,
     Windows,
     Gpu,
+    Privacy,
+    Interface,
+    Network,
+    Services,
+}
+
+/// <summary>How much can go wrong. Shown as a coloured tag next to every tweak.</summary>
+public enum TweakRisk
+{
+    Low,
+    Medium,
+    High,
+}
+
+/// <summary>Whether a tweak is in effect on this PC right now.</summary>
+public enum TweakState
+{
+    /// <summary>The setting is in the tweak's state (by this app or by Windows itself).</summary>
+    Applied,
+
+    NotApplied,
+
+    /// <summary>Doesn't apply to this PC, or can only be done by hand.</summary>
+    Unavailable,
 }
 
 public enum TweakStatus
@@ -46,6 +70,24 @@ public static class EffectivenessText
         Effectiveness.Medium => "Средняя",
         Effectiveness.Low => "Низкая",
         _ => "Зависит от железа",
+    };
+
+    public static string Ru(this TweakRisk r) => r switch
+    {
+        TweakRisk.Low => "Риск: низкий",
+        TweakRisk.Medium => "Риск: средний",
+        _ => "Риск: высокий",
+    };
+
+    public static string Ru(this TweakCategory c) => c switch
+    {
+        TweakCategory.Game => "Игра",
+        TweakCategory.Windows => "Система",
+        TweakCategory.Gpu => "Видеокарта",
+        TweakCategory.Privacy => "Приватность и реклама",
+        TweakCategory.Interface => "Интерфейс и Проводник",
+        TweakCategory.Network => "Сеть",
+        _ => "Службы",
     };
 }
 
@@ -114,10 +156,26 @@ public abstract class Tweak
     public virtual bool RequiresRestart => false;
     public virtual string Risk => "Минимальный, полностью откатывается";
 
+    /// <summary>Risk level for the tag; <see cref="Risk"/> explains it in words.</summary>
+    public virtual TweakRisk RiskLevel => TweakRisk.Low;
+
+    /// <summary>Games this actually helps (or "все игры"); part of the honest description.</summary>
+    public virtual string? AppliesTo => null;
+
     /// <summary>Optional manual instructions shown next to the tweak.</summary>
     public virtual string? ManualSteps => null;
 
     public abstract TweakPlan Plan(TweakContext ctx);
+
+    /// <summary>Reads the current state without changing anything. Derived from <see cref="Plan"/>, so the two can never disagree.</summary>
+    public TweakState DetectState(TweakContext ctx) => StateOf(Plan(ctx));
+
+    public static TweakState StateOf(TweakPlan plan) => plan.Status switch
+    {
+        TweakStatus.AlreadyOptimal => TweakState.Applied,
+        TweakStatus.CanApply or TweakStatus.Blocked => TweakState.NotApplied,
+        _ => TweakState.Unavailable,
+    };
 
     protected TweakPlan Result(TweakStatus status, string text, IReadOnlyList<PlannedAction>? actions = null, bool? recommendedHere = null, string? copy = null) => new()
     {

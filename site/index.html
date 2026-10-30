@@ -7,10 +7,18 @@
 <meta name="description" content="FrameLab — бесплатная программа для Windows: больше FPS и меньше фризов в Dota 2, Counter-Strike 2 и GTA V для RP-проектов (GTA5RP, Majestic RP). Оффлайн, не трогает игру, любое изменение отменяется в один клик.">
 <meta property="og:title" content="FrameLab — оптимизация Dota 2, CS2 и GTA RP">
 <meta property="og:description" content="Бесплатно, оффлайн, VAC-безопасно. Пресеты графики, параметры запуска, решения типичных проблем и монитор матча.">
-<meta property="og:image" content="img/cs2-plan.jpg">
+<meta property="og:image" content="https://derposd.github.io/v60/img/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
 <meta property="og:type" content="website">
+<meta property="og:url" content="https://derposd.github.io/v60/">
+<meta property="og:locale" content="ru_RU">
+<meta property="og:site_name" content="FrameLab">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="canonical" href="https://derposd.github.io/v60/">
 <meta name="theme-color" content="#09090c">
 <link rel="icon" href="img/favicon.png">
+<script type="application/ld+json">{"@context": "https://schema.org", "@graph": [{"@type": "SoftwareApplication", "name": "FrameLab", "applicationCategory": "UtilitiesApplication", "operatingSystem": "Windows 10, Windows 11", "softwareVersion": "1.4.0", "inLanguage": "ru", "url": "https://derposd.github.io/v60/", "downloadUrl": "https://github.com/Derposd/v60/releases/latest/download/FrameLab-Setup.exe", "image": "https://derposd.github.io/v60/img/og.jpg", "screenshot": "https://derposd.github.io/v60/img/gta-modes.jpg", "description": "Бесплатная программа для Windows: больше FPS и меньше фризов в Dota 2, Counter-Strike 2 и GTA V для RP-проектов. Оффлайн, любое изменение отменяется в один клик.", "offers": {"@type": "Offer", "price": "0", "priceCurrency": "RUB"}}, {"@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "Меня не забанят? Это безопасно для VAC?", "acceptedAnswer": {"@type": "Answer", "text": "Программа не вмешивается в процесс игры: не читает и не меняет её память, не встраивает свои модули. Она меняет только файлы настроек игры, параметры запуска в Steam и настройки Windows — то же самое, что можно сделать руками в меню."}}, {"@type": "Question", "name": "Почему Windows или браузер предупреждают о файле?", "acceptedAnswer": {"@type": "Answer", "text": "У программы нет платного сертификата подписи кода, поэтому SmartScreen показывает предупреждение для новых файлов. Скачивайте только по ссылкам с этой страницы — они ведут на официальную страницу релизов на GitHub."}}, {"@type": "Question", "name": "Насколько вырастет FPS?", "acceptedAnswer": {"@type": "Answer", "text": "Зависит от железа и от того, что было настроено раньше. Больше всего дают пресет графики, запуск на дискретной видеокарте в ноутбуках и отключение фоновой записи. Проверить эффект можно в «Мониторе матча»."}}, {"@type": "Question", "name": "Нужно ли сканировать ПК при каждом запуске?", "acceptedAnswer": {"@type": "Answer", "text": "Нет. С версии 1.2.1 результат сохраняется: при следующем запуске программа сразу показывает диагноз, а Steam, игры и настройки Windows перепроверяет за секунду. Полное сканирование повторится само, если сменилась видеокарта, драйвер или процессор."}}, {"@type": "Question", "name": "Что делает кнопка «Оптимизировать»?", "acceptedAnswer": {"@type": "Answer", "text": "Применяет для всех установленных игр только то, что мастер выбрал бы сам: рекомендованные для вашего ПК настройки без спорных пунктов и без перезагрузки. Перед применением показывает список, после — отчёт и кнопку «Отменить всё». Программы не закрываются, ничего не удаляется и не разгоняется."}}, {"@type": "Question", "name": "Подходит для GTA5RP и Majestic RP? Не забанят за редукс?", "acceptedAnswer": {"@type": "Answer", "text": "Режимы графики меняют только settings.xml — то же, что меню настроек игры, поэтому работают на любом RP-сервере. Менеджер редуксов ставит только файлы графики и никогда не ставит код (скрипты, ASI, DLL, ReShade). Но правила модов у каждого проекта свои: паки, убирающие объекты, делающие текстуры прозрачными или дающие другое преимущество, считаются читом. Прочитайте правила проекта перед установкой."}}, {"@type": "Question", "name": "Как вернуть оригинальные файлы GTA V после редукса?", "acceptedAnswer": {"@type": "Answer", "text": "На вкладке «Редуксы» нажмите «Удалить (вернуть оригиналы)». Заменённые файлы игры при установке переносятся в папку .framelab внутри GTA V и возвращаются на место. Прерванная установка откатывается там же."}}, {"@type": "Question", "name": "Как всё вернуть, как было?", "acceptedAnswer": {"@type": "Answer", "text": "Рядом с каждым изменением есть кнопка «Отменить», а на вкладке «Откат» — «Откатить всё». Копии хранятся в %LOCALAPPDATA%\\Dota2Optimizer и не удаляются вместе с программой."}}, {"@type": "Question", "name": "Программа платная? Где подвох?", "acceptedAnswer": {"@type": "Answer", "text": "Бесплатно, без рекламы и регистрации. Код открыт на GitHub — можно проверить, что программа делает."}}]}]}</script>
 <!-- No analytics, no cookies, no third-party fonts: the page only loads files from this site. -->
 <style>
   :root {
@@ -231,6 +239,11 @@
   .final p { color: var(--muted); margin: 16px auto 0; max-width: 540px; }
   .final .cta-row { justify-content: center; }
 
+  .guides { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+  .guides a { display: block; padding: 22px; border-radius: 18px; background: var(--panel); border: 1px solid var(--line); text-decoration: none; }
+  .guides a b { display: block; font-size: 18px; margin-bottom: 8px; }
+  .guides a span { color: var(--muted); font-size: 15px; }
+  .guides a:hover { border-color: rgba(var(--a-rgb), .55); transform: translateY(-2px); }
   footer { padding: 40px 0 56px; color: var(--subtle); font-size: 14px; border-top: 1px solid var(--line); }
   footer .wrap { display: flex; flex-wrap: wrap; gap: 14px 28px; justify-content: space-between; }
   footer a { color: var(--muted); }
@@ -285,7 +298,7 @@
 <nav>
   <div class="wrap">
     <a class="brand" href="#"><img src="img/logo.png" alt="">FrameLab<small class="ver-tag">v<span class="ver">1.4</span></small></a>
-    <div class="links"><a href="#how">Как работает</a><a href="#features">Возможности</a><a href="#screens">Скриншоты</a><a href="#honest">Честно</a><a href="#faq">Вопросы</a></div>
+    <div class="links"><a href="#how">Как работает</a><a href="#features">Возможности</a><a href="#screens">Скриншоты</a><a href="#honest">Честно</a><a href="#guides">Гайды</a><a href="#faq">Вопросы</a></div>
     <a class="btn btn-primary" href="https://github.com/Derposd/v60/releases/latest/download/FrameLab-Setup.exe">Скачать</a>
   </div>
 </nav>
@@ -519,6 +532,19 @@
   </div>
 </section>
 
+<section id="guides" style="padding-top:0">
+  <div class="wrap">
+    <div class="head rv"><div class="k">Гайды</div><h2>Разобрались, <span class="acc">что реально помогает</span></h2>
+      <p>Подробно и без мифов — с тем, что можно проверить самому.</p></div>
+    <div class="guides rv">
+      <a href="gta-5-rp/"><b>FPS в GTA 5 RP на слабом ПК</b><span>Почему RP тормозит сильнее обычной GTA V и пять готовых режимов графики.</span></a>
+      <a href="reduksy-gta-5-rp/"><b>Как установить редукс</b><span>Три шага, проверка до копирования, оригиналы сохраняются, удаление в один клик.</span></a>
+      <a href="cs2-input-lag/"><b>Задержка ввода в CS2</b><span>Монитор 144 Гц на 60, V-Sync, полноэкранный режим, Reflex и мифы параметров.</span></a>
+      <a href="dota-2-fps/"><b>FPS в Dota 2</b><span>Падение FPS к концу матча, фризы после обновления и устаревшие параметры.</span></a>
+    </div>
+  </div>
+</section>
+
 <section id="faq" style="padding-top:0">
   <div class="wrap">
     <div class="head c rv"><div class="k">Вопросы</div><h2>Частые вопросы</h2></div>
@@ -552,6 +578,7 @@
 <footer>
   <div class="wrap">
     <span>© FrameLab · <a href="https://github.com/Derposd/v60">Исходный код на GitHub</a></span>
+    <span>Гайды: <a href="gta-5-rp/">GTA 5 RP</a> · <a href="reduksy-gta-5-rp/">редуксы</a> · <a href="cs2-input-lag/">CS2</a> · <a href="dota-2-fps/">Dota 2</a></span>
     <span>Сайт не использует cookies, счётчики и формы.</span>
     <span>Не связано с Valve Corporation, Rockstar Games и RP-проектами. Dota 2 и Counter-Strike 2 — товарные знаки Valve Corporation, Grand Theft Auto V — Rockstar Games.</span>
   </div>

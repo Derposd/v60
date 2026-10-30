@@ -1,0 +1,147 @@
+<UserControl x:Class="Dota2Optimizer.App.Views.GameModePage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:v="clr-namespace:Dota2Optimizer.App.Views">
+    <UserControl.Resources>
+        <!-- Removable chip for a process or service name. -->
+        <DataTemplate x:Key="NameChip">
+            <Border Style="{StaticResource Tag}" Padding="10,4,4,4" Margin="0,0,6,6" Background="{StaticResource PanelAlt}" v:Fx.Appear="True">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="{Binding}" FontFamily="{StaticResource MonoFont}" FontSize="12" VerticalAlignment="Center" TextWrapping="NoWrap" />
+                    <Button Style="{StaticResource Flat}" Padding="6,2" Margin="6,0,0,0" ToolTip="Убрать из списка" CommandParameter="{Binding}"
+                            Command="{Binding Path=(v:GameModePage.RemoveCommand), RelativeSource={RelativeSource AncestorType=ItemsControl}}">
+                        <ContentControl Style="{StaticResource Icon}" Tag="{StaticResource IconX}" Width="10" Height="10" />
+                    </Button>
+                </StackPanel>
+            </Border>
+        </DataTemplate>
+    </UserControl.Resources>
+    <ScrollViewer>
+        <StackPanel Margin="{StaticResource Margin.Page}">
+            <TextBlock Text="WINDOWS" Style="{StaticResource Kicker}" />
+            <TextBlock Text="Игровой режим" Style="{StaticResource PageTitle}" />
+            <TextBlock Style="{StaticResource PageSub}" Margin="0,4,0,18"
+                       Text="Пока идёт игра, программа на время закрывает выбранные фоновые программы, останавливает выбранные службы и повышает приоритет игры. После выхода из игры всё возвращается как было — даже если FrameLab перед этим закрылся с ошибкой." />
+
+            <Border Style="{StaticResource Hero}" v:Fx.Appear="True">
+                <DockPanel>
+                    <Button DockPanel.Dock="Right" Content="Вернуть всё сейчас" Tag="{StaticResource IconUndo}" Style="{StaticResource UndoIcon}" Command="{Binding RestoreNowCommand}" VerticalAlignment="Center" />
+                    <CheckBox Style="{StaticResource Switch}" IsChecked="{Binding Enabled}" VerticalAlignment="Center" Margin="0,0,16,0" />
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="Игровой режим в реальном времени" Style="{StaticResource H1}" />
+                        <TextBlock Text="{Binding State}" Style="{StaticResource MutedText}" Margin="0,4,0,0" />
+                    </StackPanel>
+                </DockPanel>
+            </Border>
+
+            <Border Style="{StaticResource Card}" Background="{StaticResource WarnSoft}" BorderBrush="Transparent" Visibility="{Binding IsElevated, Converter={StaticResource NotVis}}">
+                <DockPanel>
+                    <ContentControl Style="{StaticResource Icon}" Tag="{StaticResource IconAlert}" Foreground="{StaticResource Warn}" Margin="0,2,10,0" VerticalAlignment="Top" />
+                    <TextBlock Style="{StaticResource MutedText}" Text="FrameLab запущен без прав администратора: программы из списка закрываются, приоритет меняется, а службы Windows останавливать нельзя — они будут пропущены. Чтобы останавливать и службы, запустите FrameLab от имени администратора." />
+                </DockPanel>
+            </Border>
+
+            <Border Style="{StaticResource Card}" v:Fx.Appear="True">
+                <StackPanel>
+                    <TextBlock Text="При запуске игры" Style="{StaticResource CardTitle}" Margin="0,0,0,10" />
+                    <CheckBox Style="{StaticResource Switch}" IsChecked="{Binding HighPriority}" Content="Приоритет игры «Высокий»" />
+                    <TextBlock Style="{StaticResource Caption}" Margin="50,0,0,10" Text="Как «Подробности → Задать приоритет» в Диспетчере задач. Эффект небольшой: заметен, когда процессор загружен полностью. Память игры не читается и не меняется; для Valorant шаг пропускается из-за античита Vanguard." />
+                    <CheckBox Style="{StaticResource Switch}" IsChecked="{Binding PowerBoost}" Content="План питания «Высокая производительность» на время игры" />
+                    <TextBlock Style="{StaticResource Caption}" Margin="50,0,0,0" Text="Тот же переключатель, что «Ускорение на время игры» на Главной. После игры возвращается прежний план." />
+                </StackPanel>
+            </Border>
+
+            <Border Style="{StaticResource Card}" v:Fx.Appear="True">
+                <StackPanel>
+                    <DockPanel Margin="0,0,0,8">
+                        <Button DockPanel.Dock="Right" Content="Добавить игру…" Tag="{StaticResource IconFolder}" Style="{StaticResource SecondaryIcon}" Command="{Binding AddGameCommand}" Margin="0" />
+                        <TextBlock Text="Игры" Style="{StaticResource CardTitle}" VerticalAlignment="Center" />
+                    </DockPanel>
+                    <TextBlock Style="{StaticResource Caption}" TextWrapping="Wrap">
+                        <Run Text="Узнаются сами: " /><Run Text="{Binding KnownGames, Mode=OneWay}" />
+                    </TextBlock>
+                    <ItemsControl ItemsSource="{Binding Games}" Margin="0,12,0,0">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Style="{StaticResource Inset}" Margin="0,0,0,8" v:Fx.Appear="True">
+                                    <StackPanel>
+                                        <DockPanel>
+                                            <Button DockPanel.Dock="Right" Content="Убрать" Style="{StaticResource Ghost}" Margin="0" CommandParameter="{Binding}"
+                                                    Command="{Binding DataContext.RemoveGameCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" />
+                                            <StackPanel>
+                                                <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
+                                                <TextBlock Text="{Binding Detail}" Style="{StaticResource Caption}" FontFamily="{StaticResource MonoFont}" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" />
+                                            </StackPanel>
+                                        </DockPanel>
+                                        <ContentControl Content="{Binding Fso}" ContentTemplate="{StaticResource TweakRowTemplate}" Margin="0,10,0,-10"
+                                                        Visibility="{Binding Fso, Converter={StaticResource NullToCollapsed}}" />
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+
+            <TextBlock Text="Что ставить на паузу" Style="{StaticResource H2}" />
+            <ItemsControl ItemsSource="{Binding Presets}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Border Style="{StaticResource RowCard}">
+                            <DockPanel>
+                                <CheckBox DockPanel.Dock="Right" Style="{StaticResource Switch}" IsChecked="{Binding IsOn}" VerticalAlignment="Center" Margin="16,0,0,0" />
+                                <StackPanel>
+                                    <TextBlock Text="{Binding Name}" Style="{StaticResource CardTitle}" />
+                                    <TextBlock Text="{Binding Description}" Style="{StaticResource MutedText}" Margin="0,4,0,0" />
+                                    <TextBlock Text="{Binding Items}" Style="{StaticResource Caption}" FontFamily="{StaticResource MonoFont}" Margin="0,4,0,0" />
+                                </StackPanel>
+                            </DockPanel>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <Grid Margin="0,6,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="12" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Border Style="{StaticResource Card}" v:Fx.Appear="True">
+                    <StackPanel>
+                        <TextBlock Text="Программы (закрываются и запускаются снова)" Style="{StaticResource CardTitle}" />
+                        <TextBlock Style="{StaticResource Caption}" Margin="0,4,0,10" Text="Добавляйте только фоновые программы: несохранённые данные в закрытой программе пропадут. Discord, Steam, OBS и лаунчеры не закрываются никогда." />
+                        <ItemsControl ItemsSource="{Binding Processes}" ItemTemplate="{StaticResource NameChip}" v:GameModePage.RemoveCommand="{Binding RemoveProcessCommand}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                        </ItemsControl>
+                        <DockPanel Margin="0,8,0,0">
+                            <Button DockPanel.Dock="Right" Content="Добавить" Command="{Binding AddProcessCommand}" Margin="8,0,0,0" />
+                            <TextBox Style="{StaticResource SearchBox}" Tag="имя процесса, например OneDrive" Text="{Binding NewProcess, UpdateSourceTrigger=PropertyChanged}" />
+                        </DockPanel>
+                    </StackPanel>
+                </Border>
+                <Border Grid.Column="2" Style="{StaticResource Card}" v:Fx.Appear="True">
+                    <StackPanel>
+                        <TextBlock Text="Службы (останавливаются и запускаются снова)" Style="{StaticResource CardTitle}" />
+                        <TextBlock Style="{StaticResource Caption}" Margin="0,4,0,10" Text="Нужны права администратора. Звук, сеть, Защитник, Центр обновления, службы Xbox и античиты не останавливаются никогда." />
+                        <ItemsControl ItemsSource="{Binding ServicesList}" ItemTemplate="{StaticResource NameChip}" v:GameModePage.RemoveCommand="{Binding RemoveServiceCommand}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                        </ItemsControl>
+                        <DockPanel Margin="0,8,0,0">
+                            <Button DockPanel.Dock="Right" Content="Добавить" Command="{Binding AddServiceCommand}" Margin="8,0,0,0" />
+                            <TextBox Style="{StaticResource SearchBox}" Tag="имя службы, например WSearch" Text="{Binding NewService, UpdateSourceTrigger=PropertyChanged}" />
+                        </DockPanel>
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

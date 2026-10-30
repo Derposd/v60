@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="ru" data-game="gta">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Как установить редукс в GTA 5 RP — в три шага и с откатом | FrameLab</title>
+<meta name="description" content="Установка редукса в GTA 5 RP (GTA5RP, Majestic RP) без ручного копирования и бэкапов: выбрали папку игры и архив .zip/.7z/.rar, проверили и установили. Оригиналы сохраняются, удаление — одной кнопкой.">
+<link rel="canonical" href="https://derposd.github.io/v60/reduksy-gta-5-rp/">
+<meta property="og:type" content="article">
+<meta property="og:locale" content="ru_RU">
+<meta property="og:site_name" content="FrameLab">
+<meta property="og:title" content="Как установить редукс в GTA 5 RP — в три шага и с откатом">
+<meta property="og:description" content="Без ручного копирования и бэкапов: проверка до установки, оригиналы сохраняются, удаление одной кнопкой.">
+<meta property="og:url" content="https://derposd.github.io/v60/reduksy-gta-5-rp/">
+<meta property="og:image" content="https://derposd.github.io/v60/img/og-redux.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#09090c">
+<link rel="icon" href="../img/favicon.png">
+<link rel="stylesheet" href="../guides.css">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@graph":[
+ {"@type":"HowTo","name":"Как установить редукс в GTA 5 RP","inLanguage":"ru","image":"https://derposd.github.io/v60/img/og-redux.jpg","totalTime":"PT3M",
+  "tool":[{"@type":"HowToTool","name":"FrameLab"}],
+  "step":[
+   {"@type":"HowToStep","name":"Папка GTA V","text":"Откройте в FrameLab раздел GTA RP → «Редуксы». Папку игры программа находит сама, при необходимости выберите её вручную."},
+   {"@type":"HowToStep","name":"Пак","text":"Выберите папку или архив с редуксом (.zip, .7z или .rar) и нажмите «Проверить»: программа покажет, какие файлы встанут, сколько места они займут и что пропущено."},
+   {"@type":"HowToStep","name":"Установка","text":"Закройте игру и нажмите «Установить». Заменяемые файлы игры переносятся в папку .framelab внутри GTA V и возвращаются при удалении пака."}]},
+ {"@type":"BreadcrumbList","itemListElement":[
+  {"@type":"ListItem","position":1,"name":"FrameLab","item":"https://derposd.github.io/v60/"},
+  {"@type":"ListItem","position":2,"name":"Редуксы GTA 5 RP","item":"https://derposd.github.io/v60/reduksy-gta-5-rp/"}]},
+ {"@type":"FAQPage","mainEntity":[
+  {"@type":"Question","name":"Как удалить редукс и вернуть оригинальные файлы GTA V?","acceptedAnswer":{"@type":"Answer","text":"На вкладке «Редуксы» в списке установленных паков нажмите «Удалить». Заменённые файлы возвращаются из папки .framelab внутри GTA V, добавленные паком файлы удаляются."}},
+  {"@type":"Question","name":"Какие архивы поддерживаются?","acceptedAnswer":{"@type":"Answer","text":"Папка, .zip, .7z и .rar. Для .7z и .rar нужен бесплатный 7-Zip, иначе используется встроенный в Windows tar."}},
+  {"@type":"Question","name":"Что будет после обновления GTA V?","acceptedAnswer":{"@type":"Answer","text":"Пак может перестать работать. Удалите его в FrameLab (оригиналы вернутся) или проверьте целостность файлов в Steam или Rockstar Games Launcher."}},
+  {"@type":"Question","name":"Почему часть файлов пака не ставится?","acceptedAnswer":{"@type":"Answer","text":"FrameLab ставит только файлы графики. Исполняемый код — ASI и DLL (ScriptHook, ReShade, ENB и подобные) — и файлы с небезопасными путями не устанавливаются: их можно поставить вручную, если это разрешают правила вашего проекта."}}]}
+]}
+</script>
+</head>
+<body>
+
+<nav>
+  <div class="wrap">
+    <a class="brand" href="../"><img src="../img/logo.png" alt="">FrameLab</a>
+    <div class="links"><a href="../gta-5-rp/">GTA 5 RP</a><a href="../reduksy-gta-5-rp/" aria-current="page">Редуксы</a><a href="../cs2-input-lag/">CS2</a><a href="../dota-2-fps/">Dota 2</a></div>
+    <a class="btn btn-primary" href="https://github.com/Derposd/v60/releases/latest/download/FrameLab-Setup.exe">Скачать</a>
+  </div>
+</nav>
+
+<div class="wrap">
+  <div class="crumbs"><a href="../">FrameLab</a> › Редуксы GTA 5 RP</div>
+  <div class="layout">
+    <article>
+      <div class="k">Гайд · Редуксы · GTA5RP · Majestic RP</div>
+      <h1>Как установить редукс в GTA 5 RP — в три шага и с откатом</h1>
+      <p class="lead">Ставить редукс вручную — это копирование папок, бэкапы оригиналов и поиск, что сломалось, когда пак надоел. В FrameLab всё это делается само: вы выбираете архив, смотрите, что встанет, и нажимаете «Установить».</p>
+      <p class="meta">Обновлено 25 октября 2026 · 5 минут чтения</p>
+
+      <h2 id="manual">Как ставят редукс вручную и в чём неудобство</h2>
+      <ul>
+        <li>Найти, какие папки из архива куда класть, — у каждого автора своя структура.</li>
+        <li>Перед заменой сохранить оригинальные файлы игры, чтобы потом было что вернуть.</li>
+        <li>Не перепутать файлы графики с исполняемыми модами, которые на RP-проектах могут запрещать.</li>
+        <li>Когда пак надоел или сломался после обновления GTA V, — вспомнить, что именно было заменено.</li>
+      </ul>
+
+      <h2 id="steps">Установка в FrameLab: три шага</h2>
+      <ol class="steps">
+        <li><b>Папка GTA V.</b> Откройте раздел GTA RP → «Редуксы». Папку игры программа находит сама, при необходимости выберите её кнопкой «Выбрать…».</li>
+        <li><b>Пак.</b> Укажите папку или архив <code>.zip</code>, <code>.7z</code> или <code>.rar</code> и нажмите «Проверить». До установки ничего не копируется.</li>
+        <li><b>«Установить».</b> Закройте игру и нажмите кнопку — прогресс видно, установку можно отменить.</li>
+      </ol>
+      <figure><img class="shot" src="../img/gta-redux.jpg" width="1600" height="1067" loading="lazy" alt="Проверка редукса в FrameLab перед установкой: сколько файлов встанет и что заблокировано"><figcaption>После проверки видно, сколько файлов встанет, сколько места они займут и что пропущено.</figcaption></figure>
+
+      <h2 id="preview">Что видно ещё до копирования</h2>
+      <ul>
+        <li><b>Будет установлено</b> — количество файлов и объём.</li>
+        <li><b>Пропущено</b> — документация, превью и лишние файлы из архива.</li>
+        <li><b>Не будет установлено</b> — исполняемый код и файлы с небезопасными путями, с причиной для каждого.</li>
+        <li>Предупреждения: например, что RPF-архивы нельзя проверить изнутри, поэтому паки стоит брать только из источников, которым вы доверяете.</li>
+      </ul>
+
+      <h2 id="backup">Оригиналы сохраняются сами</h2>
+      <p>Заменяемые файлы игры переносятся в папку <code>.framelab</code> внутри GTA V — на тот же диск, поэтому лишнего места не нужно. Прерванная установка откатывается там же.</p>
+      <p>Чтобы убрать пак, нажмите <b>«Удалить»</b> в списке установленных: оригиналы вернутся на место, добавленные файлы удалятся, и игра снова будет как была.</p>
+
+      <h2 id="code">Почему скрипты, DLL и ReShade не ставятся</h2>
+      <p>FrameLab ставит только файлы графики — модели, текстуры, таймциклы. Исполняемый код (ASI и DLL: ScriptHook, ReShade, ENB и подобные) программа не устанавливает никогда. Если он вам нужен и правила вашего проекта это разрешают, его можно поставить вручную.</p>
+      <div class="note warn"><b>Проверьте правила своего проекта.</b> Приложение не знает правил конкретного RP-сервера. Графические паки обычно разрешены, но всё, что убирает объекты, делает текстуры прозрачными или даёт другое преимущество, считается читом и ведёт к бану.</div>
+
+      <h2 id="faq">Частые вопросы</h2>
+      <details><summary>Как удалить редукс и вернуть оригинальные файлы GTA V?</summary><p>На вкладке «Редуксы» в списке установленных паков нажмите «Удалить». Заменённые файлы возвращаются из папки .framelab внутри GTA V, добавленные паком файлы удаляются.</p></details>
+      <details><summary>Какие архивы поддерживаются?</summary><p>Папка, .zip, .7z и .rar. Для .7z и .rar нужен бесплатный 7-Zip, иначе используется встроенный в Windows tar.</p></details>
+      <details><summary>Что будет после обновления GTA V?</summary><p>Пак может перестать работать. Удалите его в FrameLab (оригиналы вернутся) или проверьте целостность файлов в Steam или Rockstar Games Launcher.</p></details>
+      <details><summary>Почему часть файлов пака не ставится?</summary><p>FrameLab ставит только файлы графики. Исполняемый код — ASI и DLL (ScriptHook, ReShade, ENB и подобные) — и файлы с небезопасными путями не устанавливаются: их можно поставить вручную, если это разрешают правила вашего проекта.</p></details>
+
+      <div class="cta">
+        <h2>Поставьте редукс за пару кликов</h2>
+        <p>FrameLab бесплатный, работает оффлайн, любое изменение отменяется одной кнопкой.</p>
+        <div class="row"><a class="btn btn-primary" href="https://github.com/Derposd/v60/releases/latest/download/FrameLab-Setup.exe">Скачать FrameLab</a><a class="btn btn-ghost" href="../gta-5-rp/">Режимы графики GTA 5 RP</a></div>
+      </div>
+
+      <h2>Ещё гайды</h2>
+      <div class="related">
+        <a href="../gta-5-rp/">FPS в GTA 5 RP на слабом ПК<span>Пять режимов графики и что ещё проверить.</span></a>
+        <a href="../cs2-input-lag/">Задержка ввода в CS2<span>144 Гц, V-Sync, полноэкранный режим.</span></a>
+        <a href="../dota-2-fps/">FPS в Dota 2<span>Фризы и падение FPS к концу матча.</span></a>
+      </div>
+    </article>
+
+    <aside>
+      <div class="box">
+        <div class="dl"><img src="../img/logo.png" alt=""><b>FrameLab <span class="ver">1.4</span></b><p>Бесплатно для Windows 10 и 11</p><a class="btn btn-primary" href="https://github.com/Derposd/v60/releases/latest/download/FrameLab-Setup.exe">Скачать</a></div>
+        <div class="toc"><b>Содержание</b><a href="#manual">Вручную — неудобно</a><a href="#steps">Три шага</a><a href="#preview">Что видно заранее</a><a href="#backup">Оригиналы и удаление</a><a href="#code">Что не ставится</a><a href="#faq">Вопросы</a></div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<footer>
+  <div class="wrap">
+    <span>© FrameLab · <a href="https://github.com/Derposd/v60">Исходный код на GitHub</a></span>
+    <span>Сайт не использует cookies, счётчики и формы.</span>
+    <span>Не связано с Rockstar Games и RP-проектами. Grand Theft Auto V — товарный знак Rockstar Games.</span>
+  </div>
+</footer>
+</body>
+</html>

@@ -200,8 +200,8 @@ public sealed class AboutViewModel : ObservableObject
 
 public sealed class MainViewModel : ObservableObject
 {
-    // Tab order in MainWindow.xaml: home, a section header, the Dota 2 / CS2 pages, the GTA RP pages (only one group is visible),
-    // a section header, then shared pages.
+    // Tab order in MainWindow.xaml: home, a section header, the Dota 2 / CS2 pages, the GTA RP pages, the «ПК» pages (Windows and
+    // other games) — only one group is visible — then a section header and the shared pages.
     public const int HomeTab = 0;
     public const int OptimizeTab = 2;
     public const int IssuesTab = 3;
@@ -210,12 +210,26 @@ public sealed class MainViewModel : ObservableObject
     public const int GtaModesTab = 6;
     public const int GtaReduxTab = 7;
     public const int GtaDiagnosisTab = 8;
-    public const int NetworkTab = 10;
-    public const int RollbackTab = 11;
+    public const int SystemTweaksTab = 9;
+    public const int GameModeTab = 10;
+    public const int StartupTab = 11;
+    public const int BoostTab = 12;
+    public const int PresetsTab = 13;
+    public const int UpscaleTab = 14;
+    public const int BenchmarkTab = 15;
+    public const int NetworkTab = 17;
+    public const int RollbackTab = 18;
+
+    private enum Section
+    {
+        Game,
+        Gta,
+        Pc,
+    }
 
     private int _selectedTab;
     private GameWorkspace _current;
-    private bool _isGta;
+    private Section _section;
 
     public MainViewModel()
     {
@@ -225,7 +239,14 @@ public sealed class MainViewModel : ObservableObject
         Gta = new GtaViewModel(services);
         Network = new NetworkViewModel(services);
         Rollback = new RollbackViewModel(services);
+        SystemTweaks = new SystemTweaksViewModel(services);
+        Startup = new StartupViewModel(services);
+        Boost = new BoostViewModel(services);
+        Presets = new PresetsViewModel(services);
+        Benchmark = new BenchmarkViewModel(services);
+        Upscale = new UpscaleViewModel(services);
         About = new AboutViewModel();
+        Settings = new SettingsViewModel(ReapplyTheme);
         Home = new HomeViewModel(services, Dota, Cs2, (ws, tab) =>
         {
             Select(ws);
@@ -234,19 +255,27 @@ public sealed class MainViewModel : ObservableObject
         {
             SelectGta();
             SelectedTab = GtaModesTab;
+        }, () =>
+        {
+            SelectPc();
+            SelectedTab = SystemTweaksTab;
         });
+        GameMode = new GameModeViewModel(services, Home);
+        SystemTweaks.GameMode = GameMode;
+        // The app always opens on the «ПК» section; the Dota 2 / CS2 chip returns to the game opened last time.
         _current = UiState.LastGame() == Core.Game.GameId.Cs2 ? Cs2 : Dota;
-        if (UiState.LastWasGta())
-        {
-            SelectGta();
-        }
-        else
-        {
-            Select(_current);
-        }
+        SelectPc();
+        Live.Active = true; // the app opens on the home page
     }
 
     public HomeViewModel Home { get; }
+    public DashboardViewModel Live { get; } = new();
+
+    /// <summary>The window is minimised: live sampling pauses.</summary>
+    public bool WindowHidden
+    {
+        set => Live.Active = !value && SelectedTab == HomeTab;
+    }
 
     public GameWorkspace Dota { get; }
     public GameWorkspace Cs2 { get; }
@@ -262,7 +291,7 @@ public sealed class MainViewModel : ObservableObject
     /// <summary>True while the GTA RP section is open: its pages replace the Dota 2 / CS2 ones.</summary>
     public bool IsGta
     {
-        get => _isGta;
+        get => _section == Section.Gta;
         set
         {
             if (value)
@@ -272,13 +301,31 @@ public sealed class MainViewModel : ObservableObject
         }
     }
 
-    public bool IsGamePages => !IsGta;
+    /// <summary>True while the «ПК» section is open: Windows tweaks, the game mode, presets for other games, tools.</summary>
+    public bool IsPc
+    {
+        get => _section == Section.Pc;
+        set
+        {
+            if (value)
+            {
+                SelectPc();
+            }
+        }
+    }
 
-    public string SectionTitle => IsGta ? "GTA RP" : Current.SectionTitle;
+    public bool IsGamePages => _section == Section.Game;
+
+    public string SectionTitle => _section switch
+    {
+        Section.Gta => "GTA RP",
+        Section.Pc => "WINDOWS И ДРУГИЕ ИГРЫ",
+        _ => Current.SectionTitle,
+    };
 
     public bool IsDota
     {
-        get => !IsGta && Current == Dota;
+        get => IsGamePages && Current == Dota;
         set
         {
             if (value)
@@ -290,7 +337,7 @@ public sealed class MainViewModel : ObservableObject
 
     public bool IsCs2
     {
-        get => !IsGta && Current == Cs2;
+        get => IsGamePages && Current == Cs2;
         set
         {
             if (value)
@@ -303,12 +350,27 @@ public sealed class MainViewModel : ObservableObject
     public int SelectedTab
     {
         get => _selectedTab;
-        set => Set(ref _selectedTab, value);
+        set
+        {
+            if (Set(ref _selectedTab, value))
+            {
+                ActivatePage(value);
+                Live.Active = value == HomeTab;
+            }
+        }
     }
 
     public NetworkViewModel Network { get; }
+    public SystemTweaksViewModel SystemTweaks { get; }
+    public GameModeViewModel GameMode { get; }
+    public StartupViewModel Startup { get; }
+    public BoostViewModel Boost { get; }
+    public PresetsViewModel Presets { get; }
+    public BenchmarkViewModel Benchmark { get; }
+    public UpscaleViewModel Upscale { get; }
     public RollbackViewModel Rollback { get; }
     public AboutViewModel About { get; }
+    public SettingsViewModel Settings { get; }
 
     private void Select(GameWorkspace ws)
     {
@@ -318,8 +380,8 @@ public sealed class MainViewModel : ObservableObject
         // Theme first: converters read the accent brushes while the new page's bindings are evaluated.
         GameTheme.Apply(ws.Game.Id);
         Current = ws;
-        _isGta = false;
-        if (SelectedTab is >= GtaModesTab and <= GtaDiagnosisTab)
+        _section = Section.Game;
+        if (SelectedTab is >= GtaModesTab and <= BenchmarkTab)
         {
             SelectedTab = OptimizeTab;
         }
@@ -334,20 +396,79 @@ public sealed class MainViewModel : ObservableObject
         Dota.Wizard.IsActive = false;
         Cs2.Wizard.IsActive = false;
         GameTheme.ApplyGta();
-        _isGta = true;
-        if (SelectedTab is >= OptimizeTab and <= CrashTab)
+        _section = Section.Gta;
+        if (SelectedTab is (>= OptimizeTab and <= CrashTab) or (>= SystemTweaksTab and <= BenchmarkTab))
         {
             SelectedTab = GtaModesTab;
         }
 
-        UiState.SaveGta();
         RaiseSection();
         _ = Gta.ActivateAsync();
+    }
+
+    private void SelectPc()
+    {
+        Dota.Wizard.IsActive = false;
+        Cs2.Wizard.IsActive = false;
+        Gta.IsActive = false;
+        GameTheme.ApplyPc();
+        _section = Section.Pc;
+        if (SelectedTab is >= OptimizeTab and <= GtaDiagnosisTab)
+        {
+            SelectedTab = SystemTweaksTab;
+        }
+        else
+        {
+            ActivatePage(SelectedTab);
+        }
+
+        RaiseSection();
+    }
+
+    /// <summary>Re-applies the current section's colours (performance mode removes or brings back the glow).</summary>
+    private void ReapplyTheme()
+    {
+        switch (_section)
+        {
+            case Section.Gta:
+                GameTheme.ApplyGta();
+                break;
+            case Section.Pc:
+                GameTheme.ApplyPc();
+                break;
+            default:
+                GameTheme.Apply(Current.Game.Id);
+                break;
+        }
+    }
+
+    /// <summary>Pages of the Windows section load on first open, so start-up stays fast.</summary>
+    private void ActivatePage(int tab)
+    {
+        _ = tab switch
+        {
+            SystemTweaksTab => SystemTweaks.ActivateAsync(),
+            GameModeTab => GameMode.ActivateAsync(),
+            StartupTab => Startup.ActivateAsync(),
+            PresetsTab => Presets.ActivateAsync(),
+            BenchmarkTab => Benchmark.ActivateAsync(),
+            UpscaleTab => Upscale.ActivateAsync(),
+            _ => Task.CompletedTask,
+        };
+    }
+
+    /// <summary>Puts back what the real-time game mode paused, before the window closes.</summary>
+    public void Shutdown()
+    {
+        Live.Dispose();
+        GameMode.Shutdown();
+        Home.Shutdown();
     }
 
     private void RaiseSection()
     {
         OnPropertyChanged(nameof(IsGta));
+        OnPropertyChanged(nameof(IsPc));
         OnPropertyChanged(nameof(IsGamePages));
         OnPropertyChanged(nameof(IsDota));
         OnPropertyChanged(nameof(IsCs2));

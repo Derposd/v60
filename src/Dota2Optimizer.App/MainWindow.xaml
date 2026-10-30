@@ -1,6 +1,7 @@
 <Window x:Class="Dota2Optimizer.App.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:v="clr-namespace:Dota2Optimizer.App.Views"
         Title="FrameLab" Width="1320" Height="880" MinWidth="1080" MinHeight="660"
         WindowStartupLocation="CenterScreen" Style="{StaticResource DarkWindow}" Icon="Assets/app.ico">
 
@@ -133,7 +134,7 @@
 
     <Border x:Name="Root" BorderBrush="#1E2029" BorderThickness="1" Background="{StaticResource Bg}">
     <Grid>
-    <TabControl x:Name="Nav" Style="{StaticResource SideNav}" SelectedIndex="{Binding SelectedTab}">
+    <TabControl x:Name="Nav" Style="{StaticResource SideNav}" SelectedIndex="{Binding SelectedTab}" v:Fx.PageTransition="True">
 
         <!-- ===================== HOME (main menu) ===================== -->
         <TabItem Header="Главная" Tag="{StaticResource IconStar}" DataContext="{Binding Home}">
@@ -141,7 +142,7 @@
                 <StackPanel Margin="40,6,36,26">
                     <TextBlock Text="FrameLab" Style="{StaticResource Kicker}" />
                     <TextBlock Text="Главная" Style="{StaticResource PageTitle}" />
-                    <TextBlock Style="{StaticResource PageSub}" Margin="0,4,0,20" Text="Состояние ПК и оптимизация в один клик для Dota 2 и CS2. Тонкая настройка и раздел GTA RP (режимы графики, редуксы) — на страницах игр." />
+                    <TextBlock Style="{StaticResource PageSub}" Margin="0,4,0,20" Text="Состояние ПК и оптимизация в один клик для Dota 2 и CS2. Тонкая настройка — на страницах игр, а твики Windows и пресеты других игр — в разделе «ПК»." />
 
                     <!-- One-click optimisation -->
                     <Border Style="{StaticResource Hero}" Padding="28,26">
@@ -194,6 +195,56 @@
                         </StackPanel>
                     </Border>
 
+                    <!-- Live load: rings ease to each new sample; sampling runs only while this page is open. -->
+                    <Border Style="{StaticResource Card}" DataContext="{Binding DataContext.Live, ElementName=Nav}" v:Fx.Appear="True">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="1.6*" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel HorizontalAlignment="Center">
+                                <Grid Width="92" Height="92">
+                                    <v:RingGauge Value="{Binding Cpu}" Thickness="8" Stroke="{DynamicResource AccentGradient}" />
+                                    <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="20" FontWeight="SemiBold" Text="—" v:Fx.Format="0'%'" v:Fx.Number="{Binding Cpu}" />
+                                </Grid>
+                                <TextBlock Text="Процессор" HorizontalAlignment="Center" FontWeight="SemiBold" Margin="0,8,0,0" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="1" HorizontalAlignment="Center">
+                                <Grid Width="92" Height="92">
+                                    <v:RingGauge Value="{Binding Gpu}" Thickness="8" Stroke="{DynamicResource AccentGradient}" />
+                                    <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="20" FontWeight="SemiBold" Text="—" v:Fx.Format="0'%'" v:Fx.Number="{Binding Gpu}" />
+                                </Grid>
+                                <TextBlock Text="Видеокарта" HorizontalAlignment="Center" FontWeight="SemiBold" Margin="0,8,0,0" />
+                                <TextBlock Text="{Binding GpuText}" Style="{StaticResource Caption}" HorizontalAlignment="Center" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="2" HorizontalAlignment="Center">
+                                <Grid Width="92" Height="92">
+                                    <v:RingGauge Value="{Binding Ram}" Thickness="8" Stroke="{DynamicResource AccentGradient}" />
+                                    <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="20" FontWeight="SemiBold" Text="—" v:Fx.Format="0'%'" v:Fx.Number="{Binding Ram}" />
+                                </Grid>
+                                <TextBlock Text="Память" HorizontalAlignment="Center" FontWeight="SemiBold" Margin="0,8,0,0" />
+                                <TextBlock Text="{Binding RamText}" Style="{StaticResource Caption}" HorizontalAlignment="Center" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="3" HorizontalAlignment="Center">
+                                <Grid Width="92" Height="92">
+                                    <v:RingGauge Value="{Binding Temp}" Maximum="100" Thickness="8" Stroke="{StaticResource Warn}" />
+                                    <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="20" FontWeight="SemiBold" Text="—" v:Fx.Format="0'°'" v:Fx.Number="{Binding Temp}" />
+                                </Grid>
+                                <TextBlock Text="Температура" HorizontalAlignment="Center" FontWeight="SemiBold" Margin="0,8,0,0" />
+                                <TextBlock Text="{Binding TempText}" Style="{StaticResource Caption}" HorizontalAlignment="Center" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="4" Margin="18,0,0,0" VerticalAlignment="Center">
+                                <TextBlock Text="Загрузка процессора, 2 мин" Style="{StaticResource Caption}" Margin="0,0,0,6" />
+                                <Border Style="{StaticResource Inset}" Padding="8" Height="92">
+                                    <v:Sparkline Values="{Binding CpuHistory}" Stroke="{DynamicResource Accent}" Minimum="0" />
+                                </Border>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
                     <Grid Margin="0,0,0,16">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
@@ -229,6 +280,19 @@
                         <Border Grid.Column="2" Style="{StaticResource Card}">
                             <StackPanel>
                                 <TextBlock Text="Игры" Style="{StaticResource Section}" Margin="0,0,0,8" />
+                                <Border BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0" Padding="0,10">
+                                    <DockPanel>
+                                        <Button DockPanel.Dock="Right" Content="Открыть" Tag="{StaticResource IconChevron}" Style="{StaticResource GhostIcon}" VerticalAlignment="Center"
+                                                Command="{Binding OpenPcCommand}" />
+                                        <Border Width="40" Height="40" CornerRadius="11" Margin="0,0,14,0" Background="{StaticResource PcTile}">
+                                            <TextBlock Text="ПК" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="Bold" FontSize="12" Foreground="#04201C" />
+                                        </Border>
+                                        <StackPanel VerticalAlignment="Center">
+                                            <TextBlock Text="Windows и другие игры" FontWeight="SemiBold" />
+                                            <TextBlock Text="Твики системы, игровой режим, Fortnite, Valorant, Minecraft, Apex, бенчмарк" Style="{StaticResource Caption}" TextTrimming="CharacterEllipsis" />
+                                        </StackPanel>
+                                    </DockPanel>
+                                </Border>
                                 <ItemsControl ItemsSource="{Binding Games}">
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
@@ -1738,6 +1802,35 @@
             </ScrollViewer>
         </TabItem>
 
+        <!-- ===================== ПК: WINDOWS И ДРУГИЕ ИГРЫ ===================== -->
+        <TabItem Header="Твики Windows" Tag="{StaticResource IconSliders}" DataContext="{Binding SystemTweaks}" Visibility="{Binding DataContext.IsPc, ElementName=Nav, Converter={StaticResource BoolToVis}}">
+            <v:SystemTweaksPage />
+        </TabItem>
+
+        <TabItem Header="Игровой режим" Tag="{StaticResource IconGamepad}" DataContext="{Binding GameMode}" Visibility="{Binding DataContext.IsPc, ElementName=Nav, Converter={StaticResource BoolToVis}}">
+            <v:GameModePage />
+        </TabItem>
+
+        <TabItem Header="Автозагрузка" Tag="{StaticResource IconPower}" DataContext="{Binding Startup}" Visibility="{Binding DataContext.IsPc, ElementName=Nav, Converter={StaticResource BoolToVis}}">
+            <v:StartupPage />
+        </TabItem>
+
+        <TabItem Header="Ускорения" Tag="{StaticResource IconRocket}" DataContext="{Binding Boost}" Visibility="{Binding DataContext.IsPc, ElementName=Nav, Converter={StaticResource BoolToVis}}">
+            <v:BoostPage />
+        </TabItem>
+
+        <TabItem Header="Пресеты игр" Tag="{StaticResource IconLayers}" DataContext="{Binding Presets}" Visibility="{Binding DataContext.IsPc, ElementName=Nav, Converter={StaticResource BoolToVis}}">
+            <v:PresetsPage />
+        </TabItem>
+
+        <TabItem Header="Апскейл и кадры" Tag="{StaticResource IconSparkle}" DataContext="{Binding Upscale}" Visibility="{Binding DataContext.IsPc, ElementName=Nav, Converter={StaticResource BoolToVis}}">
+            <v:UpscalePage />
+        </TabItem>
+
+        <TabItem Header="Бенчмарк" Tag="{StaticResource IconGauge}" DataContext="{Binding Benchmark}" Visibility="{Binding DataContext.IsPc, ElementName=Nav, Converter={StaticResource BoolToVis}}">
+            <v:BenchmarkPage />
+        </TabItem>
+
         <!-- ===================== NETWORK ===================== -->
         <TabItem Header="ОБЩЕЕ ДЛЯ ВСЕХ ИГР" Style="{StaticResource NavSection}" />
 
@@ -1844,6 +1937,46 @@
                                     <TextBlock Text="{Binding DnsChangedText}" Foreground="{StaticResource Ok}" VerticalAlignment="Center" />
                                 </DockPanel>
                             </Border>
+                            <Border Style="{StaticResource Divider}" Margin="0,14,0,12" />
+                            <DockPanel>
+                                <Button DockPanel.Dock="Right" Content="Сравнить DNS" Tag="{StaticResource IconGauge}" Style="{StaticResource SecondaryIcon}" Command="{Binding BenchmarkDnsCommand}" Margin="0" VerticalAlignment="Top" />
+                                <StackPanel>
+                                    <TextBlock Text="Бенчмарк DNS" FontWeight="SemiBold" />
+                                    <TextBlock Style="{StaticResource Caption}" Text="Время ответа текущего DNS и трёх пресетов (медиана 12 запросов). Запустите до и после смены — увидите разницу." />
+                                </StackPanel>
+                            </DockPanel>
+                            <ItemsControl ItemsSource="{Binding DnsResults}" Margin="0,10,0,0">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid Margin="0,4" v:Fx.Appear="True">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="190" />
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="70" />
+                                            </Grid.ColumnDefinitions>
+                                            <StackPanel>
+                                                <TextBlock Text="{Binding Label}" FontWeight="SemiBold" TextWrapping="NoWrap" />
+                                                <TextBlock Text="{Binding Server}" Style="{StaticResource Caption}" FontFamily="{StaticResource MonoFont}" />
+                                            </StackPanel>
+                                            <Border Grid.Column="1" Height="8" CornerRadius="4" Background="{StaticResource NeutralSoft}" VerticalAlignment="Center">
+                                                <Border HorizontalAlignment="Left" CornerRadius="4" Background="{DynamicResource BarGradient}" v:Fx.Appear="True">
+                                                    <Border.Width>
+                                                        <MultiBinding Converter="{StaticResource FractionWidth}">
+                                                            <Binding Path="Bar" />
+                                                            <Binding Path="ActualWidth" RelativeSource="{RelativeSource AncestorType=Border}" />
+                                                        </MultiBinding>
+                                                    </Border.Width>
+                                                </Border>
+                                            </Border>
+                                            <TextBlock Grid.Column="2" HorizontalAlignment="Right" VerticalAlignment="Center" FontWeight="SemiBold"
+                                                       v:Fx.Format="0' мс'" v:Fx.Number="{Binding MsValue}" />
+                                            <TextBlock Grid.Column="1" Grid.ColumnSpan="2" Text="{Binding Note}" Style="{StaticResource Caption}" Foreground="{StaticResource Warn}" Margin="0,18,0,0"
+                                                       Visibility="{Binding Note, Converter={StaticResource NullToCollapsed}}" />
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <TextBlock Text="{Binding DnsVerdict}" Style="{StaticResource MutedText}" Margin="0,8,0,0" Visibility="{Binding DnsVerdict, Converter={StaticResource NullToCollapsed}}" />
                             <Border Style="{StaticResource Divider}" Margin="0,14,0,10" />
                             <StackPanel Orientation="Horizontal" Margin="-14,0,0,0">
                                 <Button Content="Очистить кеш DNS" Tag="{StaticResource IconRefresh}" Style="{StaticResource GhostIcon}" Command="{Binding FlushDnsCommand}" />
@@ -1967,6 +2100,10 @@
             </ScrollViewer>
         </TabItem>
 
+        <TabItem Header="Настройки" Tag="{StaticResource IconGear}" DataContext="{Binding Settings}">
+            <v:SettingsPage />
+        </TabItem>
+
         <!-- ===================== ABOUT ===================== -->
         <TabItem Header="О программе" Tag="{StaticResource IconInfo}" DataContext="{Binding About}">
             <Grid Margin="40,6,36,24">
@@ -2019,7 +2156,7 @@
                                     <TextBlock Text="Что программа намеренно НЕ делает" Style="{StaticResource CardTitle}" VerticalAlignment="Center" />
                                 </DockPanel>
                                 <TextBlock Style="{StaticResource MutedText}"
-                                           Text="Не отключает Defender, обновления и UAC; не «чистит реестр» и не «освобождает RAM»; не убивает процессы; не правит профили драйвера; не меняет TCP/Nagle/MTU; не разгоняет; не скачивает драйверы сама." />
+                                           Text="Не отключает Defender, обновления Windows и драйверов, UAC; не «чистит реестр»; не читает и не меняет память игр, не внедряется в процесс и не обходит античиты; не меняет Nagle/MTU «для пинга»; не разгоняет; ничего не скачивает без вашего согласия. Программы закрывает только «Игровой режим» и только из вашего списка; профиль драйвера NVIDIA меняется только по вашему переключателю и с копией прежних значений." />
                             </StackPanel>
                         </Border>
                     </Grid>

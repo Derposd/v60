@@ -11,6 +11,9 @@ public static class RestorePoint
     private const int ModifySettings = 12;
     private const int BeginSystemChange = 100;
 
+    /// <summary>The app already made a restore point once; the first-apply offer is not repeated.</summary>
+    public static bool CreatedBefore => File.Exists(AppPaths.RestorePointMarker);
+
     public static RestorePointResult Create(string description)
     {
         if (!Elevation.IsElevated)
@@ -30,6 +33,7 @@ public static class RestorePoint
             if (code == 0)
             {
                 Log.Info($"Точка восстановления создана: {description}");
+                TryMark();
                 return new RestorePointResult(true,
                     "Точка восстановления запрошена. Windows создаёт не больше одной точки в сутки — если точка уже была сегодня, новая может не появиться (наши собственные копии файлов и реестра делаются всегда).");
             }
@@ -42,6 +46,19 @@ public static class RestorePoint
         {
             Log.Error("Не удалось создать точку восстановления", ex);
             return new RestorePointResult(false, ex.Message);
+        }
+    }
+
+    private static void TryMark()
+    {
+        try
+        {
+            Directory.CreateDirectory(AppPaths.Root);
+            File.WriteAllText(AppPaths.RestorePointMarker, DateTime.Now.ToString("O"));
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            // Only decides whether to offer the point again.
         }
     }
 }

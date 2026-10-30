@@ -9,6 +9,15 @@ public enum ActionKind
     WriteFile,
     DeleteFile,
     RunCommand,
+
+    /// <summary>Changes a service's start type (and optionally stops it); the old type and running state are restored.</summary>
+    SetService,
+
+    /// <summary>Copies a binary file over a target (a DLL into a game folder); the target is backed up first.</summary>
+    CopyFile,
+
+    /// <summary>Sets a DWORD in the NVIDIA driver's global profile; the previous value (or "driver default") is restored.</summary>
+    SetNvidiaSetting,
 }
 
 /// <summary>
@@ -36,6 +45,18 @@ public sealed record PlannedAction
     public string? Arguments { get; init; }
     public string? UndoCommand { get; init; }
     public string? UndoArguments { get; init; }
+
+    // Service
+    public string? ServiceName { get; init; }
+    public string? ServiceStartType { get; init; }
+    public bool StopService { get; init; }
+
+    // Copy
+    public string? SourcePath { get; init; }
+
+    // NVIDIA driver setting
+    public uint NvSettingId { get; init; }
+    public uint NvValue { get; init; }
 
     public static PlannedAction SetReg(RegHive hive, string key, string name, RegValue value, string description) => new()
     {
@@ -86,10 +107,41 @@ public sealed record PlannedAction
         RequiresAdmin = requiresAdmin,
     };
 
+    /// <summary>Sets a service's start type ("demand", "disabled"…). Stopping it right away is optional; undo starts it again if it was running.</summary>
+    public static PlannedAction SetService(string name, string startType, bool stop, string description) => new()
+    {
+        Kind = ActionKind.SetService,
+        ServiceName = name,
+        ServiceStartType = startType,
+        StopService = stop,
+        Description = description,
+        RequiresAdmin = true,
+    };
+
+    public static PlannedAction CopyFile(string source, string target, string description, bool requiresAdmin = false) => new()
+    {
+        Kind = ActionKind.CopyFile,
+        SourcePath = source,
+        Path = target,
+        Description = description,
+        RequiresAdmin = requiresAdmin,
+    };
+
+    public static PlannedAction SetNvidia(uint settingId, uint value, string description) => new()
+    {
+        Kind = ActionKind.SetNvidiaSetting,
+        NvSettingId = settingId,
+        NvValue = value,
+        Description = description,
+        RequiresAdmin = true,
+    };
+
     public string Target => Kind switch
     {
         ActionKind.SetRegistry or ActionKind.DeleteRegistry => $"{Hive.ShortName()}\\{Key}\\{ValueName}",
-        ActionKind.WriteFile or ActionKind.DeleteFile => Path ?? string.Empty,
+        ActionKind.WriteFile or ActionKind.DeleteFile or ActionKind.CopyFile => Path ?? string.Empty,
+        ActionKind.SetService => $"служба {ServiceName}",
+        ActionKind.SetNvidiaSetting => $"драйвер NVIDIA: 0x{NvSettingId:X8}",
         _ => $"{Command} {Arguments}",
     };
 }

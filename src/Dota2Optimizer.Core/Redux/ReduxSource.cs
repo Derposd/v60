@@ -49,6 +49,9 @@ public sealed class FolderReduxSource : IReduxSource
     public string Name { get; }
     public IReadOnlyList<ReduxEntry> Entries => _entries;
 
+    /// <summary>The folder the entries live in (for a .7z/.rar: the unpacked staging folder).</summary>
+    public string Root => _root;
+
     public Stream Open(ReduxEntry entry) =>
         new FileStream(Path.Combine(_root, entry.Path.Replace('/', Path.DirectorySeparatorChar)), FileMode.Open, FileAccess.Read, FileShare.Read, 1 << 20, FileOptions.SequentialScan);
 
