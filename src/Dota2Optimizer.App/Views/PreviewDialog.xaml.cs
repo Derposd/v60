@@ -10,6 +10,7 @@ public partial class PreviewDialog : Window
     {
         InitializeComponent();
         Owner = Application.Current.MainWindow;
+        SourceInitialized += (_, _) => Backdrop.TryMica(this, new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(0xD8, 0x0A, 0x0B, 0x10)));
         HeaderText.Text = title;
         Lines.ItemsSource = lines;
         var admin = lines.Count(l => l.RequiresAdmin);
