@@ -76,12 +76,16 @@ public sealed class BoostViewModel
     private async Task RunAsync(BoostRowVm row)
     {
         var a = row.Action;
-        var extra = a.Id switch
+        row.IsBusy = true;
+        // Folder sizes are measured off the UI thread: TEMP and driver caches can hold many thousands of files.
+        var extra = await Task.Run(() => a.Id switch
         {
             BoostCatalog.Shaders => $"\n\nБудет очищено: {Ui.Size(ShaderCaches().Sum(c => c.SizeBytes))}.",
             BoostCatalog.Temp => $"\n\nБудет удалено: {TempCleaner.Measure(TempCleaner.UserTemp, DateTime.UtcNow).SizeText}.",
             _ => string.Empty,
-        };
+        });
+        row.IsBusy = false;
+        row.Mark = MarkState.None;
         if (!Ui.Confirm($"{a.Title}?\n\n{a.Description}\n\n{a.Honest}{extra}\n\nЭто разовое действие, откатить его нельзя (и не нужно).", a.Title))
         {
             return;

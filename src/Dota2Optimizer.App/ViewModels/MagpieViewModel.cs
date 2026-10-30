@@ -70,12 +70,12 @@ public sealed class MagpieViewModel : ObservableObject
         _state = Load();
         AlgorithmChoices = MagpieSetup.Algorithms.Select(a => new AlgorithmVm(this, a)).ToList();
         InstallCommand = new AsyncCommand(InstallAsync, () => !Busy);
-        UninstallCommand = new RelayCommand(Uninstall, () => !Busy && Installed);
-        StartCommand = new RelayCommand(() => Run(MagpieSetup.Start), () => !Busy && Installed);
-        StopCommand = new RelayCommand(() => Run(MagpieSetup.Stop), () => !Busy && Installed);
-        ApplyCommand = new RelayCommand(Apply, () => !Busy && Installed);
-        AddRunningGameCommand = new RelayCommand(AddRunningGame, () => !Busy && Installed);
-        RemoveGameCommand = new RelayCommand(p => RemoveGame(p as MagpieGameProfile));
+        UninstallCommand = new AsyncCommand(UninstallAsync, () => !Busy && Installed);
+        StartCommand = new AsyncCommand(() => RunAsync(MagpieSetup.Start), () => !Busy && Installed);
+        StopCommand = new AsyncCommand(() => RunAsync(MagpieSetup.Stop), () => !Busy && Installed);
+        ApplyCommand = new AsyncCommand(ApplyAsync, () => !Busy && Installed);
+        AddRunningGameCommand = new AsyncCommand(AddRunningGameAsync, () => !Busy && Installed);
+        RemoveGameCommand = new AsyncCommand<MagpieGameProfile>(RemoveGameAsync);
         OpenProjectCommand = new RelayCommand(() => Ui.OpenUrl(MagpieSetup.ProjectUrl));
         Games = new ObservableCollection<MagpieGameProfile>(_state.Games);
     }
@@ -234,7 +234,7 @@ public sealed class MagpieViewModel : ObservableObject
             var release = await MagpieSetup.LatestAsync(Http, CancellationToken.None);
             Status = $"Скачиваю Magpie {release.Version}…";
             await MagpieSetup.InstallAsync(Http, release, new Progress<double>(p => Progress = p), CancellationToken.None);
-            Apply();
+            await ApplyAsync();
             Status = $"Magpie {release.Version} установлен и запущен. {ResolutionText}";
         }
         catch (Exception ex) when (ex is HttpRequestException or IOException or InvalidDataException or UnauthorizedAccessException or TaskCanceledException or JsonException or KeyNotFoundException or InvalidOperationException)
@@ -248,26 +248,31 @@ public sealed class MagpieViewModel : ObservableObject
         }
     }
 
-    private void Uninstall()
+    private async Task UninstallAsync()
     {
         if (!Ui.Confirm("Удалить копию Magpie из папки FrameLab вместе с её настройками? Ваш собственный Magpie (если есть) не затрагивается.", "Magpie"))
         {
             return;
         }
 
-        Run(MagpieSetup.Uninstall);
+        await RunAsync(MagpieSetup.Uninstall);
         Status = "Копия Magpie удалена.";
     }
 
     /// <summary>Rebuilds Magpie's config from FrameLab's settings. Magpie is closed first (it rewrites its config on exit) and started again.</summary>
-    private void Apply()
+    private async Task ApplyAsync()
     {
         try
         {
-            var wasRunning = MagpieSetup.Running();
-            MagpieSetup.Stop();
-            MagpieSetup.WriteConfig(MagpieSetup.ConfigPath, _state.Algorithm, _state.Preset, _state.Games);
-            MagpieSetup.Start();
+            var (algorithm, preset, games) = (_state.Algorithm, _state.Preset, _state.Games.ToList());
+            var wasRunning = await Task.Run(() =>
+            {
+                var running = MagpieSetup.Running();
+                MagpieSetup.Stop();
+                MagpieSetup.WriteConfig(MagpieSetup.ConfigPath, algorithm, preset, games);
+                MagpieSetup.Start();
+                return running;
+            });
             Status = (wasRunning ? "Настройки применены, Magpie перезапущен. " : "Настройки применены, Magpie запущен в трее. ") + ResolutionText;
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException or InvalidOperationException or System.ComponentModel.Win32Exception)
@@ -279,7 +284,7 @@ public sealed class MagpieViewModel : ObservableObject
     }
 
     /// <summary>Remembers the currently running game (from the game mode list) with its window class, so Magpie scales it by itself.</summary>
-    private void AddRunningGame()
+    private async Task AddRunningGameAsync()
     {
         var config = GameModeConfigStore.Load(_s.Fs, AppPaths.GameModeConfig);
         var running = new ProcessControl().RunningNames();
@@ -290,8 +295,7 @@ public sealed class MagpieViewModel : ObservableObject
             return;
         }
 
-        var cls = GameWindows.ClassOf(game.Process);
-        var path = game.Path ?? new ProcessControl().Find(game.Process).FirstOrDefault()?.Path;
+        var (cls, path) = await Task.Run(() => (GameWindows.ClassOf(game.Process), game.Path ?? new ProcessControl().Find(game.Process).FirstOrDefault()?.Path));
         if (cls is null || path is null)
         {
             Status = $"Окно {game.Name} не найдено — разверните игру и попробуйте ещё раз.";
@@ -310,11 +314,11 @@ public sealed class MagpieViewModel : ObservableObject
 
         Games.Add(profile);
         Save();
-        Apply();
+        await ApplyAsync();
         Status = $"{game.Name}: {profile.Algorithm.Ru()}, " + (AutoScale ? "масштабирование включится само при запуске игры. " : $"масштабирование — по {Hotkey}. ") + Status;
     }
 
-    private void RemoveGame(MagpieGameProfile? p)
+    private async Task RemoveGameAsync(MagpieGameProfile? p)
     {
         if (p is null)
         {
@@ -326,19 +330,24 @@ public sealed class MagpieViewModel : ObservableObject
         Save();
         if (Installed)
         {
-            Apply();
+            await ApplyAsync();
         }
     }
 
-    private void Run(Action a)
+    private async Task RunAsync(Action a)
     {
+        Busy = true;
         try
         {
-            a();
+            await Task.Run(a);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException or System.ComponentModel.Win32Exception)
         {
             Status = ex.Message;
+        }
+        finally
+        {
+            Busy = false;
         }
 
         RaiseInstall();

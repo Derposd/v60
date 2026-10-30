@@ -57,7 +57,7 @@ public sealed class UpscaleViewModel : ObservableObject
         Magpie = new MagpieViewModel(services);
         LaunchLosslessCommand = new RelayCommand(() => Core.Crash.CrashTools.OpenUri($"steam://rungameid/{LosslessScaling.AppId}"), () => LosslessFound);
         LosslessStoreCommand = new RelayCommand(() => Ui.OpenUrl(LosslessScaling.StoreUrl));
-        PickGameCommand = new RelayCommand(PickGame, () => !Busy);
+        PickGameCommand = new AsyncCommand(PickGameAsync, () => !Busy);
         InstallOptiCommand = new AsyncCommand(InstallOptiAsync, () => !Busy && GameExe is not null && !OptiInstalled);
         RemoveOptiCommand = new AsyncCommand(RemoveOptiAsync, () => !Busy && OptiInstalled);
         OpenOptiPageCommand = new RelayCommand(() => Ui.OpenUrl($"https://github.com/{OptiScalerInstaller.Repo}"));
@@ -169,7 +169,7 @@ public sealed class UpscaleViewModel : ObservableObject
         }
     }
 
-    private void PickGame()
+    private async Task PickGameAsync()
     {
         var dlg = new Microsoft.Win32.OpenFileDialog { Filter = "Игра (*.exe)|*.exe", Title = "Выберите exe одиночной игры" };
         if (dlg.ShowDialog() != true)
@@ -178,10 +178,24 @@ public sealed class UpscaleViewModel : ObservableObject
         }
 
         GameExe = dlg.FileName;
+        OptiStatus = "Проверяю папку игры…";
+        Busy = true;
         var dir = PathEx.Parent(dlg.FileName)!;
-        var root = OptiScalerInstaller.GameRoot(_s.Fs, dir);
-        var ac = AntiCheatScanner.Scan(_s.Fs, root);
-        var up = UpscalerDlls.Find(_s.Fs, root);
+        IReadOnlyList<string> ac, up;
+        try
+        {
+            // Large games have tens of thousands of files: scanning stays off the UI thread.
+            (ac, up) = await Task.Run(() =>
+            {
+                var root = OptiScalerInstaller.GameRoot(_s.Fs, dir);
+                return (AntiCheatScanner.Scan(_s.Fs, root), UpscalerDlls.Find(_s.Fs, root));
+            });
+        }
+        finally
+        {
+            Busy = false;
+        }
+
         OptiStatus = OptiScalerInstaller.BlockedExes.Contains(PathEx.FileName(dlg.FileName)) || ac.Count > 0
             ? $"⛔ Античит: {(ac.Count > 0 ? string.Join(", ", ac) : "онлайн-игра")}. Установка OptiScaler заблокирована — за внедрение DLL в такие игры банят."
             : up.Count == 0
