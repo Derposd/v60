@@ -1,0 +1,366 @@
+<UserControl x:Class="Dota2Optimizer.App.Views.SpecView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:v="clr-namespace:Dota2Optimizer.App.Views"
+             xmlns:vm="clr-namespace:Dota2Optimizer.App.ViewModels"
+             xmlns:t="clr-namespace:Dota2Optimizer.Core.Tweaks;assembly=Dota2Optimizer.Core"
+             Background="{StaticResource P.Paper}" TextElement.FontFamily="{StaticResource P.Sans}" TextElement.Foreground="{StaticResource P.Ink}"
+             TextOptions.TextFormattingMode="Ideal" UseLayoutRounding="True" SnapsToDevicePixels="True">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="P.BoolToVis" />
+        <Style TargetType="TextBlock" BasedOn="{StaticResource P.Text}" />
+        <Style TargetType="ToolTip" BasedOn="{StaticResource P.ToolTip}" />
+
+        <!-- Risk: shape + text, colour only as a third cue. -->
+        <DataTemplate x:Key="RiskMark" DataType="{x:Type vm:SpecRowVm}">
+            <StackPanel x:Name="Root" Orientation="Horizontal" VerticalAlignment="Center" TextElement.Foreground="{StaticResource P.Safe}">
+                <Canvas Width="10" Height="10" VerticalAlignment="Center" Margin="0,0,8,0">
+                    <Ellipse x:Name="Ring" Canvas.Left="1.4" Canvas.Top="1.4" Width="7.2" Height="7.2" StrokeThickness="1.5"
+                             Stroke="{Binding (TextElement.Foreground), ElementName=Root}" />
+                    <Path x:Name="Half" Data="M5,1.4 A3.6,3.6 0 0 1 5,8.6 Z" Fill="{Binding (TextElement.Foreground), ElementName=Root}" Visibility="Collapsed" />
+                    <Path x:Name="Tri" Data="M5,1 L9.3,9 L0.7,9 Z" Fill="{Binding (TextElement.Foreground), ElementName=Root}" Visibility="Collapsed" />
+                </Canvas>
+                <v:SpacedText Text="{Binding RiskText, Converter={x:Static v:UpperConverter.Instance}}" FontFamily="{StaticResource P.Mono}" FontSize="11" Tracking="0.04"
+                              Foreground="{Binding (TextElement.Foreground), ElementName=Root}" VerticalAlignment="Center" />
+            </StackPanel>
+            <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding Risk}" Value="{x:Static t:SpecRisk.Mid}">
+                    <Setter TargetName="Root" Property="TextElement.Foreground" Value="{StaticResource P.Mid}" />
+                    <Setter TargetName="Half" Property="Visibility" Value="Visible" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Risk}" Value="{x:Static t:SpecRisk.Hard}">
+                    <Setter TargetName="Root" Property="TextElement.Foreground" Value="{StaticResource P.Hard}" />
+                    <Setter TargetName="Ring" Property="Visibility" Value="Collapsed" />
+                    <Setter TargetName="Tri" Property="Visibility" Value="Visible" />
+                </DataTrigger>
+            </DataTemplate.Triggers>
+        </DataTemplate>
+
+        <!-- 56×56 click area, 28 px box, 2 px frame. Marked = accent fill, in effect = ink fill, unavailable = muted frame. -->
+        <Style x:Key="Check" TargetType="Button" BasedOn="{StaticResource P.Flat}">
+            <Setter Property="Width" Value="56" />
+            <Setter Property="Height" Value="56" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Grid Background="Transparent">
+                            <Border x:Name="Box" Width="28" Height="28" BorderThickness="2" BorderBrush="{StaticResource P.Ink}" SnapsToDevicePixels="True">
+                                <Border.Background>
+                                    <SolidColorBrush x:Name="Fill" Color="Transparent" />
+                                </Border.Background>
+                                <Path x:Name="Tick" Data="M2.5,8.5 L6,12 L13.5,4" Stroke="White" StrokeThickness="2.4" StrokeStartLineCap="Square" StrokeEndLineCap="Square"
+                                      StrokeLineJoin="Miter" Width="16" Height="16" Opacity="0" />
+                            </Border>
+                            <Border x:Name="Focus" Width="38" Height="38" BorderThickness="1" BorderBrush="{StaticResource P.Ink}" Visibility="Collapsed" />
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <DataTrigger Binding="{Binding Mark}" Value="{x:Static vm:SpecMark.Marked}">
+                                <DataTrigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <ColorAnimation Storyboard.TargetName="Fill" Storyboard.TargetProperty="Color" To="#E8380D" Duration="{StaticResource Dur.Fast}" />
+                                            <DoubleAnimation Storyboard.TargetName="Tick" Storyboard.TargetProperty="Opacity" To="1" Duration="{StaticResource Dur.Fast}" />
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </DataTrigger.EnterActions>
+                                <DataTrigger.ExitActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <ColorAnimation Storyboard.TargetName="Fill" Storyboard.TargetProperty="Color" To="Transparent" Duration="{StaticResource Dur.Fast}" />
+                                            <DoubleAnimation Storyboard.TargetName="Tick" Storyboard.TargetProperty="Opacity" To="0" Duration="{StaticResource Dur.Fast}" />
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </DataTrigger.ExitActions>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding Mark}" Value="{x:Static vm:SpecMark.InEffect}">
+                                <Setter TargetName="Box" Property="Background" Value="{StaticResource P.Ink}" />
+                                <Setter TargetName="Tick" Property="Opacity" Value="1" />
+                                <Setter Property="Cursor" Value="Arrow" />
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding Mark}" Value="{x:Static vm:SpecMark.Unavailable}">
+                                <Setter TargetName="Box" Property="BorderBrush" Value="{StaticResource P.Rule}" />
+                                <Setter Property="Cursor" Value="Arrow" />
+                            </DataTrigger>
+                            <Trigger Property="IsKeyboardFocused" Value="True">
+                                <Setter TargetName="Focus" Property="Visibility" Value="Visible" />
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Box" Property="BorderThickness" Value="2.5" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="GameRow" TargetType="Button" BasedOn="{StaticResource P.Flat}">
+            <Setter Property="Height" Value="48" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="BorderBrush" Value="{StaticResource P.Rule}" />
+            <Setter Property="BorderThickness" Value="0,0,0,1" />
+            <Setter Property="Foreground" Value="{StaticResource P.Muted}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" Background="Transparent" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" SnapsToDevicePixels="True">
+                            <Grid>
+                                <ContentPresenter VerticalAlignment="Center" />
+                                <Rectangle x:Name="Focus" Height="2" VerticalAlignment="Bottom" Margin="0,0,0,-1" Fill="{StaticResource P.Ink}" Visibility="Collapsed" />
+                            </Grid>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Foreground" Value="{StaticResource P.Ink}" />
+                            </Trigger>
+                            <Trigger Property="IsKeyboardFocused" Value="True">
+                                <Setter TargetName="Focus" Property="Visibility" Value="Visible" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="440" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+
+        <!-- ===== Left column: game, counter, actions ===== -->
+        <Border BorderBrush="{StaticResource P.Ink}" BorderThickness="0,0,2,0" Padding="36,32">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <StackPanel>
+                    <v:SpacedText Text="ПРОФИЛЬ ИГРЫ" FontFamily="{StaticResource P.Mono}" FontSize="11" Tracking="0.14" Foreground="{StaticResource P.Muted}" HorizontalAlignment="Left" />
+                    <Border Margin="0,8,0,0" BorderBrush="{StaticResource P.Rule}" BorderThickness="0,1,0,0">
+                        <ItemsControl ItemsSource="{Binding Games}" Focusable="False">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate DataType="{x:Type vm:SpecGameVm}">
+                                    <Button x:Name="Btn" Style="{StaticResource GameRow}" Command="{Binding SelectCommand}" AutomationProperties.Name="{Binding Title}">
+                                        <DockPanel>
+                                            <Path x:Name="Arrow" DockPanel.Dock="Right" Data="M0,6 L16,6 M11,1 L16,6 L11,11" Stroke="{StaticResource P.Accent}" StrokeThickness="2.4"
+                                                  Width="18" Height="12" VerticalAlignment="Center" Visibility="Hidden" />
+                                            <TextBlock Style="{StaticResource P.Text}" Text="{Binding Title}" FontSize="22" FontWeight="Bold" VerticalAlignment="Center" />
+                                        </DockPanel>
+                                    </Button>
+                                    <DataTemplate.Triggers>
+                                        <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                            <Setter TargetName="Btn" Property="Foreground" Value="{StaticResource P.Ink}" />
+                                            <Setter TargetName="Arrow" Property="Visibility" Value="Visible" />
+                                        </DataTrigger>
+                                    </DataTemplate.Triggers>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </Border>
+                </StackPanel>
+
+                <!-- The counter shrinks only when the window is too low for it (minimum 1100×720 with four profiles). -->
+                <Viewbox Grid.Row="1" StretchDirection="DownOnly" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="0,0,0,16">
+                    <StackPanel Margin="0,36,0,0" Width="368">
+                        <v:SpacedText Text="ИЗМЕНЕНИЙ К ПРИМЕНЕНИЮ" FontFamily="{StaticResource P.Mono}" FontSize="11" Tracking="0.14" Foreground="{StaticResource P.Muted}" HorizontalAlignment="Left" />
+                        <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                            <v:SpacedText x:Name="Counter" Text="{Binding Counter}" FontFamily="{StaticResource P.Sans}" FontSize="{StaticResource P.Counter}" FontWeight="ExtraBold"
+                                          Tracking="-0.05" LineHeight="0.82" Foreground="{StaticResource P.Accent}" RenderTransformOrigin="0,1">
+                                <v:SpacedText.RenderTransform>
+                                    <TranslateTransform x:Name="CounterShift" />
+                                </v:SpacedText.RenderTransform>
+                            </v:SpacedText>
+                            <TextBlock Style="{StaticResource P.Text}" FontFamily="{StaticResource P.Mono}" FontSize="16" VerticalAlignment="Bottom" Margin="14,0,0,6">
+                                <Run Text="из" /> <Run Text="{Binding Total, Mode=OneWay}" />
+                            </TextBlock>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,16,0,0" Visibility="{Binding RiskMarked, Converter={StaticResource P.BoolToVis}}">
+                            <Path Data="M5,1 L9.3,9 L0.7,9 Z" Fill="{StaticResource P.Hard}" Width="10" Height="10" VerticalAlignment="Center" Margin="0,0,8,0" />
+                            <v:SpacedText Text="ВЫБРАН ПУНКТ С РИСКОМ" FontFamily="{StaticResource P.Mono}" FontSize="11" Tracking="0.06" Foreground="{StaticResource P.Hard}" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </StackPanel>
+                </Viewbox>
+
+                <StackPanel Grid.Row="2">
+                    <Button Style="{StaticResource P.Primary}" Command="{Binding ApplyCommand}">
+                        <TextBlock Style="{StaticResource P.Text}" Text="{Binding ApplyText}" />
+                    </Button>
+                    <Button Style="{StaticResource P.Outline}" Margin="0,10,0,0" Command="{Binding RevertCommand}">
+                        <StackPanel Orientation="Horizontal">
+                            <Canvas Width="16" Height="16" Margin="0,0,10,0" VerticalAlignment="Center">
+                                <Path Data="M3,6.5 L9.5,6.5 A3.5,3.5 0 0 1 9.5,13.5 L5,13.5 M5.5,3.5 L2.5,6.5 L5.5,9.5" Stroke="{StaticResource P.Ink}" StrokeThickness="1.8"
+                                      StrokeStartLineCap="Square" StrokeEndLineCap="Square" />
+                            </Canvas>
+                            <TextBlock Style="{StaticResource P.Text}" Text="Вернуть всё как было" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                    <TextBlock Style="{StaticResource P.Text}" Margin="0,14,0,0" FontSize="13" LineHeight="18.85" LineStackingStrategy="BlockLineHeight" Foreground="{StaticResource P.Desc}" TextWrapping="Wrap"
+                               Text="Перед первым применением создаётся точка восстановления. Одна кнопка откатывает всё, что сделала программа." />
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- ===== Right: the specification table ===== -->
+        <Grid Grid.Column="1" Margin="36,32,40,0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+            <DockPanel>
+                <v:SpacedText DockPanel.Dock="Right" Text="ОФЛАЙН · БЕЗ ТЕЛЕМЕТРИИ" FontFamily="{StaticResource P.Mono}" FontSize="11" Tracking="0.08" Foreground="{StaticResource P.Muted}"
+                              VerticalAlignment="Bottom" Margin="16,0,0,8" />
+                <TextBlock Style="{StaticResource P.Text}" Text="Спецификация изменений" FontSize="34" FontWeight="Bold" />
+            </DockPanel>
+
+            <Border Grid.Row="1" Margin="0,20,0,0" Padding="0,0,0,8" BorderBrush="{StaticResource P.Ink}" BorderThickness="0,0,0,2">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="48" />
+                        <ColumnDefinition Width="16" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="16" />
+                        <ColumnDefinition Width="190" />
+                        <ColumnDefinition Width="16" />
+                        <ColumnDefinition Width="56" />
+                    </Grid.ColumnDefinitions>
+                    <v:SpacedText Text="№" FontFamily="{StaticResource P.Mono}" FontSize="11" Tracking="0.14" Foreground="{StaticResource P.Muted}" HorizontalAlignment="Left" />
+                    <v:SpacedText Grid.Column="2" Text="ИЗМЕНЕНИЕ" FontFamily="{StaticResource P.Mono}" FontSize="11" Tracking="0.14" Foreground="{StaticResource P.Muted}" HorizontalAlignment="Left" />
+                    <v:SpacedText Grid.Column="4" Text="РИСК" FontFamily="{StaticResource P.Mono}" FontSize="11" Tracking="0.14" Foreground="{StaticResource P.Muted}" HorizontalAlignment="Left" />
+                    <v:SpacedText Grid.Column="6" Text="ВКЛ." FontFamily="{StaticResource P.Mono}" FontSize="11" Tracking="0.14" Foreground="{StaticResource P.Muted}" HorizontalAlignment="Left" />
+                </Grid>
+            </Border>
+
+            <ScrollViewer Grid.Row="2" Style="{StaticResource P.Scroll}" VerticalScrollBarVisibility="Auto" Focusable="False">
+                <StackPanel>
+                <ItemsControl ItemsSource="{Binding Items}" Focusable="False">
+                    <ItemsControl.Resources>
+                        <DataTemplate DataType="{x:Type vm:SpecGroupVm}">
+                            <Border BorderBrush="{StaticResource P.Ink}" BorderThickness="0,0,0,1" Padding="0,22,0,7">
+                                <v:SpacedText Text="{Binding Caps}" FontFamily="{StaticResource P.Mono}" FontSize="11" Tracking="0.14" Foreground="{StaticResource P.Ink}" HorizontalAlignment="Left" />
+                            </Border>
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type vm:SpecRowVm}">
+                            <Border BorderBrush="{StaticResource P.Rule}" BorderThickness="0,0,0,1" Padding="0,6" MinHeight="74" ToolTip="{Binding ToolTipText}">
+                                <Grid VerticalAlignment="Center">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="48" />
+                                        <ColumnDefinition Width="16" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="16" />
+                                        <ColumnDefinition Width="190" />
+                                        <ColumnDefinition Width="16" />
+                                        <ColumnDefinition Width="56" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Style="{StaticResource P.Text}" Text="{Binding Number}" FontFamily="{StaticResource P.Mono}" FontSize="13" Foreground="{StaticResource P.Muted}" VerticalAlignment="Center" />
+                                    <StackPanel Grid.Column="2" VerticalAlignment="Center">
+                                        <TextBlock Style="{StaticResource P.Text}" Text="{Binding Name}" FontSize="20" FontWeight="SemiBold" LineHeight="23" LineStackingStrategy="BlockLineHeight" TextWrapping="Wrap" />
+                                        <TextBlock Style="{StaticResource P.Text}" Text="{Binding Description}" FontSize="13.5" LineHeight="18.2" LineStackingStrategy="BlockLineHeight" Foreground="{StaticResource P.Desc}"
+                                                   TextWrapping="Wrap" TextTrimming="WordEllipsis" MaxHeight="36.4" Margin="0,3,0,0" />
+                                        <TextBlock Style="{StaticResource P.Text}" Text="{Binding StatusLine}" FontFamily="{StaticResource P.Mono}" FontSize="11" Foreground="{StaticResource P.Muted}" TextWrapping="Wrap"
+                                                   Margin="0,5,0,0" Visibility="{Binding HasStatus, Converter={StaticResource P.BoolToVis}}" />
+                                        <DockPanel Margin="0,5,0,0" Visibility="{Binding HasError, Converter={StaticResource P.BoolToVis}}">
+                                            <Path DockPanel.Dock="Left" Data="M5,1 L9.3,9 L0.7,9 Z" Fill="{StaticResource P.Hard}" Width="10" Height="10" VerticalAlignment="Top" Margin="0,2,8,0" />
+                                            <TextBlock Style="{StaticResource P.Text}" FontFamily="{StaticResource P.Mono}" FontSize="11" Foreground="{StaticResource P.Hard}" TextWrapping="Wrap">
+                                                <Run Text="НЕ ПРИМЕНЕНО ·" /> <Run Text="{Binding Error, Mode=OneWay}" />
+                                            </TextBlock>
+                                        </DockPanel>
+                                    </StackPanel>
+                                    <ContentPresenter Grid.Column="4" Content="{Binding}" ContentTemplate="{StaticResource RiskMark}" VerticalAlignment="Center" HorizontalAlignment="Left" />
+                                    <Button Grid.Column="6" Style="{StaticResource Check}" Command="{Binding ToggleCommand}" VerticalAlignment="Center"
+                                            AutomationProperties.Name="{Binding Name}" ToolTip="{Binding StatusLine}" />
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.Resources>
+                </ItemsControl>
+                <Button Style="{StaticResource P.Flat}" HorizontalAlignment="Left" Margin="0,16,0,28" Padding="0,4" Command="{Binding ToggleUnsuitableCommand}"
+                        Visibility="{Binding HasUnsuitable, Converter={StaticResource P.BoolToVis}}">
+                    <TextBlock Style="{StaticResource P.Text}" Text="{Binding UnsuitableText}" FontFamily="{StaticResource P.Mono}" FontSize="12" TextDecorations="Underline" />
+                </Button>
+                </StackPanel>
+            </ScrollViewer>
+        </Grid>
+
+        <!-- ===== Dialog in the same style: flat scrim, 2 px frame, no shadow ===== -->
+        <Grid Grid.ColumnSpan="2" Background="{StaticResource P.Scrim}" Visibility="{Binding HasDialog, Converter={StaticResource P.BoolToVis}}">
+            <Border DataContext="{Binding Dialog}" Width="640" MaxHeight="660" VerticalAlignment="Center" HorizontalAlignment="Center" Background="{StaticResource P.Paper}"
+                    BorderBrush="{StaticResource P.Ink}" BorderThickness="2" Padding="36,32">
+                <DockPanel>
+                    <StackPanel DockPanel.Dock="Top">
+                        <v:SpacedText Text="{Binding Kicker}" FontFamily="{StaticResource P.Mono}" FontSize="11" Tracking="0.14" Foreground="{StaticResource P.Muted}" HorizontalAlignment="Left" />
+                        <TextBlock Style="{StaticResource P.Text}" Text="{Binding Title}" FontSize="30" FontWeight="Bold" TextWrapping="Wrap" Margin="0,10,0,0" />
+                        <TextBlock Style="{StaticResource P.Text}" Text="{Binding Body}" FontSize="14" LineHeight="20" LineStackingStrategy="BlockLineHeight" Foreground="{StaticResource P.Desc}" TextWrapping="Wrap"
+                                   Margin="0,12,0,0" Visibility="{Binding HasBody, Converter={StaticResource P.BoolToVis}}" />
+                    </StackPanel>
+                    <Grid DockPanel.Dock="Bottom" Margin="0,24,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="12" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Button x:Name="Primary" Height="52" Command="{Binding PrimaryCommand}" IsDefault="True">
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource P.Primary}">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsDanger}" Value="True">
+                                            <Setter Property="Background" Value="{StaticResource P.Hard}" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                            <TextBlock Style="{StaticResource P.Text}" Text="{Binding Primary}" />
+                        </Button>
+                        <Button Grid.Column="2" Style="{StaticResource P.Outline}" Command="{Binding SecondaryCommand}" IsCancel="True"
+                                Visibility="{Binding HasSecondary, Converter={StaticResource P.BoolToVis}}">
+                            <TextBlock Style="{StaticResource P.Text}" Text="{Binding Secondary}" />
+                        </Button>
+                    </Grid>
+                    <Border Margin="0,20,0,0" BorderBrush="{StaticResource P.Ink}" BorderThickness="0,2,0,0" Visibility="{Binding HasLines, Converter={StaticResource P.BoolToVis}}">
+                        <ScrollViewer Style="{StaticResource P.Scroll}" VerticalScrollBarVisibility="Auto" Focusable="False">
+                            <ItemsControl ItemsSource="{Binding Lines}" Focusable="False">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate DataType="{x:Type vm:SpecDialogLine}">
+                                        <Border BorderBrush="{StaticResource P.Rule}" BorderThickness="0,0,0,1" Padding="0,10">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="48" />
+                                                    <ColumnDefinition Width="*" />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Style="{StaticResource P.Text}" x:Name="Mark" Text="{Binding Mark}" FontFamily="{StaticResource P.Mono}" FontSize="13" Foreground="{StaticResource P.Muted}" />
+                                                <StackPanel Grid.Column="1">
+                                                    <TextBlock Style="{StaticResource P.Text}" Text="{Binding Text}" FontSize="16" FontWeight="SemiBold" TextWrapping="Wrap" />
+                                                    <TextBlock Style="{StaticResource P.Text}" x:Name="Detail" Text="{Binding Detail}" FontFamily="{StaticResource P.Mono}" FontSize="11" Foreground="{StaticResource P.Muted}"
+                                                               TextWrapping="Wrap" Margin="0,4,0,0" Visibility="{Binding HasDetail, Converter={StaticResource P.BoolToVis}}" />
+                                                </StackPanel>
+                                            </Grid>
+                                        </Border>
+                                        <DataTemplate.Triggers>
+                                            <DataTrigger Binding="{Binding Bad}" Value="True">
+                                                <Setter TargetName="Mark" Property="Foreground" Value="{StaticResource P.Hard}" />
+                                                <Setter TargetName="Detail" Property="Foreground" Value="{StaticResource P.Hard}" />
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding Mark}" Value="✓">
+                                                <Setter TargetName="Mark" Property="Foreground" Value="{StaticResource P.Safe}" />
+                                                <Setter TargetName="Mark" Property="FontFamily" Value="{StaticResource P.Sans}" />
+                                                <Setter TargetName="Mark" Property="FontWeight" Value="Bold" />
+                                                <Setter TargetName="Mark" Property="FontSize" Value="16" />
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding Mark}" Value="✗">
+                                                <Setter TargetName="Mark" Property="FontFamily" Value="{StaticResource P.Sans}" />
+                                                <Setter TargetName="Mark" Property="FontWeight" Value="Bold" />
+                                                <Setter TargetName="Mark" Property="FontSize" Value="16" />
+                                            </DataTrigger>
+                                        </DataTemplate.Triggers>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </Border>
+                </DockPanel>
+            </Border>
+        </Grid>
+    </Grid>
+</UserControl>

@@ -159,6 +159,9 @@ public abstract class Tweak
     /// <summary>Risk level for the tag; <see cref="Risk"/> explains it in words.</summary>
     public virtual TweakRisk RiskLevel => TweakRisk.Low;
 
+    /// <summary>Applied only after the user confirms the risk in a separate dialog («Я понимаю риск»).</summary>
+    public virtual bool RequiresConsent => RiskLevel == TweakRisk.High;
+
     /// <summary>Games this actually helps (or "все игры"); part of the honest description.</summary>
     public virtual string? AppliesTo => null;
 

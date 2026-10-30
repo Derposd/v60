@@ -211,32 +211,54 @@ public sealed class DeliveryOptimizationTweak : Tweak
     }
 }
 
-/// <summary>Memory integrity (HVCI). Shown only: the app never switches off Windows protection itself.</summary>
+/// <summary>
+/// Memory integrity (HVCI). Off only by the user's explicit choice: the tweak is never recommended or preselected and asks for consent
+/// (<see cref="Tweak.RequiresConsent"/>) before it is applied. When a UEFI lock or a group policy keeps it on, Windows ignores the
+/// registry value, so the tweak says so instead of writing it.
+/// </summary>
 public sealed class MemoryIntegrityTweak : Tweak
 {
-    private const string Key = @"SYSTEM\CurrentControlSet\Control\DeviceGuard\Scenarios\HypervisorEnforcedCodeIntegrity";
+    public const string Key = @"SYSTEM\CurrentControlSet\Control\DeviceGuard\Scenarios\HypervisorEnforcedCodeIntegrity";
+    public const string PolicyKey = @"SOFTWARE\Policies\Microsoft\Windows\DeviceGuard";
 
     public override string Id => "win.memoryintegrity";
-    public override string Title => "Целостность памяти (изоляция ядра)";
+    public override string Title => "Отключить целостность памяти (HVCI)";
     public override TweakCategory Category => TweakCategory.Windows;
     public override Effectiveness Effectiveness => Effectiveness.HardwareDependent;
     public override bool Recommended => false;
     public override bool Disputed => true;
+    public override bool RequiresRestart => true;
     public override TweakRisk RiskLevel => TweakRisk.High;
-    public override string Risk => "Отключение снижает защиту Windows. Программа сама этого не делает";
+    public override string Risk => "Снижает защиту ядра Windows от вредоносных драйверов. Нужны права администратора и перезагрузка";
 
     public override string Explanation =>
-        "Защита Windows от вредоносных драйверов. В тестах она стоит от 0 до 5–10% FPS там, где игра упирается в процессор. " +
-        "Microsoft допускает её отключение на время игры с возвратом после — но это решение за вами, программа защиту не выключает.";
+        "Защита Windows от вредоносных и уязвимых драйверов. В тестах она стоит от 0 до 5–10% FPS там, где игра упирается в процессор. " +
+        "Microsoft допускает её отключение на время игры с возвратом после. Откат включает защиту обратно (тоже после перезагрузки).";
 
     public override string? ManualSteps =>
-        "Безопасность Windows → Безопасность устройства → Сведения об изоляции ядра → «Целостность памяти». Нужна перезагрузка. После игры включите обратно.";
+        "Безопасность Windows → Безопасность устройства → Сведения об изоляции ядра → «Целостность памяти». Нужна перезагрузка.";
 
     public override TweakPlan Plan(TweakContext ctx)
     {
-        var enabled = ctx.Registry.GetValue(RegHive.LocalMachine, Key, "Enabled")?.AsInt() == 1;
-        return enabled
-            ? Result(TweakStatus.ManualOnly, $"Включена. {ManualSteps}", recommendedHere: false)
-            : Result(TweakStatus.NotApplicable, "Выключена или не поддерживается этим ПК.", recommendedHere: false);
+        var enabled = ctx.Registry.GetValue(RegHive.LocalMachine, Key, "Enabled")?.AsInt();
+        if (enabled != 1)
+        {
+            return Result(TweakStatus.AlreadyOptimal, enabled is null ? "Не включена на этом ПК." : "Выключена.", recommendedHere: false);
+        }
+
+        if (ctx.Registry.GetValue(RegHive.LocalMachine, Key, "Locked")?.AsInt() == 1)
+        {
+            return Result(TweakStatus.ManualOnly, "Включена с блокировкой UEFI: через реестр её не выключить. " + ManualSteps, recommendedHere: false);
+        }
+
+        if (ctx.Registry.GetValue(RegHive.LocalMachine, PolicyKey, "HypervisorEnforcedCodeIntegrity")?.AsInt() is 1 or 2)
+        {
+            return Result(TweakStatus.ManualOnly, "Включена групповой политикой (например, на рабочем ПК): программа её не меняет.", recommendedHere: false);
+        }
+
+        return Result(TweakStatus.CanApply, "Включена. Выключится после перезагрузки.", new[]
+        {
+            PlannedAction.SetReg(RegHive.LocalMachine, Key, "Enabled", RegValue.Dword(0), "Целостность памяти: выкл. (после перезагрузки)"),
+        }, recommendedHere: false);
     }
 }

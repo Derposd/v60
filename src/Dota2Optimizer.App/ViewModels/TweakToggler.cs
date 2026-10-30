@@ -30,6 +30,11 @@ public static class TweakToggler
             }
             else if (state.CanTurnOn)
             {
+                if (row.Tweak.RequiresConsent && !Ui.Confirm($"«{row.Title}»\n\n{row.Tweak.Risk}.\n\n{row.Tweak.Explanation}\n\nПродолжить, если понимаете риск?", "Риск"))
+                {
+                    return null;
+                }
+
                 var lines = await s.ConfirmAndApplyAsync(new[] { state.Plan }, row.Title);
                 if (lines is not null)
                 {

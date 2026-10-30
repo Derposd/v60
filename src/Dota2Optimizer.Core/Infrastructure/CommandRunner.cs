@@ -101,6 +101,26 @@ public static class Elevation
 /// <summary>Starts a process through the UAC prompt and waits for it. Used only for single, user-confirmed admin commands.</summary>
 public static class ElevatedProcess
 {
+    /// <summary>Starts an elevated process without waiting for it. Returns null if the user declined the UAC prompt.</summary>
+    public static Process? StartAs(string fileName, string arguments)
+    {
+        Log.Info($"Запуск с правами администратора: {fileName} {arguments}");
+        try
+        {
+            return Process.Start(new ProcessStartInfo(fileName, arguments)
+            {
+                UseShellExecute = true,
+                Verb = "runas",
+                WindowStyle = ProcessWindowStyle.Hidden,
+            });
+        }
+        catch (System.ComponentModel.Win32Exception ex) when (ex.NativeErrorCode == 1223)
+        {
+            Log.Warn("Пользователь отклонил запрос UAC");
+            return null;
+        }
+    }
+
     /// <returns>Exit code, or -1 if the user declined the UAC prompt.</returns>
     public static int RunAs(string fileName, string arguments, TimeSpan? timeout = null)
     {

@@ -81,6 +81,15 @@ public class InputLatencyTests
     }
 
     [Fact]
+    public void Timer_resolution_is_not_offered_on_windows_10_where_the_value_is_not_read()
+    {
+        var s = new SystemSnapshot { Windows = new WindowsInfo("Windows 10", "22H2", 19045, false) };
+        Assert.Equal(TweakStatus.NotApplicable, new GlobalTimerResolutionTweak().Plan(Ctx(s)).Status);
+        var w11 = new SystemSnapshot { Windows = new WindowsInfo("Windows 11", "23H2", 22631, true) };
+        Assert.Equal(TweakStatus.CanApply, new GlobalTimerResolutionTweak().Plan(Ctx(w11)).Status);
+    }
+
+    [Fact]
     public void Timer_resolution_is_not_offered_on_old_windows()
     {
         var s = new SystemSnapshot { Windows = new WindowsInfo("Windows 10", "1903", 18362, false) };

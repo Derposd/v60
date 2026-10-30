@@ -22,12 +22,12 @@
     <CubicEase x:Key="Ease.InOut" EasingMode="EaseInOut" />
     <BackEase x:Key="Ease.Pop" EasingMode="EaseOut" Amplitude="0.35" />
 
-    <!-- Radii -->
-    <CornerRadius x:Key="Radius.S">8</CornerRadius>
-    <CornerRadius x:Key="Radius.M">12</CornerRadius>
-    <CornerRadius x:Key="Radius.L">18</CornerRadius>
-    <CornerRadius x:Key="Radius.XL">22</CornerRadius>
-    <CornerRadius x:Key="Radius.Pill">999</CornerRadius>
+    <!-- Radii: design B has no rounded large elements. -->
+    <CornerRadius x:Key="Radius.S">0</CornerRadius>
+    <CornerRadius x:Key="Radius.M">0</CornerRadius>
+    <CornerRadius x:Key="Radius.L">0</CornerRadius>
+    <CornerRadius x:Key="Radius.XL">0</CornerRadius>
+    <CornerRadius x:Key="Radius.Pill">0</CornerRadius>
 
     <!-- Spacing (4-pt scale) -->
     <sys:Double x:Key="Space.1">4</sys:Double>
@@ -47,7 +47,7 @@
     <sys:Double x:Key="Font.H1">21</sys:Double>
     <sys:Double x:Key="Font.Display">32</sys:Double>
 
-    <!-- Elevation: one soft shadow for floating elements; removed in performance mode. -->
-    <DropShadowEffect x:Key="Glow.Button" Color="#F0453A" BlurRadius="22" ShadowDepth="3" Direction="270" Opacity="0.38" RenderingBias="Performance" />
-    <DropShadowEffect x:Key="Shadow.Float" BlurRadius="24" ShadowDepth="6" Direction="270" Opacity="0.35" Color="Black" RenderingBias="Performance" />
+    <!-- Elevation: design B has no shadows; the keys stay for the templates that reference them. -->
+    <DropShadowEffect x:Key="Glow.Button" BlurRadius="0" ShadowDepth="0" Opacity="0" />
+    <DropShadowEffect x:Key="Shadow.Float" BlurRadius="0" ShadowDepth="0" Opacity="0" />
 </ResourceDictionary>

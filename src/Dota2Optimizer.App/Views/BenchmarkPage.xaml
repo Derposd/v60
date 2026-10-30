@@ -108,8 +108,8 @@
                                     </Grid.ColumnDefinitions>
                                     <TextBlock Text="{Binding Metric}" FontWeight="SemiBold" VerticalAlignment="Center" />
                                     <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                        <Border Height="6" CornerRadius="3" Background="{StaticResource NeutralSoft}" Margin="0,0,0,4">
-                                            <Border HorizontalAlignment="Left" CornerRadius="3" Background="{StaticResource Subtle}" v:Fx.Appear="True">
+                                        <Border Height="6" CornerRadius="0" Background="{StaticResource NeutralSoft}" Margin="0,0,0,4">
+                                            <Border HorizontalAlignment="Left" CornerRadius="0" Background="{StaticResource Subtle}" v:Fx.Appear="True">
                                                 <Border.Width>
                                                     <MultiBinding Converter="{StaticResource FractionWidth}">
                                                         <Binding Path="BeforeBar" />
@@ -118,8 +118,8 @@
                                                 </Border.Width>
                                             </Border>
                                         </Border>
-                                        <Border Height="6" CornerRadius="3" Background="{StaticResource NeutralSoft}">
-                                            <Border HorizontalAlignment="Left" CornerRadius="3" Background="{DynamicResource BarGradient}" v:Fx.Appear="True">
+                                        <Border Height="6" CornerRadius="0" Background="{StaticResource NeutralSoft}">
+                                            <Border HorizontalAlignment="Left" CornerRadius="0" Background="{DynamicResource BarGradient}" v:Fx.Appear="True">
                                                 <Border.Width>
                                                     <MultiBinding Converter="{StaticResource FractionWidth}">
                                                         <Binding Path="AfterBar" />
